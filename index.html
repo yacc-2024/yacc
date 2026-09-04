@@ -692,7 +692,7 @@
 </head>
 <body>
 
-  <!-- ===== 导航 ===== -->
+  
   <header class="nav">
     <a class="wordmark" href="#top">YACC</a>
     <nav class="menu">
@@ -703,7 +703,7 @@
     </nav>
   </header>
 
-  <!-- ===== Hero ===== -->
+  
   <section class="hero" id="top">
     <div class="hero-bg" id="heroBg" aria-hidden="true">
       <div class="orb orb-a"></div>
@@ -717,7 +717,7 @@
     <p class="sub hero-anim" style="animation-delay:.18s">反对校园霸凌项目</p>
   </section>
 
-  <!-- ===== 关于 ===== -->
+  
   <section class="block" id="about">
     <div class="inner">
       <div class="sec-head reveal">
@@ -744,7 +744,7 @@
     </div>
   </section>
 
-  <!-- ===== 团队 ===== -->
+  
   <section class="block" id="team">
     <div class="inner">
       <div class="sec-head reveal">
@@ -755,7 +755,7 @@
     </div>
   </section>
 
-  <!-- ===== 作品 ===== -->
+  
   <section class="block works" id="works">
     <div class="inner">
       <div class="sec-head reveal">
@@ -764,7 +764,7 @@
       </div>
 
       <div class="watch-layout">
-        <!-- 播放器 -->
+        
         <div class="player-panel reveal">
           <div class="player" id="playerWrap">
             <video id="videoPlayer" playsinline preload="metadata"></video>
@@ -772,7 +772,7 @@
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
               <span class="pp">敬请期待</span>
             </div>
-            <!-- 待播放封面层（首次进入不自动播放） -->
+            
             <div class="player-cover is-hidden" id="playerCover">
               <div class="cover-glow" aria-hidden="true"></div>
               <div class="cover-title">
@@ -780,11 +780,11 @@
                 <h3 id="coverTitle"></h3>
               </div>
             </div>
-            <!-- 中央播放键 -->
+            
             <button class="center-play" id="centerPlay" aria-label="播放">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
             </button>
-            <!-- 自绘控制条 -->
+            
             <div class="controls" id="controls">
               <div class="progress" id="progress">
                 <div class="progress-track">
@@ -837,7 +837,7 @@
           </div>
         </div>
 
-        <!-- 选集 -->
+        
         <div class="episodes reveal" style="transition-delay:.08s">
           <div class="glass-panel">
             <div class="season-tabs" id="seasonTabs"></div>
@@ -849,7 +849,7 @@
     </div>
   </section>
 
-  <!-- ===== 团队介绍 ===== -->
+  
   <section class="block" id="team-intro">
     <div class="inner">
       <div class="sec-head reveal">
@@ -872,7 +872,7 @@
     </div>
   </section>
 
-  <!-- ===== 页脚 ===== -->
+  
   <footer>
     <div class="foot">
       <span class="wordmark">YACC</span>
@@ -880,7 +880,7 @@
     </div>
   </footer>
 
-  <!-- ===== 成员弹窗 ===== -->
+  
   <div class="modal" id="memberModal" hidden>
     <div class="modal-backdrop" data-close></div>
     <div class="modal-card">
@@ -898,7 +898,6 @@
 
 <script>
   // ============================================================
-  // 团队成员数据（11 人 · 职位整合 · 简介为占位文案）
   // ============================================================
   var MEMBERS = [
     { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。" },
@@ -917,7 +916,6 @@
   var AVATAR_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2.25c-4 0-7.5 2-7.5 4.5V21h15v-2.25c0-2.5-3.5-4.5-7.5-4.5z"/></svg>';
 
   // ============================================================
-  // 剧集数据（多季多集，可持续新增）
   // ============================================================
   var SEASONS = [
     {
@@ -937,7 +935,6 @@
   ];
 
   // ============================================================
-  // 渲染：团队成员
   // ============================================================
   function renderMembers() {
     var list = document.getElementById("memberList");
@@ -952,7 +949,6 @@
   }
 
   // ============================================================
-  // 成员弹窗
   // ============================================================
   var modal = document.getElementById("memberModal");
 
@@ -990,7 +986,6 @@
   });
 
   // ============================================================
-  // 关于数据卡跳转（作品→作品区 / 成员→团队区 / 成立→团队介绍）
   // ============================================================
   function jumpTo(sel) {
     var el = document.querySelector(sel);
@@ -1017,7 +1012,6 @@
   });
 
   // ============================================================
-  // 播放器
   // ============================================================
   var playerWrap = document.getElementById("playerWrap");
   var video = document.getElementById("videoPlayer");
@@ -1065,7 +1059,6 @@
     if (video.paused) video.play().catch(function () {}); else video.pause();
   }
 
-  // 待播放封面层：显示/隐藏
   var coverShown = false;
   function showCover(show, metaText, titleText) {
     coverShown = show;
@@ -1100,12 +1093,10 @@
   });
   video.addEventListener("loadedmetadata", function () {
     timeDur.textContent = fmt(video.duration);
-    // 自适应视频比例，消除黑边
     var r = video.videoWidth / video.videoHeight;
     if (isFinite(r) && r > 0) playerWrap.style.aspectRatio = String(r);
   });
 
-  // 进度条：点击 / 拖动
   function seekFromEvent(e) {
     if (!hasVideo || !isFinite(video.duration)) return;
     var rect = progress.getBoundingClientRect();
@@ -1130,7 +1121,6 @@
     progress.classList.remove("dragging");
   });
 
-  // 音量
   function updateVolUI() {
     var muted = video.muted || video.volume === 0;
     icoVol.classList.toggle("is-hidden", muted);
@@ -1147,7 +1137,6 @@
     updateVolUI();
   });
 
-  // 全屏
   btnFull.addEventListener("click", function () {
     if (!document.fullscreenElement) {
       playerWrap.requestFullscreen && playerWrap.requestFullscreen().catch(function () {});
@@ -1156,7 +1145,6 @@
     }
   });
 
-  // 设置菜单（播放速度 / 画中画）
   btnSettings.addEventListener("click", function (e) {
     e.stopPropagation();
     setMenu.classList.toggle("is-hidden");
@@ -1182,17 +1170,12 @@
     });
   });
 
-  // 控制条常驻显示（桌面与移动端均可见，简单可靠）
-
   // ============================================================
-  // 播放器离开视口自动暂停（避免"划走了还在响"）
-  // 全屏 / 画中画等沉浸场景自动豁免
   // ============================================================
   if ("IntersectionObserver" in window) {
     var playerIO = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) return;
-        // 沉浸模式（全屏 / 系统画中画）下不打断
         if (document.fullscreenElement === playerWrap) return;
         if (document.pictureInPictureElement === video) return;
         if (hasVideo && !video.paused) video.pause();
@@ -1202,7 +1185,6 @@
   }
 
   // ============================================================
-  // 选集：季标签 + 数字宫格
   // ============================================================
   var seasonTabs = document.getElementById("seasonTabs");
   var epGrid = document.getElementById("epGrid");
@@ -1224,7 +1206,6 @@
       return '<button class="ep-chip' + active + soon + '" data-e="' + ei + '" title="' + ep.title + '">' + ep.no + '</button>';
     }).join("");
     epHint.textContent = "已上线：" + s.episodes.filter(function (ep) { return ep.video; }).length + " 集 · 点击" + s.label + "集数即可播放";
-    // 切换季/集时整组入场动效
     epGrid.classList.remove("ready");
     void epGrid.offsetWidth;
     epGrid.classList.add("ready");
@@ -1269,7 +1250,6 @@
       progressFill.style.width = "0%";
       progressThumb.style.left = "0%";
     }
-    // 播放器切换微动效
     playerWrap.classList.remove("swapping");
     void playerWrap.offsetWidth;
     playerWrap.classList.add("swapping");
@@ -1292,11 +1272,9 @@
     selectEpisode(activeSeason, Number(chip.getAttribute("data-e")), true);
   });
 
-  // 默认选中第一季第 1 集（不自动播放，展示待播放封面）
   selectEpisode(0, 0, false);
 
   // ============================================================
-  // Hero 鼠标视差（仅精细指针设备）
   // ============================================================
   var heroBg = document.getElementById("heroBg");
   if (heroBg) {
@@ -1312,7 +1290,6 @@
   }
 
   // ============================================================
-  // 导航栏滚动态（液态玻璃加深）
   // ============================================================
   var navEl = document.querySelector("header.nav");
   if (navEl) {
@@ -1322,7 +1299,6 @@
   }
 
   // ============================================================
-  // 关于数据卡数字滚动动画
   // ============================================================
   function animateCount(el) {
     var target = Number(el.getAttribute("data-count"));
@@ -1355,7 +1331,6 @@
   })();
 
   // ============================================================
-  // 滚动渐入
   // ============================================================
   function initReveal() {
     var els = document.querySelectorAll(".reveal");
@@ -1375,7 +1350,6 @@
   }
 
   // ============================================================
-  // 初始化
   // ============================================================
   renderMembers();
   initReveal();
