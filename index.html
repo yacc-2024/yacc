@@ -461,6 +461,57 @@
   .log-title { font-family: var(--serif); font-size: 17px; font-weight: 700; margin-bottom: 5px; }
   .log-desc { font-size: 13.5px; color: var(--ink-2); line-height: 1.8; }
 
+  .school-card {
+    margin-top: 28px;
+    display: flex; align-items: center; gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 20px 26px;
+    cursor: pointer;
+    transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s, border-color .25s;
+  }
+  .school-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(20,20,20,.14);
+  }
+  .school-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    color: var(--muted); text-transform: uppercase;
+    padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+    white-space: nowrap;
+  }
+  .school-name {
+    flex: 1;
+    font-family: var(--serif); font-size: 17px; font-weight: 700;
+    color: var(--ink);
+  }
+  .school-play {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; color: var(--muted);
+    transition: color .2s;
+  }
+  .school-card:hover .school-play { color: var(--ink); }
+  .school-play svg { flex-shrink: 0; }
+
+  .school-modal-card { width: min(860px, 100%); padding: clamp(24px,4vw,34px); }
+  .school-modal-title {
+    font-family: var(--serif); font-size: 22px; font-weight: 900;
+    text-align: center; margin-bottom: 4px;
+  }
+  .school-modal-name {
+    text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 22px;
+  }
+  .school-video-wrap {
+    border-radius: var(--r-md); overflow: hidden;
+    background: #000;
+    aspect-ratio: 16 / 9;
+  }
+  .school-video-wrap video {
+    width: 100%; height: 100%; object-fit: contain; display: block;
+  }
+
   /* ---------- 作品：播放器 + 选集 ---------- */
   .works { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 
@@ -828,10 +879,17 @@
           <div class="stat-hint">查看团队介绍<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
         </div>
       </div>
+      <div class="school-card reveal" id="schoolBtn" tabindex="0" role="button" aria-label="查看出品学校宣传视频">
+        <div class="school-label">出品学校</div>
+        <div class="school-name">北京师范大学天津静海实验学校</div>
+        <div class="school-play">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+          <span>宣传视频</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  
   <section class="block" id="team">
     <div class="inner">
       <div class="sec-head reveal">
@@ -994,6 +1052,20 @@
     </div>
   </div>
 
+  <div class="modal school-modal" id="schoolModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card school-modal-card">
+      <button class="modal-close" data-close aria-label="关闭">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <h3 class="school-modal-title">出品学校</h3>
+      <div class="school-modal-name">北京师范大学天津静海实验学校</div>
+      <div class="school-video-wrap">
+        <video id="schoolVideo" playsinline preload="metadata" controls></video>
+      </div>
+    </div>
+  </div>
+
 <script>
   // ============================================================
   // ============================================================
@@ -1095,6 +1167,7 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !modal.hidden) closeModal();
     if (e.key === "Escape" && !changelogModal.hidden) closeChangelog();
+    if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
 
   var CHANGELOG = [
@@ -1136,6 +1209,33 @@
   document.getElementById("changelogBtn").addEventListener("click", openChangelog);
   changelogModal.addEventListener("click", function (e) {
     if (e.target.closest("[data-close]")) closeChangelog();
+  });
+
+  var schoolModal = document.getElementById("schoolModal");
+  var schoolVideo = document.getElementById("schoolVideo");
+  function openSchool() {
+    schoolVideo.src = "school.mp4";
+    schoolVideo.load();
+    schoolModal.hidden = false;
+    requestAnimationFrame(function () { schoolModal.classList.add("open"); });
+    document.body.style.overflow = "hidden";
+  }
+  function closeSchool() {
+    schoolVideo.pause();
+    schoolVideo.removeAttribute("src");
+    schoolVideo.load();
+    schoolModal.classList.remove("open");
+    document.body.style.overflow = "";
+    var t = setTimeout(function () { schoolModal.hidden = true; }, 300);
+    if (schoolModal._timer) clearTimeout(schoolModal._timer);
+    schoolModal._timer = t;
+  }
+  document.getElementById("schoolBtn").addEventListener("click", openSchool);
+  document.getElementById("schoolBtn").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSchool(); }
+  });
+  schoolModal.addEventListener("click", function (e) {
+    if (e.target.closest("[data-close]")) closeSchool();
   });
 
   // ============================================================
