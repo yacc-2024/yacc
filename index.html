@@ -330,11 +330,41 @@
     width: 100%; height: 100%; object-fit: cover;
     border-radius: 50%; display: block;
   }
-  .member.director .avatar-default {
+  .member.director .avatar-default,
+  .member.tier-1 .avatar-default,
+  .modal-card.tier-1 .avatar-default {
     background: linear-gradient(145deg, #F5F0E6, #E8E0D0);
-    box-shadow: 0 0 0 2px rgba(180,150,80,.4), 0 8px 22px rgba(180,150,80,.2), inset 0 1px 0 rgba(255,255,255,.9);
+    box-shadow: 0 0 0 2px rgba(180,150,80,.45), 0 8px 22px rgba(180,150,80,.18), inset 0 1px 0 rgba(255,255,255,.9);
   }
-  .member.director h3 { color: #8A6D2B; }
+  .member.tier-1 h3, .modal-card.tier-1 h3 { color: #8A6D2B; }
+
+  .member.tier-2 .avatar-default,
+  .modal-card.tier-2 .avatar-default {
+    background: linear-gradient(145deg, #EEF0F3, #DDE1E6);
+    box-shadow: 0 0 0 2px rgba(90,107,124,.4), 0 8px 22px rgba(90,107,124,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .member.tier-2 h3, .modal-card.tier-2 h3 { color: #5A6B7C; }
+
+  .member.tier-3 .avatar-default,
+  .modal-card.tier-3 .avatar-default {
+    background: linear-gradient(145deg, #F0ECF4, #E2DAEA);
+    box-shadow: 0 0 0 2px rgba(107,78,138,.4), 0 8px 22px rgba(107,78,138,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .member.tier-3 h3, .modal-card.tier-3 h3 { color: #6B4E8A; }
+
+  .member.tier-4 .avatar-default,
+  .modal-card.tier-4 .avatar-default {
+    background: linear-gradient(145deg, #F5ECE6, #EADFD6);
+    box-shadow: 0 0 0 2px rgba(160,82,45,.4), 0 8px 22px rgba(160,82,45,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .member.tier-4 h3, .modal-card.tier-4 h3 { color: #A0522D; }
+
+  .member.tier-5 .avatar-default,
+  .modal-card.tier-5 .avatar-default {
+    background: linear-gradient(145deg, #E6F0EF, #D6E6E4);
+    box-shadow: 0 0 0 2px rgba(46,107,107,.35), 0 8px 22px rgba(46,107,107,.12), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .member.tier-5 h3, .modal-card.tier-5 h3 { color: #2E6B6B; }
   .member h3 { font-family: var(--serif); font-size: 18px; font-weight: 900; }
   .member .role { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
   .member .tap-hint { font-size: 11px; color: #B9B6AE; margin-top: 10px; letter-spacing: .08em; }
@@ -384,6 +414,52 @@
   .modal-card h3 { font-family: var(--serif); font-size: 24px; font-weight: 900; text-align: center; }
   .modal-card .role { text-align: center; font-size: 13px; color: var(--muted); margin: 6px 0 22px; }
   .modal-card .bio { font-size: 14.5px; color: var(--ink-2); line-height: 1.9; text-align: center; }
+
+  .nav-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 400; color: var(--muted);
+    padding: 6px 2px; position: relative;
+    transition: color .18s;
+  }
+  .nav-btn::after {
+    content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px; width: 0;
+    background: var(--ink); transition: width .28s ease;
+  }
+  .nav-btn:hover { color: var(--ink); }
+  .nav-btn:hover::after { width: 100%; }
+
+  .changelog-card { width: min(620px, 100%); padding: clamp(28px,5vw,40px); }
+  .changelog-title {
+    font-family: var(--serif); font-size: 26px; font-weight: 900;
+    text-align: center; margin-bottom: 28px;
+  }
+  .changelog-list { position: relative; padding-left: 28px; }
+  .changelog-list::before {
+    content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+    width: 1.5px; background: linear-gradient(to bottom, var(--line), transparent);
+  }
+  .log-item {
+    position: relative; margin-bottom: 24px;
+    opacity: 0; transform: translateY(12px);
+    animation: logIn .4s cubic-bezier(.22,.61,.36,1) forwards;
+  }
+  .log-item:last-child { margin-bottom: 0; }
+  @keyframes logIn { to { opacity: 1; transform: none; } }
+  .log-dot {
+    position: absolute; left: -28px; top: 6px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--surface); border: 2.5px solid var(--ink);
+    box-shadow: 0 0 0 4px var(--surface);
+  }
+  .log-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .log-date { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+  .log-ver {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+    color: #8A6D2B; background: rgba(180,150,80,.1);
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .log-title { font-family: var(--serif); font-size: 17px; font-weight: 700; margin-bottom: 5px; }
+  .log-desc { font-size: 13.5px; color: var(--ink-2); line-height: 1.8; }
 
   /* ---------- 作品：播放器 + 选集 ---------- */
   .works { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -710,6 +786,7 @@
       <a href="#team">团队</a>
       <a href="#works">作品</a>
       <a href="#team-intro">团队介绍</a>
+      <button class="nav-btn" id="changelogBtn" type="button">日志</button>
     </nav>
   </header>
 
@@ -906,21 +983,32 @@
     </div>
   </div>
 
+  <div class="modal changelog-modal" id="changelogModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card changelog-card">
+      <button class="modal-close" data-close aria-label="关闭">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <h3 class="changelog-title">更新日志</h3>
+      <div class="changelog-list" id="changelogList"></div>
+    </div>
+  </div>
+
 <script>
   // ============================================================
   // ============================================================
   var MEMBERS = [
-    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。", avatar: "https://aka.doubaocdn.com/s/Wau3ngPAwZ" },
-    { name: "王裴煜", role: "导演 / 制片人 / 剪辑", bio: "导演兼制片人，统筹拍摄与后期，负责全片剪辑与成片。" },
-    { name: "张睿轩", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。" },
-    { name: "楚世瀛", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。" },
-    { name: "韩庆颉", role: "领衔主演", bio: "领衔主演，诠释剧中核心角色，撑起全片情感主线。" },
-    { name: "宋禹成", role: "主演", bio: "主演，参与多场重要戏份的拍摄。" },
-    { name: "宫研博", role: "主演", bio: "主演，参与多场重要戏份的拍摄。" },
-    { name: "李金灿", role: "主演", bio: "主演，参与多场重要戏份的拍摄。" },
-    { name: "元一茗", role: "主演 / 特别主演", bio: "特别主演，塑造剧中关键角色。" },
-    { name: "史航铭", role: "主演 / 友情出演", bio: "友情出演，为全片带来独特亮点。" },
-    { name: "赵增宸", role: "摄影指导 / 录音师", bio: "摄影指导与录音师，负责全片画面质感与收音质量。" }
+    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。", avatar: "https://aka.doubaocdn.com/s/Wau3ngPAwZ", tier: 1 },
+    { name: "王裴煜", role: "导演 / 制片人 / 剪辑", bio: "导演兼制片人，统筹拍摄与后期，负责全片剪辑与成片。", tier: 2 },
+    { name: "张睿轩", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。", avatar: "https://aka.doubaocdn.com/s/6Vc9cokCXE", tier: 3 },
+    { name: "楚世瀛", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。", tier: 3 },
+    { name: "韩庆颉", role: "领衔主演", bio: "领衔主演，诠释剧中核心角色，撑起全片情感主线。", tier: 4 },
+    { name: "宋禹成", role: "主演", bio: "主演，参与多场重要戏份的拍摄。", tier: 5 },
+    { name: "宫研博", role: "主演", bio: "主演，参与多场重要戏份的拍摄。", tier: 5 },
+    { name: "李金灿", role: "主演", bio: "主演，参与多场重要戏份的拍摄。", tier: 5 },
+    { name: "元一茗", role: "主演 / 特别主演", bio: "特别主演，塑造剧中关键角色。", tier: 4 },
+    { name: "史航铭", role: "主演 / 友情出演", bio: "友情出演，为全片带来独特亮点。", tier: 5 },
+    { name: "赵增宸", role: "摄影指导 / 录音师", bio: "摄影指导与录音师，负责全片画面质感与收音质量。", tier: 5 }
   ];
 
   var AVATAR_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2.25c-4 0-7.5 2-7.5 4.5V21h15v-2.25c0-2.5-3.5-4.5-7.5-4.5z"/></svg>';
@@ -952,7 +1040,7 @@
       var avatarHtml = m.avatar
         ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
         : AVATAR_SVG;
-      var cls = "member reveal" + (m.avatar ? " director" : "");
+      var cls = "member reveal tier-" + (m.tier || 5);
       return '<div class="' + cls + '" data-i="' + i + '" style="transition-delay:' + (i % 4) * 0.06 + 's" tabindex="0" role="button" aria-label="查看 ' + m.name + ' 介绍">' +
         '<div class="avatar-default" aria-hidden="true">' + avatarHtml + '</div>' +
         '<h3>' + m.name + '</h3>' +
@@ -978,6 +1066,9 @@
         ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
         : AVATAR_SVG;
     }
+    var card = modal.querySelector(".modal-card");
+    card.classList.remove("tier-1","tier-2","tier-3","tier-4","tier-5");
+    card.classList.add("tier-" + (m.tier || 5));
     modal.hidden = false;
     requestAnimationFrame(function () { modal.classList.add("open"); });
     document.body.style.overflow = "hidden";
@@ -1003,6 +1094,48 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !modal.hidden) closeModal();
+    if (e.key === "Escape" && !changelogModal.hidden) closeChangelog();
+  });
+
+  var CHANGELOG = [
+    { date: "2026.09.05", version: "v1.2", title: "新增更新日志", desc: "网站新增更新日志功能，记录每次改版内容；优化页面过渡动画与交互流畅度。" },
+    { date: "2026.09.05", version: "v1.1", title: "总导演金标与头像更新", desc: "增加总导演金色标识，上传李政为头像，优化界面与动画效果。" },
+    { date: "2026.09.05", version: "v1.0", title: "网站正式发布", desc: "YACC 官网正式发布，包含关于、团队、作品、团队介绍四大板块，支持播放 YACC 全部内容。" }
+  ];
+
+  var changelogModal = document.getElementById("changelogModal");
+
+  function renderChangelog() {
+    var list = document.getElementById("changelogList");
+    list.innerHTML = CHANGELOG.map(function (item, i) {
+      return '<div class="log-item" style="animation-delay:' + (i * 0.06) + 's">' +
+        '<div class="log-dot"></div>' +
+        '<div class="log-content">' +
+        '<div class="log-head"><span class="log-date">' + item.date + '</span>' +
+        (item.version ? '<span class="log-ver">' + item.version + '</span>' : '') +
+        '</div>' +
+        '<div class="log-title">' + item.title + '</div>' +
+        '<div class="log-desc">' + item.desc + '</div>' +
+        '</div></div>';
+    }).join("");
+  }
+
+  function openChangelog() {
+    renderChangelog();
+    changelogModal.hidden = false;
+    requestAnimationFrame(function () { changelogModal.classList.add("open"); });
+    document.body.style.overflow = "hidden";
+  }
+  function closeChangelog() {
+    changelogModal.classList.remove("open");
+    document.body.style.overflow = "";
+    var t = setTimeout(function () { changelogModal.hidden = true; }, 300);
+    if (changelogModal._timer) clearTimeout(changelogModal._timer);
+    changelogModal._timer = t;
+  }
+  document.getElementById("changelogBtn").addEventListener("click", openChangelog);
+  changelogModal.addEventListener("click", function (e) {
+    if (e.target.closest("[data-close]")) closeChangelog();
   });
 
   // ============================================================
