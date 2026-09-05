@@ -324,7 +324,17 @@
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 16px;
     box-shadow: inset 0 0 0 1px rgba(20,20,20,.04);
+    overflow: hidden;
   }
+  .avatar-img {
+    width: 100%; height: 100%; object-fit: cover;
+    border-radius: 50%; display: block;
+  }
+  .member.director .avatar-default {
+    background: linear-gradient(145deg, #F5F0E6, #E8E0D0);
+    box-shadow: 0 0 0 2px rgba(180,150,80,.4), 0 8px 22px rgba(180,150,80,.2), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .member.director h3 { color: #8A6D2B; }
   .member h3 { font-family: var(--serif); font-size: 18px; font-weight: 900; }
   .member .role { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
   .member .tap-hint { font-size: 11px; color: #B9B6AE; margin-top: 10px; letter-spacing: .08em; }
@@ -900,7 +910,7 @@
   // ============================================================
   // ============================================================
   var MEMBERS = [
-    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。" },
+    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。", avatar: "https://aka.doubaocdn.com/s/Wau3ngPAwZ" },
     { name: "王裴煜", role: "导演 / 制片人 / 剪辑", bio: "导演兼制片人，统筹拍摄与后期，负责全片剪辑与成片。" },
     { name: "张睿轩", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。" },
     { name: "楚世瀛", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。" },
@@ -939,8 +949,12 @@
   function renderMembers() {
     var list = document.getElementById("memberList");
     list.innerHTML = MEMBERS.map(function (m, i) {
-      return '<div class="member reveal" data-i="' + i + '" style="transition-delay:' + (i % 4) * 0.06 + 's" tabindex="0" role="button" aria-label="查看 ' + m.name + ' 介绍">' +
-        '<div class="avatar-default" aria-hidden="true">' + AVATAR_SVG + '</div>' +
+      var avatarHtml = m.avatar
+        ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
+        : AVATAR_SVG;
+      var cls = "member reveal" + (m.avatar ? " director" : "");
+      return '<div class="' + cls + '" data-i="' + i + '" style="transition-delay:' + (i % 4) * 0.06 + 's" tabindex="0" role="button" aria-label="查看 ' + m.name + ' 介绍">' +
+        '<div class="avatar-default" aria-hidden="true">' + avatarHtml + '</div>' +
         '<h3>' + m.name + '</h3>' +
         '<div class="role">' + m.role + '</div>' +
         '<div class="tap-hint">点击查看详情</div>' +
@@ -958,6 +972,12 @@
     document.getElementById("modalName").textContent = m.name;
     document.getElementById("modalRole").textContent = m.role;
     document.getElementById("modalBio").textContent = m.bio;
+    var av = document.getElementById("modalAvatar");
+    if (av) {
+      av.innerHTML = m.avatar
+        ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
+        : AVATAR_SVG;
+    }
     modal.hidden = false;
     requestAnimationFrame(function () { modal.classList.add("open"); });
     document.body.style.overflow = "hidden";
