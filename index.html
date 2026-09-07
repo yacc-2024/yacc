@@ -1026,11 +1026,12 @@
       ]
     }
   ];
-  function memberCardHtml(m, i, delayIdx) {
+  function memberCardHtml(m, i, delayIdx, forceTier) {
     var avatarHtml = m.avatar
       ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
       : AVATAR_SVG;
-    var cls = "member reveal tier-" + (m.tier || 5);
+    var tier = forceTier || m.tier || 5;
+    var cls = "member reveal tier-" + tier;
     return '<div class="' + cls + '" data-i="' + i + '" style="transition-delay:' + (delayIdx % 4) * 0.06 + 's" tabindex="0" role="button" aria-label="查看 ' + m.name + ' 介绍">' +
       '<div class="avatar-default" aria-hidden="true">' + avatarHtml + '</div>' +
       '<h3>' + m.name + '</h3>' +
@@ -1044,7 +1045,7 @@
     var s1Idx = 0, s2Idx = 0;
     s1.innerHTML = MEMBERS.map(function (m, i) {
       if (!m.s1) return "";
-      return memberCardHtml(m, i, s1Idx++);
+      return memberCardHtml(m, i, s1Idx++, 1);
     }).join("");
     s2.innerHTML = MEMBERS.map(function (m, i) {
       if (!m.s2) return "";
@@ -1487,6 +1488,24 @@
   }
   renderMembers();
   initReveal();
+
+  function preloadVideo(src) {
+    var v = document.createElement("video");
+    v.preload = "auto";
+    v.muted = true;
+    v.setAttribute("playsinline", "");
+    v.src = src;
+    v.load();
+    v.addEventListener("canplaythrough", function () {
+      v.removeAttribute("src");
+      v.load();
+    });
+  }
+
+  window.addEventListener("load", function () {
+    setTimeout(function () { preloadVideo("school.mp4"); }, 1200);
+    setTimeout(function () { preloadVideo("video.mp4"); }, 4000);
+  });
 </script>
 </body>
 </html>
