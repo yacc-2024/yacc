@@ -7,9 +7,6 @@
 <meta name="description" content="YACC 官网，2024级四班反校园霸凌短片制作专项小组。">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap">
 <style>
-  /* ============================================================
-     YACC —— 苹果官网式 · 圆角 · 自绘播放器 · 多季选集
-     ============================================================ */
   :root {
     --bg: #F6F5F2;
     --surface: #FFFFFF;
@@ -27,11 +24,8 @@
     --serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
     --maxw: 1120px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html { scroll-behavior: smooth; }
-
   body {
     font-family: var(--sans);
     background: var(--bg);
@@ -39,17 +33,11 @@
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
   }
-
   ::selection { background: var(--ink); color: var(--bg); }
-
   a { color: inherit; text-decoration: none; }
   img { display: block; max-width: 100%; }
   button { font-family: inherit; }
-
-  /* 强制隐藏（优先级高于任何 display 规则） */
   .is-hidden { display: none !important; }
-
-  /* 液态玻璃工具类：半透明 + 背景模糊 + 高光内边 + 柔和投影 */
   .glass {
     position: relative;
     background: linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.5));
@@ -62,21 +50,15 @@
     from { transform: translateX(-140%) skewX(-18deg); }
     to { transform: translateX(240%) skewX(-18deg); }
   }
-
-  /* ---------- 动效基础 ---------- */
   .reveal {
     opacity: 0;
     transform: translateY(26px);
     transition: opacity .9s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1);
   }
   .reveal.in { opacity: 1; transform: none; }
-
   @keyframes heroFade { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   .hero-anim { animation: heroFade 1.1s cubic-bezier(.22,.61,.36,1) both; }
-
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .15; } }
-
-  /* ---------- 导航 ---------- */
   header.nav {
     position: fixed; inset: 0 0 auto 0; z-index: 60;
     display: flex; align-items: center; justify-content: space-between;
@@ -92,13 +74,11 @@
     background: rgba(246,245,242,.82);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 8px 28px rgba(20,20,20,.05);
   }
-
   .wordmark {
     font-family: var(--serif);
     font-size: 19px; font-weight: 900; letter-spacing: .34em;
     text-indent: .34em;
   }
-
   nav.menu { display: flex; gap: clamp(18px,3vw,36px); }
   nav.menu a {
     font-size: 14px; font-weight: 400; color: var(--muted);
@@ -113,8 +93,6 @@
   }
   nav.menu a:hover { color: var(--ink); }
   nav.menu a:hover::after { width: 100%; }
-
-  /* ---------- Hero ---------- */
   section.hero {
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -127,8 +105,6 @@
       radial-gradient(40% 34% at 72% 78%, rgba(232,228,218,.55), transparent 72%),
       var(--bg);
   }
-
-  /* Hero 动态壁纸：超大柔光层缓慢漂移（层远大于视口，内部渐变无硬边）+ 细颗粒 + 鼠标视差 */
   .hero-bg {
     position: absolute; inset: -6%; z-index: 0; overflow: hidden;
     transition: transform .9s cubic-bezier(.22,.61,.36,1);
@@ -171,7 +147,6 @@
     mix-blend-mode: soft-light;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   }
-  /* Hero 底部过渡：动态壁纸向下渐隐融入页面背景 */
   .hero-fade {
     position: absolute; left: 0; right: 0; bottom: 0;
     height: clamp(90px, 14vh, 160px);
@@ -180,7 +155,6 @@
     pointer-events: none;
   }
   .hero .rec, .hero h1, .hero .sub { position: relative; z-index: 2; }
-
   .hero .rec {
     display: inline-flex; align-items: center; gap: 10px;
     font-size: 12px; letter-spacing: .34em; color: var(--muted);
@@ -191,7 +165,6 @@
     background: var(--ink);
     animation: blink 2.4s ease-in-out infinite;
   }
-
   .hero h1 {
     font-family: var(--serif);
     font-size: clamp(72px, 18vw, 190px);
@@ -201,7 +174,6 @@
     margin-left: .08em;
     text-shadow: 0 20px 60px rgba(20,20,20,.08);
   }
-
   .hero .sub {
     margin-top: 30px;
     font-size: clamp(14px, 1.8vw, 17px);
@@ -209,12 +181,8 @@
     color: var(--ink-2);
     letter-spacing: .18em;
   }
-
-  /* ---------- 通用 section ---------- */
   section.block { padding: clamp(84px,11vw,140px) clamp(20px,5vw,56px); scroll-margin-top: 96px; }
-
   .inner { max-width: var(--maxw); margin: 0 auto; }
-
   .sec-head { margin-bottom: clamp(38px,5vw,64px); }
   .sec-head .no { font-size: 12px; letter-spacing: .22em; color: var(--muted); }
   .sec-head h2 {
@@ -228,8 +196,6 @@
     content: ""; display: block; width: 44px; height: 3px;
     background: var(--ink); border-radius: 2px; margin-top: 16px;
   }
-
-  /* ---------- 关于 ---------- */
   .about-lead {
     font-size: clamp(15px,1.8vw,18px);
     font-weight: 300;
@@ -237,7 +203,6 @@
     max-width: 640px;
     color: var(--ink-2);
   }
-
   .about-stats {
     display: grid; grid-template-columns: repeat(3, 1fr);
     margin-top: clamp(44px,6vw,68px);
@@ -281,8 +246,6 @@
     100% { background-color: transparent; }
   }
   section.block.flash { animation: flashBg 1.6s ease; }
-
-  /* ---------- 团队 ---------- */
   .season-title {
     font-family: var(--serif);
     font-size: clamp(18px,2.4vw,24px);
@@ -293,13 +256,11 @@
     border-left: 3px solid var(--accent);
     letter-spacing: .04em;
   }
-
   .member-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: clamp(16px,2.6vw,26px);
   }
-
   .member {
     position: relative;
     background: linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.5));
@@ -327,7 +288,6 @@
   }
   .member .avatar-default { transition: transform .32s cubic-bezier(.22,.61,.36,1); }
   .member:hover .avatar-default { transform: scale(1.1); }
-
   .avatar-default {
     width: 68px; height: 68px; border-radius: 50%;
     background: linear-gradient(145deg, #ECE9E3, #E0DCD3);
@@ -348,28 +308,24 @@
     box-shadow: 0 0 0 2px rgba(180,150,80,.45), 0 8px 22px rgba(180,150,80,.18), inset 0 1px 0 rgba(255,255,255,.9);
   }
   .member.tier-1 h3, .modal-card.tier-1 h3 { color: #8A6D2B; }
-
   .member.tier-2 .avatar-default,
   .modal-card.tier-2 .avatar-default {
     background: linear-gradient(145deg, #EEF0F3, #DDE1E6);
     box-shadow: 0 0 0 2px rgba(90,107,124,.4), 0 8px 22px rgba(90,107,124,.15), inset 0 1px 0 rgba(255,255,255,.9);
   }
   .member.tier-2 h3, .modal-card.tier-2 h3 { color: #5A6B7C; }
-
   .member.tier-3 .avatar-default,
   .modal-card.tier-3 .avatar-default {
     background: linear-gradient(145deg, #F0ECF4, #E2DAEA);
     box-shadow: 0 0 0 2px rgba(107,78,138,.4), 0 8px 22px rgba(107,78,138,.15), inset 0 1px 0 rgba(255,255,255,.9);
   }
   .member.tier-3 h3, .modal-card.tier-3 h3 { color: #6B4E8A; }
-
   .member.tier-4 .avatar-default,
   .modal-card.tier-4 .avatar-default {
     background: linear-gradient(145deg, #F5ECE6, #EADFD6);
     box-shadow: 0 0 0 2px rgba(160,82,45,.4), 0 8px 22px rgba(160,82,45,.15), inset 0 1px 0 rgba(255,255,255,.9);
   }
   .member.tier-4 h3, .modal-card.tier-4 h3 { color: #A0522D; }
-
   .member.tier-5 .avatar-default,
   .modal-card.tier-5 .avatar-default {
     background: linear-gradient(145deg, #E6F0EF, #D6E6E4);
@@ -379,15 +335,12 @@
   .member h3 { font-family: var(--serif); font-size: 18px; font-weight: 900; }
   .member .role { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
   .member .tap-hint { font-size: 11px; color: #B9B6AE; margin-top: 10px; letter-spacing: .08em; }
-
-  /* ---------- 成员弹窗 ---------- */
   .modal {
     position: fixed; inset: 0; z-index: 90;
     display: flex; align-items: center; justify-content: center;
     padding: 24px;
   }
   .modal[hidden] { display: none; }
-
   .modal-backdrop {
     position: absolute; inset: 0;
     background: rgba(20,20,20,.42);
@@ -397,7 +350,6 @@
     transition: opacity .3s ease;
   }
   .modal.open .modal-backdrop { opacity: 1; }
-
   .modal-card {
     position: relative;
     width: min(560px, 100%);
@@ -410,7 +362,6 @@
     max-height: 86vh; overflow: auto;
   }
   .modal.open .modal-card { opacity: 1; transform: none; }
-
   .modal-close {
     position: absolute; top: 18px; right: 18px;
     width: 40px; height: 40px; border-radius: 50%;
@@ -420,12 +371,10 @@
     transition: background .18s, transform .18s;
   }
   .modal-close:hover { background: #EAE8E2; transform: rotate(90deg); }
-
   .modal-card .avatar-default { margin: 0 auto 18px; width: 76px; height: 76px; }
   .modal-card h3 { font-family: var(--serif); font-size: 24px; font-weight: 900; text-align: center; }
   .modal-card .role { text-align: center; font-size: 13px; color: var(--muted); margin: 6px 0 22px; }
   .modal-card .bio { font-size: 14.5px; color: var(--ink-2); line-height: 1.9; text-align: center; }
-
   .nav-btn {
     background: none; border: none; cursor: pointer;
     font-family: inherit; font-size: 14px; font-weight: 400; color: var(--muted);
@@ -438,7 +387,6 @@
   }
   .nav-btn:hover { color: var(--ink); }
   .nav-btn:hover::after { width: 100%; }
-
   .changelog-card { width: min(620px, 100%); padding: clamp(28px,5vw,40px); }
   .changelog-title {
     font-family: var(--serif); font-size: 26px; font-weight: 900;
@@ -471,7 +419,6 @@
   }
   .log-title { font-family: var(--serif); font-size: 17px; font-weight: 700; margin-bottom: 5px; }
   .log-desc { font-size: 13.5px; color: var(--ink-2); line-height: 1.8; }
-
   .school-card {
     margin-top: 28px;
     display: flex; align-items: center; gap: 20px;
@@ -505,7 +452,6 @@
   }
   .school-card:hover .school-play { color: var(--ink); }
   .school-play svg { flex-shrink: 0; }
-
   .school-modal-card { width: min(860px, 100%); padding: clamp(24px,4vw,34px); }
   .school-modal-title {
     font-family: var(--serif); font-size: 22px; font-weight: 900;
@@ -522,19 +468,14 @@
   .school-video-wrap video {
     width: 100%; height: 100%; object-fit: contain; display: block;
   }
-
-  /* ---------- 作品：播放器 + 选集 ---------- */
   .works { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-
   .watch-layout {
     display: grid;
     grid-template-columns: 1.55fr 1fr;
     gap: clamp(20px,3vw,34px);
     align-items: start;
   }
-
   .player-panel { min-width: 0; }
-
   .player {
     position: relative;
     width: 100%;
@@ -547,7 +488,6 @@
   .player.swapping { animation: swapIn .5s cubic-bezier(.22,.61,.36,1); }
   @keyframes swapIn { from { opacity: .4; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
   .player video { width: 100%; height: 100%; object-fit: contain; display: block; }
-
   .player-placeholder {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -557,8 +497,6 @@
       #0F0F0F;
   }
   .player-placeholder .pp { font-size: 12px; letter-spacing: .26em; }
-
-  /* 待播放封面层（首次进入不自动播放时展示，点击即播） */
   .player-cover {
     position: absolute; inset: 0; z-index: 4;
     display: flex; align-items: center; justify-content: center;
@@ -592,8 +530,6 @@
   }
   .cover-title .meta { font-size: 11px; letter-spacing: .22em; color: rgba(255,255,255,.55); }
   .cover-title h3 { font-family: var(--serif); font-size: 18px; font-weight: 900; margin-top: 6px; }
-
-  /* 中央播放键 */
   .center-play {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 74px; height: 74px; border-radius: 50%;
@@ -608,14 +544,11 @@
   }
   .center-play:hover { background: rgba(0,0,0,.6); transform: translate(-50%,-50%) scale(1.06); }
   .center-play.is-hidden { display: none; }
-
-  /* 自绘控制条（圆角，常驻显示） */
   .controls {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
     padding: 14px 16px;
     background: linear-gradient(180deg, transparent, rgba(0,0,0,.78));
   }
-
   .progress {
     position: relative;
     height: 18px;
@@ -645,13 +578,11 @@
     box-shadow: 0 1px 4px rgba(0,0,0,.4);
   }
   .progress:hover .progress-thumb, .progress.dragging .progress-thumb { opacity: 1; }
-
   .ctrl-row {
     display: flex; align-items: center; gap: 6px;
     margin-top: 4px;
   }
   .ctrl-row .spacer { flex: 1; }
-
   .cbtn {
     width: 40px; height: 40px;
     border: none; background: transparent;
@@ -661,11 +592,8 @@
     transition: background .18s;
   }
   .cbtn:hover { background: rgba(255,255,255,.16); }
-
   .time { font-size: 12px; color: rgba(255,255,255,.9); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
   .time-sep { color: rgba(255,255,255,.5); padding: 0 2px; }
-
-  /* 音量 */
   .vol-wrap { position: relative; display: flex; align-items: center; }
   .vol-slider {
     width: 0; opacity: 0;
@@ -688,8 +616,6 @@
     width: 13px; height: 13px; border: none; border-radius: 50%;
     background: #fff;
   }
-
-  /* 设置菜单（圆角） */
   .set-wrap { position: relative; }
   .set-menu {
     position: absolute; right: 0; bottom: 46px;
@@ -722,13 +648,10 @@
   .set-item:hover { background: rgba(255,255,255,.1); }
   .set-item .tick { color: #fff; opacity: 0; }
   .set-item.active .tick { opacity: 1; }
-
   .player-meta { margin-top: 18px; padding: 0 4px; }
   .player-meta .meta { font-size: 11px; letter-spacing: .2em; color: var(--muted); }
   .player-meta h3 { font-family: var(--serif); font-size: clamp(20px,2.6vw,26px); font-weight: 900; margin: 8px 0 4px; }
   .player-meta p { font-size: 13.5px; color: var(--muted); }
-
-  /* 选集：季标签 + 数字宫格（液态玻璃托盘） */
   .episodes { min-width: 0; }
   .glass-panel {
     position: relative;
@@ -740,7 +663,6 @@
     padding: 22px;
     box-shadow: 0 10px 34px rgba(20,20,20,.06), inset 0 1px 0 rgba(255,255,255,.9);
   }
-
   .season-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
   .season-tab {
     min-height: 40px;
@@ -755,10 +677,8 @@
   }
   .season-tab:hover { color: var(--ink); border-color: rgba(20,20,20,.22); transform: translateY(-1px); }
   .season-tab.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-
   .ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 10px; opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
   .ep-grid.ready { opacity: 1; transform: translateY(0); }
-
   .ep-chip {
     min-height: 52px;
     border: 1px solid rgba(20,20,20,.08);
@@ -774,10 +694,7 @@
   .ep-chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); box-shadow: 0 0 0 3px rgba(20,20,20,.08); }
   .ep-chip.soon { color: #C4C1BA; }
   .ep-chip.soon.active { background: #8B8B86; color: #fff; border-color: #8B8B86; }
-
   .ep-hint { font-size: 12px; color: var(--muted); margin-top: 14px; }
-
-  /* ---------- 团队介绍 ---------- */
   .team-intro { max-width: 720px; }
   .timeline { margin-top: clamp(28px,4vw,40px); display: grid; gap: 16px; }
   .tl-item {
@@ -808,8 +725,6 @@
     color: var(--ink);
     line-height: 1.8;
   }
-
-  /* ---------- 页脚 ---------- */
   footer {
     padding: 48px clamp(20px,5vw,56px);
     border-top: 1px solid var(--line);
@@ -820,17 +735,13 @@
     font-size: 13px; color: var(--muted);
   }
   footer .wordmark { font-family: var(--serif); font-size: 15px; font-weight: 900; color: var(--ink); letter-spacing: .3em; }
-
-  /* ---------- 响应式 ---------- */
   @media (max-width: 900px) {
     .watch-layout { grid-template-columns: 1fr; }
   }
-
   @media (max-width: 760px) {
     nav.menu { display: none; }
     .about-stats { grid-template-columns: 1fr; }
   }
-
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -1079,18 +990,16 @@
       <h3 class="school-modal-title">出品学校</h3>
       <div class="school-modal-name">北京师范大学天津静海实验学校</div>
       <div class="school-video-wrap">
-        <video id="schoolVideo" playsinline preload="metadata" controls poster="https://aka.doubaocdn.com/s/mWUsFMySKH"></video>
+        <video id="schoolVideo" playsinline preload="metadata" controls poster="school-poster.jpg"></video>
       </div>
     </div>
   </div>
 
 <script>
-  // ============================================================
-  // ============================================================
   var MEMBERS = [
-    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。", avatar: "https://aka.doubaocdn.com/s/Wau3ngPAwZ", tier: 1, s1: true, s2: true },
+    { name: "李政为", role: "总导演 / 导演 / 编剧", bio: "总导演，把控整体创作方向与现场调度，主导剧本与画面风格。", avatar: "lzw.png", tier: 1, s1: true, s2: true },
     { name: "王裴煜", role: "导演 / 制片人 / 剪辑", bio: "导演兼制片人，统筹拍摄与后期，负责全片剪辑与成片。", tier: 2, s1: false, s2: true },
-    { name: "张睿轩", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。", avatar: "https://aka.doubaocdn.com/s/6Vc9cokCXE", tier: 3, s1: true, s2: true },
+    { name: "张睿轩", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。", avatar: "zrx.jpg", tier: 3, s1: true, s2: true },
     { name: "楚世瀛", role: "编剧 / 领衔主演", bio: "编剧，参与剧本创作，并领衔主演剧中重要角色。", tier: 3, s1: true, s2: true },
     { name: "韩庆颉", role: "领衔主演", bio: "领衔主演，诠释剧中核心角色，撑起全片情感主线。", tier: 4, s1: false, s2: true },
     { name: "宋禹成", role: "主演", bio: "主演，参与多场重要戏份的拍摄。", tier: 5, s1: true, s2: true },
@@ -1100,11 +1009,7 @@
     { name: "史航铭", role: "主演 / 友情出演", bio: "友情出演，为全片带来独特亮点。", tier: 5, s1: false, s2: true },
     { name: "赵增宸", role: "摄影指导 / 录音师", bio: "摄影指导与录音师，负责全片画面质感与收音质量。", tier: 5, s1: false, s2: true }
   ];
-
   var AVATAR_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2.25c-4 0-7.5 2-7.5 4.5V21h15v-2.25c0-2.5-3.5-4.5-7.5-4.5z"/></svg>';
-
-  // ============================================================
-  // ============================================================
   var SEASONS = [
     {
       label: "第一季",
@@ -1121,9 +1026,6 @@
       ]
     }
   ];
-
-  // ============================================================
-  // ============================================================
   function memberCardHtml(m, i, delayIdx) {
     var avatarHtml = m.avatar
       ? '<img src="' + m.avatar + '" class="avatar-img" alt="' + m.name + '">'
@@ -1136,7 +1038,6 @@
       '<div class="tap-hint">点击查看详情</div>' +
       '</div>';
   }
-
   function renderMembers() {
     var s1 = document.getElementById("memberListS1");
     var s2 = document.getElementById("memberListS2");
@@ -1150,11 +1051,7 @@
       return memberCardHtml(m, i, s2Idx++);
     }).join("");
   }
-
-  // ============================================================
-  // ============================================================
   var modal = document.getElementById("memberModal");
-
   function openModal(i) {
     var m = MEMBERS[i];
     if (!m) return;
@@ -1201,18 +1098,14 @@
     if (e.key === "Escape" && !changelogModal.hidden) closeChangelog();
     if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
-
   var CHANGELOG = [
-    { date: "2026.09.07", version: "v1.5", title: "优化学校宣传视频加载速度", desc: "重新压缩学校宣传视频至9.4MB，保持1080p与30帧流畅度，加载速度大幅提升。" },
     { date: "2026.09.06", version: "v1.4", title: "团队界面拆分季数分组", desc: "团队界面分为第一季、第二季成员板块，支持人员重叠展示，优化交互动画与页面UI。" },
     { date: "2026.09.06", version: "v1.3", title: "增加出品学校与宣传片", desc: "增加了出品学校与宣传片，优化交互动画与页面UI。" },
     { date: "2026.09.05", version: "v1.2", title: "新增更新日志", desc: "网站新增更新日志功能，记录每次改版内容；优化页面过渡动画与交互流畅度。" },
     { date: "2026.09.05", version: "v1.1", title: "总导演金标与头像更新", desc: "增加总导演金色标识，上传李政为头像，优化界面与动画效果。" },
     { date: "2026.09.05", version: "v1.0", title: "网站正式发布", desc: "YACC 官网正式发布，包含关于、团队、作品、团队介绍四大板块，支持播放 YACC 全部内容。" }
   ];
-
   var changelogModal = document.getElementById("changelogModal");
-
   function renderChangelog() {
     var list = document.getElementById("changelogList");
     list.innerHTML = CHANGELOG.map(function (item, i) {
@@ -1227,7 +1120,6 @@
         '</div></div>';
     }).join("");
   }
-
   function openChangelog() {
     renderChangelog();
     changelogModal.hidden = false;
@@ -1245,7 +1137,6 @@
   changelogModal.addEventListener("click", function (e) {
     if (e.target.closest("[data-close]")) closeChangelog();
   });
-
   var schoolModal = document.getElementById("schoolModal");
   var schoolVideo = document.getElementById("schoolVideo");
   function openSchool() {
@@ -1272,9 +1163,6 @@
   schoolModal.addEventListener("click", function (e) {
     if (e.target.closest("[data-close]")) closeSchool();
   });
-
-  // ============================================================
-  // ============================================================
   function jumpTo(sel) {
     var el = document.querySelector(sel);
     if (!el) return;
@@ -1298,9 +1186,6 @@
       if (sel) jumpTo(sel);
     });
   });
-
-  // ============================================================
-  // ============================================================
   var playerWrap = document.getElementById("playerWrap");
   var video = document.getElementById("videoPlayer");
   var placeholder = document.getElementById("playerPlaceholder");
@@ -1324,29 +1209,24 @@
   var btnSettings = document.getElementById("btnSettings");
   var setMenu = document.getElementById("setMenu");
   var setPip = document.getElementById("setPip");
-
   var hasVideo = false;
-
   function fmt(t) {
     if (!isFinite(t) || t < 0) t = 0;
     var s = Math.floor(t % 60);
     var m = Math.floor(t / 60);
     return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
   }
-
   function updatePlayUI() {
     var playing = hasVideo && !video.paused && !video.ended;
     icoPlay.classList.toggle("is-hidden", playing);
     icoPause.classList.toggle("is-hidden", !playing);
     centerPlay.classList.toggle("is-hidden", !(hasVideo && video.paused));
   }
-
   function togglePlay() {
     if (!hasVideo) return;
     if (coverShown) { startPlay(); return; }
     if (video.paused) video.play().catch(function () {}); else video.pause();
   }
-
   var coverShown = false;
   function showCover(show, metaText, titleText) {
     coverShown = show;
@@ -1364,11 +1244,9 @@
     video.play().catch(function () {});
   }
   playerCover.addEventListener("click", function () { if (coverShown) startPlay(); });
-
   btnPlay.addEventListener("click", togglePlay);
   centerPlay.addEventListener("click", togglePlay);
   video.addEventListener("click", togglePlay);
-
   video.addEventListener("play", updatePlayUI);
   video.addEventListener("pause", updatePlayUI);
   video.addEventListener("ended", function () { video.currentTime = 0; updatePlayUI(); });
@@ -1384,7 +1262,6 @@
     var r = video.videoWidth / video.videoHeight;
     if (isFinite(r) && r > 0) playerWrap.style.aspectRatio = String(r);
   });
-
   function seekFromEvent(e) {
     if (!hasVideo || !isFinite(video.duration)) return;
     var rect = progress.getBoundingClientRect();
@@ -1408,7 +1285,6 @@
     dragging = false;
     progress.classList.remove("dragging");
   });
-
   function updateVolUI() {
     var muted = video.muted || video.volume === 0;
     icoVol.classList.toggle("is-hidden", muted);
@@ -1424,7 +1300,6 @@
     video.muted = video.volume === 0;
     updateVolUI();
   });
-
   btnFull.addEventListener("click", function () {
     if (!document.fullscreenElement) {
       playerWrap.requestFullscreen && playerWrap.requestFullscreen().catch(function () {});
@@ -1432,7 +1307,6 @@
       document.exitFullscreen && document.exitFullscreen();
     }
   });
-
   btnSettings.addEventListener("click", function (e) {
     e.stopPropagation();
     setMenu.classList.toggle("is-hidden");
@@ -1457,9 +1331,6 @@
       s.classList.toggle("active", Number(s.getAttribute("data-speed")) === speed);
     });
   });
-
-  // ============================================================
-  // ============================================================
   if ("IntersectionObserver" in window) {
     var playerIO = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
@@ -1471,21 +1342,16 @@
     }, { threshold: 0.25 });
     playerIO.observe(playerWrap);
   }
-
-  // ============================================================
-  // ============================================================
   var seasonTabs = document.getElementById("seasonTabs");
   var epGrid = document.getElementById("epGrid");
   var epHint = document.getElementById("epHint");
   var activeSeason = 0;
-  var currentSel = null; // {s, e}
-
+  var currentSel = null; 
   function renderTabs() {
     seasonTabs.innerHTML = SEASONS.map(function (s, i) {
       return '<button class="season-tab' + (i === activeSeason ? " active" : "") + '" data-s="' + i + '">' + s.label + '</button>';
     }).join("");
   }
-
   function renderEpGrid() {
     var s = SEASONS[activeSeason];
     epGrid.innerHTML = s.episodes.map(function (ep, ei) {
@@ -1498,7 +1364,6 @@
     void epGrid.offsetWidth;
     epGrid.classList.add("ready");
   }
-
   function selectEpisode(si, ei, autoplay) {
     var s = SEASONS[si], ep = s.episodes[ei];
     if (!ep) return;
@@ -1507,7 +1372,6 @@
     document.getElementById("playerMeta").textContent = s.label + " · " + ep.no;
     document.getElementById("playerTitle").textContent = ep.title;
     document.getElementById("playerDesc").textContent = ep.desc;
-
     if (ep.video) {
       hasVideo = true;
       video.src = ep.video;
@@ -1545,7 +1409,6 @@
     renderTabs();
     renderEpGrid();
   }
-
   seasonTabs.addEventListener("click", function (e) {
     var tab = e.target.closest(".season-tab");
     if (!tab) return;
@@ -1553,17 +1416,12 @@
     renderTabs();
     renderEpGrid();
   });
-
   epGrid.addEventListener("click", function (e) {
     var chip = e.target.closest(".ep-chip");
     if (!chip) return;
     selectEpisode(activeSeason, Number(chip.getAttribute("data-e")), true);
   });
-
   selectEpisode(0, 0, false);
-
-  // ============================================================
-  // ============================================================
   var heroBg = document.getElementById("heroBg");
   if (heroBg) {
     var heroSec = heroBg.closest(".hero");
@@ -1576,18 +1434,12 @@
       });
     }
   }
-
-  // ============================================================
-  // ============================================================
   var navEl = document.querySelector("header.nav");
   if (navEl) {
     function syncNav() { navEl.classList.toggle("scrolled", window.scrollY > 10); }
     window.addEventListener("scroll", syncNav, { passive: true });
     syncNav();
   }
-
-  // ============================================================
-  // ============================================================
   function animateCount(el) {
     var target = Number(el.getAttribute("data-count"));
     var pad = Number(el.getAttribute("data-pad") || 0);
@@ -1617,9 +1469,6 @@
     }, { threshold: 0.6 });
     nums.forEach(function (el) { io.observe(el); });
   })();
-
-  // ============================================================
-  // ============================================================
   function initReveal() {
     var els = document.querySelectorAll(".reveal");
     if (!("IntersectionObserver" in window)) {
@@ -1636,9 +1485,6 @@
     }, { threshold: 0.12 });
     els.forEach(function (el) { io.observe(el); });
   }
-
-  // ============================================================
-  // ============================================================
   renderMembers();
   initReveal();
 </script>
