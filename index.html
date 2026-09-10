@@ -18,11 +18,11 @@
     --muted: #8E8A82;
     --line: rgba(255,255,255,.09);
     --shadow-sm: 0 2px 8px rgba(20,20,20,.04);
-    --shadow-md: 0 16px 40px rgba(20,20,20,.08);
-    --shadow-lg: 0 30px 80px rgba(20,20,20,.14);
-    --r-lg: 40px;
+    --shadow-md: 0 18px 44px rgba(20,20,20,.09);
+    --shadow-lg: 0 32px 72px rgba(20,20,20,.16), 0 2px 10px rgba(20,20,20,.05);
+    --r-lg: 44px;
     --r-md: 26px;
-    --r-sm: 16px;
+    --r-sm: 18px;
     --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     --serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
     --hand: "Caveat", "Segoe Script", "Bradley Hand", cursive;
@@ -99,6 +99,44 @@
     color: var(--ink);
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+  }
+  .sysdark-tip {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: max(14px, env(safe-area-inset-bottom));
+    z-index: 300;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px 9px 16px;
+    border-radius: 999px;
+    font-size: 12.5px; letter-spacing: .02em;
+    color: var(--ink-2);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    border: 1px solid var(--line);
+    box-shadow: 0 14px 40px rgba(20,20,20,.22);
+    white-space: nowrap;
+    animation: tipIn .5s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes tipIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .sysdark-tip[hidden] { display: none; }
+  .sysdark-tip button {
+    border: 0; cursor: pointer;
+    font-size: 12px; letter-spacing: .04em;
+    color: var(--ink);
+    background: var(--chip-bg-hi);
+    border-radius: 999px;
+    padding: 5px 12px;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), background .3s ease;
+  }
+  .sysdark-tip button:hover { transform: scale(1.05); }
+  .sysdark-tip .tip-close {
+    border: 0; cursor: pointer; padding: 2px 6px;
+    background: transparent; color: var(--muted);
+    font-size: 15px; line-height: 1;
+    border-radius: 50%;
   }
   body::before, body::after {
     content: ""; position: fixed; z-index: 0; pointer-events: none;
@@ -333,6 +371,14 @@ var(--glass-bg);
   }
   @media (max-width: 380px) {
     .hero h1 { font-size: clamp(42px, 13.5vw, 170px); }
+  }
+  /* 系统深色模式下使用浅色主题：浏览器可能强制反转，渐变文字降级为实色保证可读 */
+  [data-theme="light"].sys-dark .hero h1 {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    color: #111214 !important;
+    animation: none !important;
   }
   @keyframes heroShimmer {
     0% { background-position: 130% 0; }
@@ -648,11 +694,11 @@ var(--glass-bg);
   .member:hover {
     transform: translateY(-6px);
     border-color: var(--hover-line);
-    box-shadow: 0 0 0 1px var(--hover-ring), 0 26px 60px rgba(0,0,0,.3), inset 0 1px 0 var(--hover-glow), inset 0 -1px 0 rgba(255,255,255,.06);
+    box-shadow: 0 0 0 1px var(--hover-ring), 0 26px 60px rgba(0,0,0,.3), 0 44px 90px rgba(0,0,0,.18), inset 0 1px 0 var(--hover-glow), inset 0 -1px 0 rgba(255,255,255,.06);
   }
   [data-theme="light"] .member:hover {
     border-color: rgba(255,255,255,.9);
-    box-shadow: 0 0 0 1px rgba(255,255,255,.85), 0 26px 60px rgba(25,25,22,.14), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.55);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.85), 0 26px 60px rgba(25,25,22,.14), 0 44px 90px rgba(25,25,22,.1), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.55);
   }
   .member .avatar-default {
     transform: translateZ(22px);
@@ -1794,15 +1840,34 @@ var(--glass-bg);
     <p class="modal-close-hint">点击空白处或按 Esc 关闭</p>
   </div>
 
+<div class="sysdark-tip" id="sysdarkTip" hidden>
+  <span>检测到系统深色模式，浅色主题可能显示异常</span>
+  <button id="sysdarkGo" type="button">切换深色</button>
+  <button class="tip-close" id="sysdarkClose" type="button" aria-label="关闭">×</button>
+</div>
 <script>
   (function () {
     var btn = document.getElementById("themeBtn");
+    var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    function sync() {
+      var t = document.documentElement.getAttribute("data-theme");
+      var tip = document.getElementById("sysdarkTip");
+      if (mq && mq.matches && t === "light") {
+        document.documentElement.classList.add("sys-dark");
+        if (tip) tip.hidden = false;
+      } else {
+        document.documentElement.classList.remove("sys-dark");
+        if (tip) tip.hidden = true;
+      }
+    }
     function apply(t) {
       document.documentElement.setAttribute("data-theme", t);
       try { localStorage.setItem("yacc-theme", t); } catch (e) {}
+      sync();
     }
-    var saved = "dark";
-    try { saved = localStorage.getItem("yacc-theme") || "dark"; } catch (e) {}
+    var saved = null;
+    try { saved = localStorage.getItem("yacc-theme"); } catch (e) {}
+    if (!saved) saved = (mq && mq.matches) ? "dark" : "light";
     apply(saved === "light" ? "light" : "dark");
     if (btn) btn.addEventListener("click", function () {
       apply(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
@@ -1811,6 +1876,16 @@ var(--glass-bg);
     if (mbtn) mbtn.addEventListener("click", function () {
       apply(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
+    var go = document.getElementById("sysdarkGo");
+    if (go) go.addEventListener("click", function () { apply("dark"); });
+    var close = document.getElementById("sysdarkClose");
+    if (close) close.addEventListener("click", function () {
+      var tip = document.getElementById("sysdarkTip");
+      if (tip) tip.hidden = true;
+    });
+    if (mq) {
+      try { mq.addEventListener("change", sync); } catch (e) { mq.addListener(sync); }
+    }
   })();
   function preloadVideos() {
     ["video.mp4", "school.mp4"].forEach(function (src) {
@@ -2061,6 +2136,7 @@ var(--glass-bg);
     if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
   var CHANGELOG = [
+    { date: "2026.09.10", version: "v2.0.1", title: "深浅色兼容与圆角优化", desc: "修复了移动端设备在开启系统的深色模式后在网站内开启浅色模式仍显示黑色的问题。优化了界面的动画。", isMajor: false },
     { date: "2026.09.09", version: "v2.0", title: "全域优化", desc: "改动界面UI，升级动画特效，预加载视频优化存储。增加更新日志移动端界面，增加深浅色切换移动端界面，全局加入玻璃效果。", isMajor: true },
     { date: "2026.09.09", version: "v1.9", title: "界面质感与交互动画优化", desc: "优化界面质感，优化交互动画。新增校园霸凌科普板块，反对校园霸凌，从你我做起。" },
     { date: "2026.09.08", version: "v1.8", title: "深浅色模式与动效优化", desc: "新增深色 / 浅色主题一键切换，优化翻牌动效，修复卡片显示细节，提升界面一致性。", isMajor: false },
@@ -2077,7 +2153,7 @@ var(--glass-bg);
   function renderChangelog() {
     var list = document.getElementById("changelogList");
     list.innerHTML = CHANGELOG.map(function (item, i) {
-      if (item.isMajor && i === 0) {
+      if (item.isMajor && item.version.indexOf("v2") === 0) {
         return '<div class="cl-v2">' +
           '<div class="cl-v2-inner">' +
             '<div class="cl-v2-badge"><span class="dot"></span>重大更新</div>' +
@@ -2085,7 +2161,7 @@ var(--glass-bg);
             '<div class="cl-v2-title">' + item.title + '</div>' +
             '<div class="cl-v2-desc">' + item.desc + '</div>' +
             '<div class="cl-v2-flow"></div>' +
-            '<span class="cl-v2-soon">更沉浸的页面，更流畅的交互—2.0</span>' +
+            '<span class="cl-v2-soon">更沉浸的页面，更流畅的交互—' + item.version.replace(/^v/i, "") + '</span>' +
           '</div>' +
         '</div>';
       }
