@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>YACC 官网</title>
 <meta name="description" content="YACC 官网，2024级四班反校园霸凌短片制作专项小组。">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;900&family=Caveat:wght@600;700&display=swap">
 <style>
   :root {
+    color-scheme: dark;
     --bg: #141519;
     --surface: #1D1F26;
     --ink: #F1EFEA;
@@ -49,6 +51,7 @@
     --tl-badge-bg: rgba(20,20,20,.05);
   }
   [data-theme="light"] {
+    color-scheme: light;
     --bg: #F3F2EE;
     --surface: #FFFFFF;
     --ink: #1E1D1A;
@@ -733,12 +736,14 @@ var(--glass-bg);
   .member .role { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
   .member .tap-hint { font-size: 11px; color: #B9B6AE; margin-top: 10px; letter-spacing: .08em; }
   .modal-close-hint {
-    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-    z-index: 91;
+    position: fixed; bottom: max(10px, env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
+    z-index: 92;
     font-size: 12px; letter-spacing: .06em;
     color: var(--muted);
     white-space: nowrap;
-    padding: 6px 14px; border-radius: 999px;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 11.5px;
     background: color-mix(in srgb, var(--bg) 55%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -771,12 +776,14 @@ var(--glass-bg);
   [data-theme="light"] .mobile-theme-toggle .fab-moon { display: none; }
   @media (max-width: 760px) {
     .modal-close-hint {
-    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-    z-index: 91;
+    position: fixed; bottom: max(10px, env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
+    z-index: 92;
     font-size: 12px; letter-spacing: .06em;
     color: var(--muted);
     white-space: nowrap;
-    padding: 6px 14px; border-radius: 999px;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 11.5px;
     background: color-mix(in srgb, var(--bg) 55%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -932,6 +939,9 @@ var(--glass-bg);
     transition: opacity .42s cubic-bezier(.22,1,.36,1), transform .42s cubic-bezier(.22,1,.36,1);
     max-height: 86vh; overflow: auto;
   }
+  @supports (height: 100dvh) {
+    .modal-card { max-height: min(80dvh, 680px); }
+  }
   .modal.open .modal-card {
     display: block;
     opacity: 1; transform: none;
@@ -1011,6 +1021,20 @@ var(--glass-bg);
     background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,.28) 40deg, transparent 90deg, transparent 180deg, rgba(255,255,255,.16) 220deg, transparent 280deg);
     animation: v2spin 12s linear infinite;
     opacity: .6; pointer-events: none;
+  }
+  @supports not (background: conic-gradient(from 0deg, red, blue)) {
+    .cl-v2::after {
+      background:
+        radial-gradient(34% 34% at 26% 22%, rgba(255,255,255,.2), transparent 62%),
+        radial-gradient(30% 30% at 74% 70%, rgba(255,255,255,.14), transparent 60%),
+        radial-gradient(22% 22% at 62% 30%, rgba(255,255,255,.1), transparent 58%);
+    }
+    [data-theme="light"] .cl-v2::after {
+      background:
+        radial-gradient(34% 34% at 26% 22%, rgba(25,25,22,.12), transparent 62%),
+        radial-gradient(30% 30% at 74% 70%, rgba(25,25,22,.08), transparent 60%),
+        radial-gradient(22% 22% at 62% 30%, rgba(25,25,22,.06), transparent 58%);
+    }
   }
   [data-theme="light"] .cl-v2::after {
     background: conic-gradient(from 0deg, transparent 0deg, rgba(25,25,22,.14) 40deg, transparent 90deg, transparent 180deg, rgba(25,25,22,.08) 220deg, transparent 280deg);
