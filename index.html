@@ -963,7 +963,42 @@ var(--glass-bg);
   [data-theme="light"] .tt-moon { opacity: 1; transform: none; }
 
   #changelogModal .modal-card { width: min(680px, 100%); }
-  .changelog-card { padding: clamp(28px,5vw,40px); }
+  /* 日志卡片改为左导航 + 右内容的双栏布局 */
+  .changelog-card { padding: 0; display: flex; overflow: hidden; }
+  .modal.open .changelog-card { display: flex; }
+  .changelog-side {
+    flex: none; width: 108px;
+    border-right: 1px solid var(--line);
+    padding: 18px 10px 24px;
+    display: flex; flex-direction: column; gap: 3px;
+    align-self: stretch;
+    background: rgba(0,0,0,.06);
+  }
+  [data-theme="dark"] .changelog-side { background: rgba(255,255,255,.09); }
+  .changelog-side-title {
+    font-size: 10.5px; letter-spacing: .22em; font-weight: 700;
+    color: var(--muted); padding: 0 10px 10px;
+  }
+  .changelog-nav-item {
+    display: block; width: 100%; text-align: left;
+    font-family: inherit; font-size: 13px;
+    padding: 9px 10px; border-radius: 12px;
+    border: none; background: transparent; cursor: pointer;
+    color: var(--ink-2);
+    transition: background .2s, color .2s, transform .15s;
+  }
+  .changelog-nav-item:hover { background: rgba(255,255,255,.12); color: var(--ink); }
+  [data-theme="dark"] .changelog-nav-item:hover { background: rgba(255,255,255,.1); }
+  .changelog-nav-item.active {
+    background: rgba(255,255,255,.22); color: var(--ink); font-weight: 700;
+  }
+  [data-theme="dark"] .changelog-nav-item.active { background: rgba(255,255,255,.18); }
+  .changelog-nav-item:active { transform: scale(.96); }
+  .changelog-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: clamp(28px, 5vw, 44px) clamp(28px, 5vw, 44px) 78px; }
+  @media (max-width: 420px) {
+    .changelog-side { width: 84px; padding-left: 8px; padding-right: 8px; }
+    .changelog-nav-item { font-size: 12px; padding: 8px 8px; }
+  }
   /* 灵动岛动效：打开时从顶部小胶囊展开，关闭时缩小上滑消失 */
   .changelog-card {
     transform-origin: 50% 0;
@@ -1079,6 +1114,76 @@ var(--glass-bg);
   }
   @keyframes v2flow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   .cl-v2-soon { font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+  /* 日志白条：贴合卡片内部底部，上滑时日志以灵动岛特效收回 */
+  .changelog-card { position: relative; }
+  .log-drag-handle {
+    position: absolute; left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    z-index: 6;
+    width: 92px; height: 30px;
+    display: none;
+    align-items: center; justify-content: center;
+    cursor: grab; touch-action: none;
+    background: rgba(255,255,255,.55);
+    backdrop-filter: blur(16px) saturate(170%);
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    border: 1px solid rgba(20,22,28,.18);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.95);
+  }
+  [data-theme="dark"] .log-drag-handle {
+    background: rgba(255,255,255,.13);
+    border-color: rgba(255,255,255,.3);
+    box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  .log-drag-handle.show { display: flex; }
+  .log-drag-handle .drag-bar {
+    width: 42px; height: 6px; border-radius: 999px;
+    background: rgba(0,0,0,.42);
+    transition: transform .15s ease;
+  }
+  [data-theme="dark"] .log-drag-handle .drag-bar { background: rgba(255,255,255,.78); }
+  .log-drag-handle.dragging .drag-bar { transform: scaleY(.55); }
+  /* 设置界面的调试密钥输入框（带眼睛按钮，点击可切换明文/密文） */
+  .settings-input-row { padding: 0 16px; margin-top: 18px; }
+  .secret-input-wrap {
+    position: relative; display: flex; align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255,255,255,.1);
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  [data-theme="dark"] .secret-input-wrap { background: rgba(255,255,255,.06); }
+  .secret-input-wrap:focus-within {
+    border-color: rgba(255,255,255,.45);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.07);
+    background: rgba(255,255,255,.14);
+  }
+  [data-theme="dark"] .secret-input-wrap:focus-within { background: rgba(255,255,255,.1); }
+  .secret-input {
+    flex: 1; min-width: 0;
+    background: transparent; border: none; outline: none;
+    padding: 11px 12px;
+    font-size: 14px; color: var(--ink); font-family: inherit;
+    letter-spacing: .1em;
+  }
+  .secret-input::placeholder { color: var(--muted); letter-spacing: 0; font-size: 12.5px; }
+  .secret-eye {
+    position: relative;
+    flex: none; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--muted); padding: 0;
+    transition: color .2s, transform .15s;
+  }
+  .secret-eye:hover { color: var(--ink); }
+  .secret-eye:active { transform: scale(.88); }
+  .secret-eye svg { position: absolute; transition: opacity .18s ease, transform .18s ease; }
+  .secret-eye #eyeOff { opacity: 0; transform: scale(.6); }
+  .secret-eye.show #eyeOpen { opacity: 0; transform: scale(.6); }
+  .secret-eye.show #eyeOff { opacity: 1; transform: scale(1); }
   .log-item {
     position: relative; margin-bottom: 18px;
     background: var(--card-glass);
@@ -1097,6 +1202,7 @@ var(--glass-bg);
     transform: scale(.3) translateY(-8px);
     opacity: 0;
     pointer-events: none;
+    will-change: transform, opacity;
   }
   .log-item:hover {
     transform: translateY(-3px);
@@ -1684,6 +1790,18 @@ var(--glass-bg);
   }
   /* 设置界面 */
   .settings-card { width: min(420px, 100%); }
+  /* 设置卡片从入口按钮以灵动岛动效放大展开（开与关对称，桌面与移动端一致） */
+  #settingsModal .settings-card {
+    transition: transform .5s cubic-bezier(.22,.61,.36,1), opacity .4s ease;
+    will-change: transform, opacity;
+  }
+  #settingsModal .settings-card.island-shrink {
+    transform: scale(var(--is, .2));
+    opacity: 0;
+  }
+  /* 关闭动画期间，关闭提示随弹窗一起淡出，避免弹窗消失后提示残留 */
+  .modal .modal-close-hint { transition: opacity .22s ease; }
+  .modal.closing .modal-close-hint { opacity: 0; }
   .settings-title {
     font-family: var(--serif); font-size: 24px; font-weight: 900;
     text-align: center; margin-bottom: 26px;
@@ -2042,6 +2160,15 @@ var(--glass-bg);
           </span>
         </label>
       </div>
+      <div class="settings-input-row">
+        <div class="secret-input-wrap">
+          <input type="password" class="secret-input" id="secretInput" placeholder="输入密钥进入调试菜单" autocomplete="off" spellcheck="false">
+          <button class="secret-eye" id="secretEye" type="button" aria-label="显示或隐藏输入" tabindex="-1">
+            <svg id="eyeOpen" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeOff" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
     <p class="modal-close-hint">点击空白处或按 Esc 关闭</p>
   </div>
@@ -2049,9 +2176,15 @@ var(--glass-bg);
   <div class="modal changelog-modal" id="changelogModal" hidden>
     <div class="modal-backdrop" data-close></div>
     <div class="modal-card changelog-card">
-      
-      <h3 class="changelog-title">更新日志</h3>
-      <div class="changelog-list" id="changelogList"></div>
+      <aside class="changelog-side">
+        <div class="changelog-side-title">版本</div>
+        <nav class="changelog-side-nav" id="changelogNav"></nav>
+      </aside>
+      <div class="changelog-main">
+        <h3 class="changelog-title">更新日志</h3>
+        <div class="changelog-list" id="changelogList"></div>
+      </div>
+      <div class="log-drag-handle" id="logDragHandle" aria-label="上滑关闭更新日志"><span class="drag-bar"></span></div>
     </div>
     <p class="modal-close-hint">点击空白处或按 Esc 关闭</p>
   </div>
@@ -2390,9 +2523,13 @@ var(--glass-bg);
     document.body.style.overflow = "hidden";
   }
   function closeModal() {
+    modal.classList.add("closing");
     modal.classList.remove("open");
     document.body.style.overflow = "";
-    var t = setTimeout(function () { modal.hidden = true; }, 300);
+    var t = setTimeout(function () {
+      modal.hidden = true;
+      modal.classList.remove("closing");
+    }, 300);
     if (modal._timer) clearTimeout(modal._timer);
     modal._timer = t;
   }
@@ -2441,37 +2578,84 @@ var(--glass-bg);
     { date: "2026.09.05", version: "v1.0", title: "网站正式发布", desc: "YACC 官网正式发布，包含关于、团队、作品、团队介绍四大板块，支持播放 YACC 全部内容。", isMajor: true }
   ];
   var changelogModal = document.getElementById("changelogModal");
-  function renderChangelog() {
-    var list = document.getElementById("changelogList");
-    list.innerHTML = CHANGELOG.map(function (item, i) {
-      if (item.isMajor && item.version.indexOf("v2") === 0) {
-        return '<div class="cl-v2">' +
-          '<div class="cl-v2-inner">' +
-            '<div class="cl-v2-badge"><span class="dot"></span>重大更新</div>' +
-            '<div class="log-head"><span class="log-date">' + item.date + '</span><span class="log-ver">' + item.version + '</span></div>' +
-            '<div class="cl-v2-title">' + item.title + '</div>' +
-            '<div class="cl-v2-desc">' + item.desc + '</div>' +
-            '<div class="cl-v2-flow"></div>' +
-            '<span class="cl-v2-soon">更沉浸的页面，更流畅的交互—' + item.version.replace(/^v/i, "") + '</span>' +
-          '</div>' +
-        '</div>';
+  /* 按大版本分组：v2.1.x / v2.0.x / v1.x */
+  function changelogGroups() {
+    var groups = {};
+    CHANGELOG.forEach(function (it) {
+      var key;
+      if (/^v2\.\d+/.test(it.version)) {
+        key = it.version.slice(0, 4) + ".x";
+      } else {
+        key = "v1.x";
       }
-      var major = item.isMajor ? ' log-item--major' : '';
-      var badge = item.isMajor ? '<span class="log-badge">重大更新</span>' : '';
-      return '<div class="log-item' + major + '">' +
-        '<div class="log-dot"></div>' +
-        '<div class="log-content">' +
-        '<div class="log-head"><span class="log-date">' + item.date + '</span>' +
-        (item.version ? '<span class="log-ver">' + item.version + '</span>' : '') +
-        badge +
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(it);
+    });
+    var order = Object.keys(groups).sort(function (a, b) {
+      var na = parseFloat(a.replace("v", "").replace(".x", ""));
+      var nb = parseFloat(b.replace("v", "").replace(".x", ""));
+      return nb - na;
+    });
+    return { groups: groups, order: order };
+  }
+  function changelogItemHTML(item) {
+    if (item.isMajor && item.version.indexOf("v2") === 0) {
+      return '<div class="cl-v2">' +
+        '<div class="cl-v2-inner">' +
+          '<div class="cl-v2-badge"><span class="dot"></span>重大更新</div>' +
+          '<div class="log-head"><span class="log-date">' + item.date + '</span><span class="log-ver">' + item.version + '</span></div>' +
+          '<div class="cl-v2-title">' + item.title + '</div>' +
+          '<div class="cl-v2-desc">' + item.desc + '</div>' +
+          '<div class="cl-v2-flow"></div>' +
+          '<span class="cl-v2-soon">更沉浸的页面，更流畅的交互—' + item.version.replace(/^v/i, "") + '</span>' +
         '</div>' +
-        '<div class="log-title">' + item.title + '</div>' +
-        '<div class="log-desc">' + item.desc + '</div>' +
-        '</div></div>';
-    }).join("");
+      '</div>';
+    }
+    var major = item.isMajor ? ' log-item--major' : '';
+    var badge = item.isMajor ? '<span class="log-badge">重大更新</span>' : '';
+    return '<div class="log-item' + major + '">' +
+      '<div class="log-dot"></div>' +
+      '<div class="log-content">' +
+      '<div class="log-head"><span class="log-date">' + item.date + '</span>' +
+      (item.version ? '<span class="log-ver">' + item.version + '</span>' : '') +
+      badge +
+      '</div>' +
+      '<div class="log-title">' + item.title + '</div>' +
+      '<div class="log-desc">' + item.desc + '</div>' +
+      '</div></div>';
+  }
+  function renderChangelog(group) {
+    var list = document.getElementById("changelogList");
+    var items;
+    if (group && group !== "__all__") {
+      var g = changelogGroups();
+      items = g.groups[group] || [];
+    } else {
+      items = CHANGELOG;
+    }
+    list.innerHTML = items.map(changelogItemHTML).join("");
+  }
+  /* 左侧版本导航 */
+  function renderChangelogNav() {
+    var nav = document.getElementById("changelogNav");
+    if (!nav) return;
+    var g = changelogGroups();
+    var html = '<button type="button" class="changelog-nav-item active" data-group="__all__">全部</button>';
+    g.order.forEach(function (k) {
+      html += '<button type="button" class="changelog-nav-item" data-group="' + k + '">' + k + '</button>';
+    });
+    nav.innerHTML = html;
+    nav.onclick = function (e) {
+      var b = e.target.closest(".changelog-nav-item");
+      if (!b) return;
+      nav.querySelectorAll(".changelog-nav-item").forEach(function (n) { n.classList.remove("active"); });
+      b.classList.add("active");
+      renderChangelog(b.getAttribute("data-group"));
+      initLogIsland();
+    };
   }
   function initLogIsland() {
-    var scroll = changelogModal.querySelector(".changelog-card");
+    var scroll = changelogModal.querySelector(".changelog-main");
     if (!scroll) return;
     if (changelogModal._islandIO) { changelogModal._islandIO.disconnect(); changelogModal._islandIO = null; }
     if (!("IntersectionObserver" in window)) return;
@@ -2501,55 +2685,205 @@ var(--glass-bg);
     changelogModal._islandIO = io;
   }
   var settingsModal = document.getElementById("settingsModal");
+  /* 灵动岛：移动端从 dock 设置按钮放大展开，桌面端从导航栏设置图标放大展开 */
+  function settingsAnchorBtn() {
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      return document.getElementById("dockSetBtn");
+    }
+    return document.getElementById("settingsBtn");
+  }
+  function settingsIslandState(card, btn) {
+    var br = btn.getBoundingClientRect();
+    var cr = card.getBoundingClientRect();
+    var ox = br.left + br.width / 2 - cr.left;
+    var oy = br.top + br.height / 2 - cr.top;
+    var s = Math.max(0.05, Math.min(br.width / cr.width, br.height / cr.height));
+    return { ox: ox, oy: oy, s: s };
+  }
   function openSettings() {
     if (!settingsModal) return;
+    if (settingsModal._timer) { clearTimeout(settingsModal._timer); settingsModal._timer = null; }
     var sw = document.getElementById("themeSwitch");
     if (sw) sw.checked = document.documentElement.getAttribute("data-theme") === "dark";
     settingsModal.hidden = false;
-    requestAnimationFrame(function () {
-      settingsModal.classList.remove("open");
-      void settingsModal.offsetWidth;
-      requestAnimationFrame(function () { settingsModal.classList.add("open"); });
-    });
     document.body.style.overflow = "hidden";
+    var card = settingsModal.querySelector(".settings-card");
+    var btn = settingsAnchorBtn();
+    if (btn && card) {
+      /* 灵动岛（开）：从按钮位置缩放展开，用 Web Animations API 确定性驱动 */
+      settingsModal.classList.remove("closing");
+      var st = settingsIslandState(card, btn);
+      card.style.transformOrigin = st.ox + "px " + st.oy + "px";
+      card.style.setProperty("--is", st.s);
+      card.style.opacity = "1";
+      card.style.transform = "scale(" + st.s + ")";
+      void card.offsetWidth;
+      settingsModal.classList.add("open");
+      if (card._anim) card._anim.cancel();
+      card._anim = card.animate(
+        [
+          { transform: "scale(" + st.s + ")", opacity: 0 },
+          { transform: "scale(1)", opacity: 1 }
+        ],
+        { duration: 500, easing: "cubic-bezier(.22,.61,.36,1)", fill: "both" }
+      );
+      card._anim.onfinish = function () {
+        card.style.transform = "";
+        card.style.opacity = "";
+        card._anim = null;
+      };
+    } else {
+      settingsModal.classList.add("open");
+    }
   }
   function closeSettings() {
     if (!settingsModal) return;
-    settingsModal.classList.remove("open");
-    document.body.style.overflow = "";
-    var t = setTimeout(function () { settingsModal.hidden = true; }, 300);
-    if (settingsModal._timer) clearTimeout(settingsModal._timer);
-    settingsModal._timer = t;
+    var card = settingsModal.querySelector(".settings-card");
+    var btn = settingsAnchorBtn();
+    if (btn && card) {
+      settingsModal.classList.add("closing");
+      settingsModal.classList.remove("open");
+      document.body.style.overflow = "";
+      var st = settingsIslandState(card, btn);
+      card.style.transformOrigin = st.ox + "px " + st.oy + "px";
+      card.style.setProperty("--is", st.s);
+      card.style.transform = "scale(1)";
+      card.style.opacity = "1";
+      void card.offsetWidth;
+      if (card._anim) card._anim.cancel();
+      card._anim = card.animate(
+        [
+          { transform: "scale(1)", opacity: 1 },
+          { transform: "scale(" + st.s + ")", opacity: 0 }
+        ],
+        { duration: 450, easing: "cubic-bezier(.22,.61,.36,1)", fill: "both" }
+      );
+      var t = setTimeout(function () {
+        settingsModal.hidden = true;
+        settingsModal.classList.remove("closing");
+        card.style.transform = "";
+        card.style.opacity = "";
+        card.style.transformOrigin = "";
+        card.style.removeProperty("--is");
+        if (card._anim) { card._anim.cancel(); card._anim = null; }
+      }, 470);
+      if (settingsModal._timer) clearTimeout(settingsModal._timer);
+      settingsModal._timer = t;
+    } else {
+      settingsModal.classList.add("closing");
+      settingsModal.classList.remove("open");
+      document.body.style.overflow = "";
+      var t = setTimeout(function () {
+        settingsModal.hidden = true;
+        settingsModal.classList.remove("closing");
+      }, 300);
+      if (settingsModal._timer) clearTimeout(settingsModal._timer);
+      settingsModal._timer = t;
+    }
   }
   var settingsBtn = document.getElementById("settingsBtn");
   if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
   if (settingsModal) settingsModal.addEventListener("click", function (e) {
     if (e.target.closest("[data-close]")) closeSettings();
   });
+  /* 设置界面：调试密钥输入框（眼睛按钮切换明文/密文，密钥逻辑预留） */
+  var secretInput = document.getElementById("secretInput");
+  var secretEye = document.getElementById("secretEye");
+  if (secretEye && secretInput) {
+    secretEye.addEventListener("click", function () {
+      var show = secretInput.type === "password";
+      secretInput.type = show ? "text" : "password";
+      secretEye.classList.toggle("show", show);
+      secretInput.focus();
+    });
+    secretInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        var val = secretInput.value.trim();
+        if (val) handleSecretKey(val);
+      }
+    });
+  }
+  /* 预留：密钥校验入口，后续按密钥解锁调试菜单 */
+  function handleSecretKey(val) {
+    secretInput.value = "";
+    secretInput.type = "password";
+    secretEye.classList.remove("show");
+    /* TODO: 校验密钥后出现调试菜单 */
+  }
   function openChangelog() {
-    renderChangelog();
-    initLogIsland();
+    renderChangelog("__all__");
+    renderChangelogNav();
     changelogModal.hidden = false;
     var card = changelogModal.querySelector(".changelog-card");
+    var main = changelogModal.querySelector(".changelog-main");
+    if (main) main.scrollTop = 0;
     card.classList.remove("island-out");
     card.classList.add("island-in");
+    document.body.style.overflow = "hidden";
+    showLogHandle();
     requestAnimationFrame(function () {
       changelogModal.classList.add("open");
       card.classList.remove("island-in");
+      /* 弹窗完全显示后再初始化灵动岛，此时 getBoundingClientRect 有效，
+         避免 hidden 状态下尺寸为 0 导致所有卡片被错误收起 */
+      requestAnimationFrame(function () { initLogIsland(); });
     });
-    document.body.style.overflow = "hidden";
   }
   function closeChangelog() {
     var card = changelogModal.querySelector(".changelog-card");
     card.classList.add("island-out");
+    changelogModal.classList.add("closing");
     changelogModal.classList.remove("open");
     document.body.style.overflow = "";
+    hideLogHandle();
     var t = setTimeout(function () {
       changelogModal.hidden = true;
+      changelogModal.classList.remove("closing");
       card.classList.remove("island-out");
     }, 520);
     if (changelogModal._timer) clearTimeout(changelogModal._timer);
     changelogModal._timer = t;
+  }
+  /* 日志白条：显示/隐藏 */
+  var logDragHandle = document.getElementById("logDragHandle");
+  function showLogHandle() {
+    if (logDragHandle) logDragHandle.classList.add("show");
+  }
+  function hideLogHandle() {
+    if (logDragHandle) logDragHandle.classList.remove("show");
+  }  /* 白条上滑：日志以灵动岛特效收回 */
+  if (logDragHandle) {
+    var _logDrag = null;
+    function _logDragEnd() { _logDrag = null; if (logDragHandle) logDragHandle.classList.remove("dragging"); }
+    logDragHandle.addEventListener("touchstart", function (e) {
+      if (changelogModal.hidden) return;
+      _logDrag = { y: e.touches[0].clientY };
+      logDragHandle.classList.add("dragging");
+    }, { passive: true });
+    logDragHandle.addEventListener("touchmove", function (e) {
+      if (!_logDrag) return;
+      var dy = e.touches[0].clientY - _logDrag.y;
+      if (dy < -28) {
+        _logDragEnd();
+        closeChangelog();
+      }
+    }, { passive: true });
+    logDragHandle.addEventListener("touchend", _logDragEnd, { passive: true });
+    logDragHandle.addEventListener("touchcancel", _logDragEnd, { passive: true });
+    logDragHandle.addEventListener("mousedown", function (e) {
+      if (changelogModal.hidden) return;
+      _logDrag = { y: e.clientY };
+      logDragHandle.classList.add("dragging");
+    });
+    document.addEventListener("mousemove", function (e) {
+      if (!_logDrag) return;
+      var dy = e.clientY - _logDrag.y;
+      if (dy < -28) {
+        _logDragEnd();
+        closeChangelog();
+      }
+    });
+    document.addEventListener("mouseup", _logDragEnd);
   }
   document.getElementById("changelogBtn").addEventListener("click", openChangelog);
   changelogModal.addEventListener("click", function (e) {
@@ -2605,9 +2939,13 @@ var(--glass-bg);
     document.body.style.overflow = "hidden";
   }
   function closeDivision() {
+    divisionModal.classList.add("closing");
     divisionModal.classList.remove("open");
     document.body.style.overflow = "";
-    var t = setTimeout(function () { divisionModal.hidden = true; }, 300);
+    var t = setTimeout(function () {
+      divisionModal.hidden = true;
+      divisionModal.classList.remove("closing");
+    }, 300);
     if (divisionModal._timer) clearTimeout(divisionModal._timer);
     divisionModal._timer = t;
   }
@@ -2643,9 +2981,13 @@ var(--glass-bg);
     schoolVideo.pause();
     schoolVideo.removeAttribute("src");
     schoolVideo.load();
+    schoolModal.classList.add("closing");
     schoolModal.classList.remove("open");
     document.body.style.overflow = "";
-    var t = setTimeout(function () { schoolModal.hidden = true; }, 300);
+    var t = setTimeout(function () {
+      schoolModal.hidden = true;
+      schoolModal.classList.remove("closing");
+    }, 300);
     if (schoolModal._timer) clearTimeout(schoolModal._timer);
     schoolModal._timer = t;
   }
@@ -3044,5 +3386,18 @@ var(--glass-bg);
     });
   }
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
