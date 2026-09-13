@@ -35,8 +35,8 @@
     --card-solid-2: #1A1C22;
     --card-solid-grad: linear-gradient(155deg, #23252D, #1A1C22);
     --m-back-grad: linear-gradient(155deg, #1C1E26, #16171D);
-    --glass-bg: linear-gradient(158deg, rgba(255,255,255,.11), rgba(255,255,255,.03) 40%, rgba(255,255,255,.06) 62%, rgba(255,255,255,.02)), linear-gradient(160deg, rgba(35,37,45,.88), rgba(26,28,34,.92));
-    --cl-v2-bg: linear-gradient(160deg, rgba(38,40,50,.92), rgba(28,29,38,.66));
+    --glass-bg: linear-gradient(158deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 40%, rgba(255,255,255,.05) 62%, rgba(255,255,255,.01)), linear-gradient(160deg, rgba(35,37,45,.52), rgba(26,28,34,.44));
+    --cl-v2-bg: linear-gradient(160deg, rgba(38,40,50,.52), rgba(28,29,38,.40));
     --avatar-bg: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
     --avatar-hi: rgba(255,255,255,.12);
     --accent-ui: #6E8BE8;
@@ -67,13 +67,13 @@
     --ink-2: #4B4942;
     --muted: #78746C;
     --line: rgba(25,25,22,.12);
-    --card-glass: linear-gradient(150deg, rgba(255,255,255,.94), rgba(255,255,255,.68));
+    --card-glass: linear-gradient(150deg, rgba(255,255,255,.72), rgba(255,255,255,.46));
     --card-solid: #FFFFFF;
     --card-solid-2: #F2F1EC;
     --card-solid-grad: linear-gradient(155deg, #FFFFFF, #F2F1EC);
     --m-back-grad: linear-gradient(155deg, #F8F7F3, #ECEBE5);
-    --glass-bg: linear-gradient(150deg, rgba(255,255,255,.96), rgba(255,255,255,.74));
-    --cl-v2-bg: linear-gradient(160deg, rgba(255,255,255,.96), rgba(246,245,241,.84));
+    --glass-bg: linear-gradient(150deg, rgba(255,255,255,.58), rgba(255,255,255,.38));
+    --cl-v2-bg: linear-gradient(160deg, rgba(255,255,255,.62), rgba(246,245,241,.42));
     --avatar-bg: linear-gradient(145deg, #F1EFEA, #E4E1DA);
     --avatar-hi: rgba(255,255,255,.55);
     --accent-ui: #5E7BD6;
@@ -120,8 +120,8 @@
     font-size: 12.5px; letter-spacing: .02em;
     color: var(--ink-2);
     background: color-mix(in srgb, var(--surface) 88%, transparent);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--line);
     box-shadow: 0 14px 40px rgba(20,20,20,.22);
     white-space: nowrap;
@@ -195,8 +195,8 @@
     position: relative;
     background:
 var(--glass-bg);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     box-shadow:
       0 26px 70px rgba(20,20,20,.1),
@@ -431,8 +431,8 @@ var(--glass-bg);
   section.block .inner {
     position: relative;
     background: linear-gradient(165deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: 48px;
     padding: clamp(56px,7vw,92px) clamp(22px,4vw,44px);
@@ -513,6 +513,13 @@ var(--glass-bg);
     border: 0; border-radius: calc(var(--r-lg) - 8px);
     background: #000;
   }
+  .anti-open {
+    display: block; margin-top: 10px; text-align: center;
+    font-size: 12px; letter-spacing: .03em; color: var(--muted);
+    text-decoration: none; opacity: .85;
+    transition: opacity .3s, color .3s;
+  }
+  .anti-open:hover { opacity: 1; color: var(--ink); }
   .anti-note {
     border-radius: var(--r-lg); padding: clamp(24px,3vw,32px);
     display: flex; flex-direction: column; justify-content: center; gap: 14px;
@@ -533,8 +540,8 @@ var(--glass-bg);
   .about-stats .stat {
     position: relative;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-lg);
     padding: 28px 30px;
@@ -632,8 +639,8 @@ var(--glass-bg);
   .division-mod {
     position: relative;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-md);
     padding: 16px 18px 14px;
@@ -710,8 +717,8 @@ var(--glass-bg);
     z-index: 1;
     overflow: visible;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-lg);
     padding: 28px 24px;
@@ -995,6 +1002,8 @@ var(--glass-bg);
     border-radius: var(--r-lg);
     border: 1px solid var(--line);
     background: var(--cl-v2-bg);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     box-shadow: 0 18px 50px rgba(20,20,20,.1), inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(255,255,255,.12);
     padding: 26px 28px 22px;
     margin-bottom: 30px;
@@ -1060,8 +1069,8 @@ var(--glass-bg);
   .log-item {
     position: relative; margin-bottom: 18px;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-md);
     padding: 16px 20px;
@@ -1117,8 +1126,8 @@ var(--glass-bg);
     margin-top: 28px;
     display: flex; align-items: center; gap: 20px;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-md);
     padding: 20px 26px;
@@ -1216,7 +1225,7 @@ var(--glass-bg);
   @keyframes buffSpin { to { transform: rotate(360deg); } }
   .player.swapping { animation: swapIn .5s cubic-bezier(.22,.61,.36,1); }
   @keyframes swapIn { from { opacity: .4; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
-  .player video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .player video { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: inherit; }
   .player-placeholder {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -1385,8 +1394,8 @@ var(--glass-bg);
   .glass-panel {
     position: relative;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-lg);
     padding: 22px;
@@ -1434,8 +1443,8 @@ var(--glass-bg);
     padding: 26px;
     border-radius: var(--r-lg);
     background: var(--glass-bg);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 2px solid var(--card-border);
     box-shadow: 0 10px 34px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.16);
   }
@@ -1458,8 +1467,8 @@ var(--glass-bg);
   .tl-item {
     position: relative;
     background: var(--card-glass);
-    backdrop-filter: saturate(150%) blur(8px);
-    -webkit-backdrop-filter: saturate(150%) blur(8px);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-lg);
     padding: 24px 26px;
@@ -1512,18 +1521,70 @@ var(--glass-bg);
       max-width: calc(100vw - 20px);
     }
     .dock {
+      position: relative;
       display: flex; align-items: center; gap: 3px;
       padding: 3px;
       border-radius: 999px;
-      background: rgba(255,255,255,.20);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.30) 0%,
+        rgba(255,255,255,.16) 55%,
+        rgba(255,255,255,.12) 100%);
       border: 1.5px solid rgba(255,255,255,.30);
       box-shadow: 0 12px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.45);
       overflow-x: auto;
       scrollbar-width: none;
     }
+    /* 选中滑块：独立玻璃片，left/width 过渡实现丝滑滑动；真毛玻璃，透出背景 */
+    .dock-indicator {
+      position: absolute;
+      top: 3px; bottom: 3px;
+      left: 0; width: 0;
+      opacity: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255,255,255,.30);
+      box-shadow:
+        0 3px 12px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.30),
+        inset 0 -1px 0 rgba(0,0,0,.10);
+      transition:
+        left .5s cubic-bezier(.25,1,.35,1),
+        width .5s cubic-bezier(.25,1,.35,1),
+        opacity .35s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .dock-indicator.ready { opacity: 1; }
+    [data-theme="light"] .dock-indicator {
+      background: rgba(255,255,255,.60);
+      border-color: rgba(255,255,255,.85);
+      box-shadow:
+        0 3px 10px rgba(0,0,0,.10),
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -1px 0 rgba(0,0,0,.05);
+    }
+    [data-theme="dark"] .dock-indicator {
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.24);
+      box-shadow:
+        0 3px 12px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.26),
+        inset 0 -1px 0 rgba(0,0,0,.12);
+    }
     .dock::-webkit-scrollbar { display: none; }
+    /* 浅色模式：dock 要有可见的毛玻璃底，不能透明到看不见 */
+    [data-theme="light"] .dock, [data-theme="light"] .dock-pill {
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.62) 0%,
+        rgba(255,255,255,.46) 55%,
+        rgba(255,255,255,.40) 100%);
+      border-color: rgba(255,255,255,.82);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      box-shadow: 0 12px 40px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85);
+    }
     [data-theme="dark"] .dock, [data-theme="dark"] .dock-pill {
       background: rgba(26,28,36,.42);
       border-color: rgba(255,255,255,.14);
@@ -1552,31 +1613,31 @@ var(--glass-bg);
       box-shadow: 0 12px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.45);
     }
     .dock-set { padding: 0 12px; }
-    .dock-item:hover { background: rgba(255,255,255,.2); color: var(--ink); transform: scale(1.05); }
-    [data-theme="light"] .dock-item:hover { background: rgba(0,0,0,.08); }
-    .dock-pill:hover { background: rgba(255,255,255,.28); color: var(--ink); transform: scale(1.04); }
-    [data-theme="light"] .dock-pill:hover { background: rgba(0,0,0,.1); }
+    /* hover 仅在支持鼠标悬停的设备生效：触屏点击后 :hover 会粘滞，导致灰底残留 */
+    @media (hover: hover) {
+      .dock-item:hover { background: rgba(255,255,255,.2); color: var(--ink); transform: scale(1.05); }
+      [data-theme="light"] .dock-item:hover { background: rgba(0,0,0,.08); }
+      .dock-pill:hover { background: rgba(255,255,255,.28); color: var(--ink); transform: scale(1.04); }
+      [data-theme="light"] .dock-pill:hover { background: rgba(0,0,0,.1); }
+    }
     .dock-item:active, .dock-pill:active { transform: scale(.92); }
-    /* 选中态：玻璃态高亮，边缘高光上下均匀 */
+    /* 选中态：文字高亮由滑块承载，item 本身只变文字 */
+    .dock-item {
+      position: relative; z-index: 1;
+    }
     .dock-item.active {
-      background: rgba(255,255,255,.16);
-      backdrop-filter: blur(14px) saturate(170%);
-      -webkit-backdrop-filter: blur(14px) saturate(170%);
-      border: 1px solid rgba(255,255,255,.26);
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.24),
-        inset 0 -1px 0 rgba(0,0,0,.12);
       color: #fff;
       font-weight: 700;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 0;
+      box-shadow: none;
     }
     [data-theme="light"] .dock-item.active {
-      background: rgba(255,255,255,.58);
-      border-color: rgba(255,255,255,.72);
-      box-shadow:
-        0 3px 10px rgba(0,0,0,.12),
-        inset 0 1px 0 rgba(255,255,255,.85),
-        inset 0 -1px 0 rgba(0,0,0,.06);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
       color: #111;
       font-weight: 700;
     }
@@ -1683,7 +1744,8 @@ var(--glass-bg);
       </div>
       <div class="anti-grid">
         <div class="anti-video glass reveal" style="transition-delay:.06s">
-          <iframe src="https://player.bilibili.com/player.html?bvid=BV1L7x6zWEFz&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" title="反校园霸凌科普视频" loading="lazy"></iframe>
+          <iframe src="https://player.bilibili.com/player.html?bvid=BV1L7x6zWEFz&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" title="反校园霸凌科普视频" loading="lazy"></iframe>
+          <a class="anti-open" href="https://www.bilibili.com/video/BV1L7x6zWEFz" target="_blank" rel="noopener">视频播放失败？点击跳转至 B 站 →</a>
         </div>
         <div class="anti-note glass reveal" style="transition-delay:.12s">
           <h3>YACC 在做什么</h3>
@@ -1870,6 +1932,7 @@ var(--glass-bg);
   
   <nav class="mobile-nav" id="mobileNav" aria-label="移动端导航">
     <div class="dock" id="dockNav">
+      <span class="dock-indicator" id="dockIndicator" aria-hidden="true"></span>
       <button class="dock-item active" type="button" data-target="#about">关于</button>
       <button class="dock-item" type="button" data-target="#team">团队</button>
       <button class="dock-item" type="button" data-target="#works">作品</button>
@@ -2030,14 +2093,29 @@ var(--glass-bg);
     if (dock) {
       var items = [].slice.call(dock.querySelectorAll(".dock-item"));
       var map = items.filter(function (it) { return it.getAttribute("data-target"); });
+      var indicator = document.getElementById("dockIndicator");
+      var _jumping = false;
+      var _settleTimer = null;
+      function moveIndicator(el) {
+        if (!indicator || !el) return;
+        indicator.style.left = el.offsetLeft + "px";
+        indicator.style.width = el.offsetWidth + "px";
+        indicator.classList.add("ready");
+      }
       function setActive(id) {
+        var cur = null;
         map.forEach(function (it) {
-          it.classList.toggle("active", it.getAttribute("data-target") === id);
+          var on = it.getAttribute("data-target") === id;
+          it.classList.toggle("active", on);
+          if (on) cur = it;
         });
+        moveIndicator(cur);
       }
       map.forEach(function (it) {
         it.addEventListener("click", function (e) {
           e.preventDefault();
+          _jumping = true;
+          clearTimeout(_settleTimer);
           var el = document.querySelector(it.getAttribute("data-target"));
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
           setActive(it.getAttribute("data-target"));
@@ -2057,7 +2135,13 @@ var(--glass-bg);
         setActive(cur);
       }
       window.addEventListener("scroll", function () {
-        if (!_st) { _st = true; requestAnimationFrame(scan); }
+        /* 点击跳转期间冻结选中框，滚动停止后一次性校正 */
+        if (!_jumping && !_st) { _st = true; requestAnimationFrame(scan); }
+        clearTimeout(_settleTimer);
+        _settleTimer = setTimeout(function () {
+          _jumping = false;
+          scan();
+        }, 250);
       }, { passive: true });
       scan();
     }
@@ -2081,10 +2165,11 @@ var(--glass-bg);
     update();
   })();
   function preloadVideos() {
+    /* 仅预取视频元数据（moov），不下载全片，避免页面加载即拉取 20MB+ 导致卡顿 */
     ["video.mp4", "school.mp4"].forEach(function (src) {
       try {
         var v = document.createElement("video");
-        v.preload = "auto"; v.muted = true; v.playsInline = true;
+        v.preload = "metadata"; v.muted = true; v.playsInline = true;
         v.src = src; v.load();
       } catch (e) {}
     });
