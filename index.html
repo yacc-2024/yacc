@@ -964,6 +964,17 @@ var(--glass-bg);
 
   #changelogModal .modal-card { width: min(680px, 100%); }
   .changelog-card { padding: clamp(28px,5vw,40px); }
+  /* 灵动岛动效：打开时从顶部小胶囊展开，关闭时缩小上滑消失 */
+  .changelog-card {
+    transform-origin: 50% 0;
+    transition: transform .5s cubic-bezier(.22,.61,.36,1), opacity .45s ease;
+  }
+  #changelogModal .changelog-card.island-in,
+  #changelogModal .changelog-card.island-out {
+    transform: translateY(-55vh) scale(.15);
+    opacity: 0;
+    transition: transform .5s cubic-bezier(.22,.61,.36,1), opacity .45s ease;
+  }
   .changelog-title {
     font-family: var(--serif); font-size: 26px; font-weight: 900;
     text-align: center; margin-bottom: 24px;
@@ -1007,6 +1018,8 @@ var(--glass-bg);
     box-shadow: 0 18px 50px rgba(20,20,20,.1), inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(255,255,255,.12);
     padding: 26px 28px 22px;
     margin-bottom: 30px;
+    transform-origin: 50% 0;
+    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
   }
   .cl-v2::after {
     content: ""; position: absolute; inset: -45%;
@@ -1075,9 +1088,15 @@ var(--glass-bg);
     border-radius: var(--r-md);
     padding: 16px 20px;
     box-shadow: 0 12px 34px rgba(20,20,20,.05), inset 0 1px 0 rgba(255,255,255,.35);
-    opacity: 0; transform: translateY(12px);
-    animation: logIn .45s cubic-bezier(.22,.61,.36,1) forwards;
-    transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s, border-color .3s;
+    transform-origin: 50% 0;
+    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+  }
+  /* 日志卡片灵动岛：离开视口缩成小胶囊，进入视口从小胶囊展开；只缩放不折叠布局 */
+  .changelog-card .log-item.island-min,
+  .changelog-card .cl-v2.island-min {
+    transform: scale(.3) translateY(-8px);
+    opacity: 0;
+    pointer-events: none;
   }
   .log-item:hover {
     transform: translateY(-3px);
@@ -1181,12 +1200,23 @@ var(--glass-bg);
     text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 22px;
   }
   .school-video-wrap {
+    position: relative;
     border-radius: var(--r-md); overflow: hidden;
     background: #000;
     aspect-ratio: 16 / 9;
   }
   .school-video-wrap video {
     width: 100%; height: 100%; object-fit: contain; display: block;
+    border-radius: var(--r-md); overflow: hidden;
+    -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black);
+  }
+  .school-error {
+    position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 3;
+    text-align: center; font-size: 12.5px; line-height: 1.6;
+    color: #fff; background: rgba(0,0,0,.55);
+    border-radius: 12px; padding: 8px 14px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .works { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   .watch-layout {
@@ -1225,7 +1255,7 @@ var(--glass-bg);
   @keyframes buffSpin { to { transform: rotate(360deg); } }
   .player.swapping { animation: swapIn .5s cubic-bezier(.22,.61,.36,1); }
   @keyframes swapIn { from { opacity: .4; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
-  .player video { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: inherit; }
+  .player video { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: var(--r-lg); overflow: hidden; -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); }
   .player-placeholder {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -1557,6 +1587,15 @@ var(--glass-bg);
       z-index: 0;
     }
     .dock-indicator.ready { opacity: 1; }
+    /* 水滴弹跳：点击时滑块像水滴一样压扁-回弹 */
+    @keyframes dockBounce {
+      0%   { transform: scale(1, 1); }
+      30%  { transform: scale(1.16, .86); }
+      55%  { transform: scale(.94, 1.08); }
+      75%  { transform: scale(1.05, .97); }
+      100% { transform: scale(1, 1); }
+    }
+    .dock-indicator.bounce { animation: dockBounce .55s cubic-bezier(.34,1.56,.64,1); }
     [data-theme="light"] .dock-indicator {
       background: rgba(255,255,255,.60);
       border-color: rgba(255,255,255,.85);
@@ -1660,7 +1699,7 @@ var(--glass-bg);
   .setting-label { font-size: 14.5px; color: var(--ink); }
   .switch {
     position: relative; display: inline-block;
-    width: 46px; height: 27px; flex: none;
+    width: 46px; height: 20px; flex: none;
   }
   .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
   .switch-track {
@@ -1670,14 +1709,39 @@ var(--glass-bg);
     transition: background .3s;
   }
   .switch-thumb {
-    position: absolute; top: 2.5px; left: 2.5px;
-    width: 22px; height: 22px; border-radius: 50%;
+    position: absolute; top: 2.5px; left: 2px;
+    width: 22px; height: 15px; border-radius: 999px;
     background: #fff;
     box-shadow: 0 2px 6px rgba(0,0,0,.28);
     transition: transform .35s cubic-bezier(.34,1.56,.64,1);
   }
   .switch input:checked + .switch-track { background: #34C759; }
-  .switch input:checked + .switch-track .switch-thumb { transform: translateX(19px); }
+  .switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); }
+  /* 水滴胶囊形态：原地变大变透明 → 快速滑动 → 终点缩小，全程胶囊形 */
+  .switch-thumb { z-index: 1; }
+  .switch-thumb.droplet {
+    background: linear-gradient(150deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(255,255,255,.65);
+    box-shadow:
+      0 4px 18px rgba(0,0,0,.25),
+      inset 0 1.5px 2px rgba(255,255,255,.95),
+      inset 0 -2px 6px rgba(255,255,255,.3),
+      0 0 14px rgba(255,255,255,.3);
+  }
+  @keyframes waterdropOn {
+    0%   { transform: translateX(0) scale(1, 1); }
+    50%  { transform: translateX(6px) scale(1.55, 1.55); }
+    85%  { transform: translateX(20px) scale(1.55, 1.55); }
+    100% { transform: translateX(20px) scale(1, 1); }
+  }
+  @keyframes waterdropOff {
+    0%   { transform: translateX(20px) scale(1, 1); }
+    50%  { transform: translateX(14px) scale(1.55, 1.55); }
+    85%  { transform: translateX(0) scale(1.55, 1.55); }
+    100% { transform: translateX(0) scale(1, 1); }
+  }
   .settings-more {
     margin-top: 16px; text-align: center;
     font-size: 12px; letter-spacing: .04em;
@@ -2014,6 +2078,7 @@ var(--glass-bg);
         <div class="school-buffering is-hidden" id="schoolBuffering" aria-hidden="true">
           <div class="buff-spinner"></div>
         </div>
+        <div class="school-error is-hidden" id="schoolError">视频加载失败，可能是网络或浏览器兼容问题，请稍后重试。</div>
       </div>
     </div>
     <p class="modal-close-hint">点击空白处或按 Esc 关闭</p>
@@ -2059,6 +2124,7 @@ var(--glass-bg);
     });
     var sw = document.getElementById("themeSwitch");
     if (sw) sw.addEventListener("change", function () {
+      waterdropKnob(sw);
       apply(sw.checked ? "dark" : "light");
     });
     var go = document.getElementById("sysdarkGo");
@@ -2072,6 +2138,23 @@ var(--glass-bg);
       try { mq.addEventListener("change", sync); } catch (e) { mq.addListener(sync); }
     }
   })();
+  var _wdSeq = 0;
+  function waterdropKnob(input) {
+    var track = input.parentElement.querySelector(".switch-track");
+    var thumb = track ? track.querySelector(".switch-thumb") : null;
+    if (!thumb) return;
+    var my = ++_wdSeq;
+    thumb.classList.add("droplet");
+    thumb.style.animation = "none";
+    void thumb.offsetWidth;
+    thumb.style.animation = (input.checked ? "waterdropOn" : "waterdropOff") + " .55s cubic-bezier(.4,.15,.25,1) forwards";
+    setTimeout(function () {
+      if (my !== _wdSeq) return;
+      thumb.style.animation = "";
+      thumb.classList.remove("droplet");
+      thumb.style.transform = input.checked ? "translateX(20px)" : "translateX(0)";
+    }, 580);
+  }
   (function () {
     var sw = document.getElementById("glowSwitch");
     function apply(on) {
@@ -2082,7 +2165,10 @@ var(--glass-bg);
     var saved = null;
     try { saved = localStorage.getItem("yacc-glow"); } catch (e) {}
     apply(saved !== "off");
-    if (sw) sw.addEventListener("change", function () { apply(sw.checked); });
+    if (sw) sw.addEventListener("change", function () {
+      waterdropKnob(sw);
+      apply(sw.checked);
+    });
   })();
   (function () {
     var dock = document.getElementById("dockNav");
@@ -2111,6 +2197,15 @@ var(--glass-bg);
         });
         moveIndicator(cur);
       }
+      function bounceIndicator() {
+        if (!indicator) return;
+        indicator.classList.remove("bounce");
+        void indicator.offsetWidth;
+        indicator.classList.add("bounce");
+      }
+      if (indicator) {
+        indicator.addEventListener("animationend", function () { indicator.classList.remove("bounce"); });
+      }
       map.forEach(function (it) {
         it.addEventListener("click", function (e) {
           e.preventDefault();
@@ -2119,6 +2214,7 @@ var(--glass-bg);
           var el = document.querySelector(it.getAttribute("data-target"));
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
           setActive(it.getAttribute("data-target"));
+          bounceIndicator();
         });
       });
       var sections = map.map(function (it) {
@@ -2325,6 +2421,7 @@ var(--glass-bg);
     if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
   var CHANGELOG = [
+    { date: "2026.09.13", version: "v2.1.5", title: "更新日志动画优化", desc: "优化了更新日志的动画，优化了导航栏移动的动画，优化了玻璃显示的效果。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.4", title: "设置新增背景光斑开关", desc: "设置内支持开关背景光斑，以满足不同人群观感。加大主页 yacc 字符大小，显示主题。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.3", title: "弹窗玻璃效果修复", desc: "修复移动端设置与日志弹窗在深色模式下无玻璃效果的问题，统一深色模式毛玻璃显示参数。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.2", title: "移动端导航与作品页重构", desc: "优化移动端Dock导航显示，删除PC端冗余悬浮按钮，放大移动端主标题，作品区精简为进入作品页按钮，作品页重构：进页即播放器，搜索栏移至顶部并下滑隐藏，搜索结果定位集数。", isMajor: false },
@@ -2361,7 +2458,7 @@ var(--glass-bg);
       }
       var major = item.isMajor ? ' log-item--major' : '';
       var badge = item.isMajor ? '<span class="log-badge">重大更新</span>' : '';
-      return '<div class="log-item' + major + '" style="animation-delay:' + (i * 0.06) + 's">' +
+      return '<div class="log-item' + major + '">' +
         '<div class="log-dot"></div>' +
         '<div class="log-content">' +
         '<div class="log-head"><span class="log-date">' + item.date + '</span>' +
@@ -2372,6 +2469,36 @@ var(--glass-bg);
         '<div class="log-desc">' + item.desc + '</div>' +
         '</div></div>';
     }).join("");
+  }
+  function initLogIsland() {
+    var scroll = changelogModal.querySelector(".changelog-card");
+    if (!scroll) return;
+    if (changelogModal._islandIO) { changelogModal._islandIO.disconnect(); changelogModal._islandIO = null; }
+    if (!("IntersectionObserver" in window)) return;
+    var cards = scroll.querySelectorAll(".log-item, .cl-v2");
+    /* 打开弹窗：视口内的直接显示，视口外的先收成胶囊（滚动进入时有展开动画） */
+    var sr = scroll.getBoundingClientRect();
+    cards.forEach(function (c) {
+      var r = c.getBoundingClientRect();
+      c.classList.toggle("island-min", !(r.top < sr.bottom && r.bottom > sr.top));
+    });
+    /* threshold 0 + 上下 8% 收缩带：进入检测带即展开，滚到边缘即收起；
+       不依赖高阈值，慢速滚动也不会丢动画；锁只防像素级快速抖动 */
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var card = en.target;
+        if (card._lock) return;
+        card._lock = true;
+        setTimeout(function () { card._lock = false; }, 250);
+        if (en.isIntersecting) {
+          card.classList.remove("island-min");
+        } else {
+          card.classList.add("island-min");
+        }
+      });
+    }, { root: scroll, threshold: 0, rootMargin: "-8% 0px -8% 0px" });
+    cards.forEach(function (c) { c._lock = false; io.observe(c); });
+    changelogModal._islandIO = io;
   }
   var settingsModal = document.getElementById("settingsModal");
   function openSettings() {
@@ -2401,14 +2528,26 @@ var(--glass-bg);
   });
   function openChangelog() {
     renderChangelog();
+    initLogIsland();
     changelogModal.hidden = false;
-    requestAnimationFrame(function () { changelogModal.classList.add("open"); });
+    var card = changelogModal.querySelector(".changelog-card");
+    card.classList.remove("island-out");
+    card.classList.add("island-in");
+    requestAnimationFrame(function () {
+      changelogModal.classList.add("open");
+      card.classList.remove("island-in");
+    });
     document.body.style.overflow = "hidden";
   }
   function closeChangelog() {
+    var card = changelogModal.querySelector(".changelog-card");
+    card.classList.add("island-out");
     changelogModal.classList.remove("open");
     document.body.style.overflow = "";
-    var t = setTimeout(function () { changelogModal.hidden = true; }, 300);
+    var t = setTimeout(function () {
+      changelogModal.hidden = true;
+      card.classList.remove("island-out");
+    }, 520);
     if (changelogModal._timer) clearTimeout(changelogModal._timer);
     changelogModal._timer = t;
   }
@@ -2479,6 +2618,7 @@ var(--glass-bg);
   var schoolModal = document.getElementById("schoolModal");
   var schoolVideo = document.getElementById("schoolVideo");
   var schoolBuffering = document.getElementById("schoolBuffering");
+  var schoolError = document.getElementById("schoolError");
   function setSchoolBuffering(on) {
     if (!schoolBuffering) return;
     schoolBuffering.classList.toggle("is-hidden", !on);
@@ -2486,9 +2626,15 @@ var(--glass-bg);
   schoolVideo.addEventListener("waiting", function () { if (!schoolVideo.paused) setSchoolBuffering(true); });
   schoolVideo.addEventListener("playing", function () { setSchoolBuffering(false); });
   schoolVideo.addEventListener("canplay", function () { setSchoolBuffering(false); });
+  schoolVideo.addEventListener("error", function () {
+    setSchoolBuffering(false);
+    if (schoolError) schoolError.classList.remove("is-hidden");
+  });
   function openSchool() {
-    schoolVideo.src = "school.mp4";
+    /* 加版本参数绕过浏览器旧缓存，避免手机端拉到旧文件报格式错误 */
+    schoolVideo.src = "school.mp4?v=20260913";
     schoolVideo.load();
+    if (schoolError) schoolError.classList.add("is-hidden");
     schoolModal.hidden = false;
     requestAnimationFrame(function () { schoolModal.classList.add("open"); });
     document.body.style.overflow = "hidden";
