@@ -40,8 +40,8 @@
     --avatar-bg: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
     --avatar-hi: rgba(255,255,255,.12);
     --accent-ui: #6E8BE8;
-    --nav-bg: rgba(20,21,25,.55);
-    --nav-bg-solid: rgba(20,21,25,.8);
+    --nav-bg: rgba(20,21,25,.32);
+    --nav-bg-solid: rgba(20,21,25,.58);
     --backdrop: rgba(8,9,12,.6);
     --chip-bg: rgba(255,255,255,.08);
     --chip-bg-hi: rgba(255,255,255,.16);
@@ -77,8 +77,8 @@
     --avatar-bg: linear-gradient(145deg, #F1EFEA, #E4E1DA);
     --avatar-hi: rgba(255,255,255,.55);
     --accent-ui: #5E7BD6;
-    --nav-bg: rgba(255,255,255,.72);
-    --nav-bg-solid: rgba(255,255,255,.92);
+    --nav-bg: rgba(255,255,255,.48);
+    --nav-bg-solid: rgba(255,255,255,.72);
     --backdrop: rgba(25,25,22,.32);
     --chip-bg: rgba(25,25,22,.05);
     --chip-bg-hi: rgba(25,25,22,.11);
@@ -910,8 +910,9 @@ var(--glass-bg);
     max-height: 86vh; overflow: auto;
   }
   [data-theme="dark"] .modal-card {
-    background: rgba(30,32,40,.55);
-    border-color: rgba(255,255,255,.26);
+    background: rgba(255,255,255,.18);
+    border-color: rgba(255,255,255,.22);
+    box-shadow: 0 16px 48px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18);
   }
   @supports (height: 100dvh) {
     .modal-card { max-height: min(80dvh, 680px); }
@@ -968,6 +969,17 @@ var(--glass-bg);
   .modal-card::-webkit-scrollbar { width: 6px; }
   .modal-card::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
   .modal-card::-webkit-scrollbar-track { background: transparent; }
+  [data-theme="dark"] #changelogModal .changelog-title { color: #1E1D1A; }
+  [data-theme="dark"] #changelogModal .log-item:not(.log-item--major) .log-title { color: #1E1D1A; }
+  [data-theme="dark"] #changelogModal .log-date { color: #6B675E; }
+  [data-theme="dark"] #changelogModal .log-desc { color: #3D3B34; }
+  [data-theme="dark"] #changelogModal .log-dot {
+    background: #fff; border-color: #1E1D1A;
+    box-shadow: 0 0 0 4px rgba(255,255,255,.4);
+  }
+  [data-theme="dark"] #changelogModal .changelog-list::before {
+    background: linear-gradient(to bottom, rgba(168,135,63,.5), rgba(30,29,26,.15));
+  }
   .changelog-title::after {
     content: ""; display: block;
     width: 44px; height: 1px; margin: 14px auto 0;
@@ -2191,6 +2203,7 @@ var(--glass-bg);
     if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
   var CHANGELOG = [
+    { date: "2026.09.13", version: "v2.1.3", title: "弹窗玻璃效果修复", desc: "修复移动端设置与日志弹窗在深色模式下无玻璃效果的问题，统一深色模式毛玻璃显示参数。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.2", title: "移动端导航与作品页重构", desc: "优化移动端Dock导航显示，删除PC端冗余悬浮按钮，放大移动端主标题，作品区精简为进入作品页按钮，作品页重构：进页即播放器，搜索栏移至顶部并下滑隐藏，搜索结果定位集数。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.1", title: "作品界面修改", desc: "修改作品界面为跳转网页，主站仅能预览第一季。优化玻璃显示，修改设置界面文案及UI，修复了设置界面无法退出的bug。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.0", title: "优化界面效果", desc: "优化了玻璃显示效果及UI，修复了部分动画卡顿的效果。修改了背景样式，新增了移动端导航栏，设置界面，优化了点击逻辑。", isMajor: false },
