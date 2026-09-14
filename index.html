@@ -995,9 +995,33 @@ var(--glass-bg);
   [data-theme="dark"] .changelog-nav-item.active { background: rgba(255,255,255,.18); }
   .changelog-nav-item:active { transform: scale(.96); }
   .changelog-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: clamp(28px, 5vw, 44px) clamp(28px, 5vw, 44px) 78px; }
-  @media (max-width: 420px) {
-    .changelog-side { width: 84px; padding-left: 8px; padding-right: 8px; }
-    .changelog-nav-item { font-size: 12px; padding: 8px 8px; }
+  @media (max-width: 480px) {
+    /* 移动端日志界面适配 */
+    .changelog-side { width: 72px; padding-left: 6px; padding-right: 6px; }
+    .changelog-side-title { font-size: 10px; padding: 10px 6px; }
+    .changelog-nav-item { font-size: 11px; padding: 7px 6px; }
+    .changelog-main { padding: 20px 16px 70px; }
+    .changelog-title { font-size: 20px; margin-bottom: 16px; }
+    .changelog-list { padding-left: 22px; }
+    /* 普通日志卡片移动端适配 */
+    .log-item { padding: 12px 14px; margin-bottom: 14px; }
+    .log-head { gap: 8px; margin-bottom: 4px; }
+    .log-date { font-size: 11px; }
+    .log-ver { font-size: 10px; padding: 2px 7px; }
+    .log-title { font-size: 15px; margin-bottom: 4px; }
+    .log-desc { font-size: 12.5px; line-height: 1.7; }
+    .log-badge { font-size: 10px; padding: 2px 8px; margin-left: 6px; }
+    .log-dot { left: -22px; top: 16px; width: 12px; height: 12px; }
+    /* v2.0 大版本卡片移动端适配 */
+    .cl-v2 { padding: 18px 18px 16px; margin-bottom: 22px; }
+    .cl-v2-badge { font-size: 10px; padding: 5px 11px; margin-bottom: 12px; }
+    .cl-v2-title { font-size: 18px; margin-bottom: 8px; }
+    .cl-v2-desc { font-size: 12.5px; line-height: 1.8; max-width: 100%; }
+    .cl-v2-flow { margin: 14px 0 12px; }
+    .cl-v2-soon { font-size: 11px; }
+    /* 日志白条移动端适配 */
+    .log-drag-handle { width: 140px; height: 28px; bottom: 4px; }
+    .log-drag-handle .drag-bar { width: 110px; height: 4px; }
   }
   /* 灵动岛动效：打开时从顶部小胶囊展开，关闭时缩小上滑消失 */
   .changelog-card {
@@ -1118,33 +1142,33 @@ var(--glass-bg);
   .changelog-card { position: relative; }
   .log-drag-handle {
     position: absolute; left: 50%;
-    bottom: 12px;
+    bottom: 6px;
     transform: translateX(-50%);
     z-index: 6;
-    width: 92px; height: 30px;
+    width: 160px; height: 32px;
     display: none;
-    align-items: center; justify-content: center;
+    align-items: flex-end; justify-content: center;
+    padding-bottom: 8px;
     cursor: grab; touch-action: none;
-    background: rgba(255,255,255,.55);
-    backdrop-filter: blur(16px) saturate(170%);
-    -webkit-backdrop-filter: blur(16px) saturate(170%);
-    border: 1px solid rgba(20,22,28,.18);
-    border-radius: 999px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.95);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
   [data-theme="dark"] .log-drag-handle {
-    background: rgba(255,255,255,.13);
-    border-color: rgba(255,255,255,.3);
-    box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
   .log-drag-handle.show { display: flex; }
   .log-drag-handle .drag-bar {
-    width: 42px; height: 6px; border-radius: 999px;
-    background: rgba(0,0,0,.42);
-    transition: transform .15s ease;
+    width: 134px; height: 5px; border-radius: 999px;
+    background: rgba(0,0,0,.35);
+    transition: transform .15s ease, background .15s ease;
   }
-  [data-theme="dark"] .log-drag-handle .drag-bar { background: rgba(255,255,255,.78); }
-  .log-drag-handle.dragging .drag-bar { transform: scaleY(.55); }
+  [data-theme="dark"] .log-drag-handle .drag-bar { background: rgba(255,255,255,.65); }
+  .log-drag-handle.dragging .drag-bar { transform: scaleY(.6); background: rgba(0,0,0,.5); }
+  [data-theme="dark"] .log-drag-handle.dragging .drag-bar { background: rgba(255,255,255,.85); }
   /* 设置界面的调试密钥输入框（带眼睛按钮，点击可切换明文/密文） */
   .settings-input-row { padding: 0 16px; margin-top: 18px; }
   .secret-input-wrap {
@@ -1184,6 +1208,14 @@ var(--glass-bg);
   .secret-eye #eyeOff { opacity: 0; transform: scale(.6); }
   .secret-eye.show #eyeOpen { opacity: 0; transform: scale(.6); }
   .secret-eye.show #eyeOff { opacity: 1; transform: scale(1); }
+  /* 密钥错误抖动动画 */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
   .log-item {
     position: relative; margin-bottom: 18px;
     background: var(--card-glass);
@@ -1667,56 +1699,202 @@ var(--glass-bg);
         rgba(255,255,255,.12) 100%);
       border: 1.5px solid rgba(255,255,255,.30);
       box-shadow: 0 12px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.45);
-      overflow-x: auto;
-      scrollbar-width: none;
+      overflow: visible;
     }
-    /* 选中滑块：独立玻璃片，left/width 过渡实现丝滑滑动；真毛玻璃，透出背景 */
+    /* 选中滑块：静止时纯灰底，滑动/放大时玻璃+高光+折射 */
     .dock-indicator {
       position: absolute;
       top: 3px; bottom: 3px;
       left: 0; width: 0;
       opacity: 0;
       border-radius: 999px;
-      background: rgba(255,255,255,.18);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border: 1px solid rgba(255,255,255,.30);
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.20),
-        inset 0 1px 0 rgba(255,255,255,.30),
-        inset 0 -1px 0 rgba(0,0,0,.10);
+      /* 静止状态：纯灰色胶囊背景，没有玻璃、没有边缘高光、没有阴影 */
+      background: rgba(120,120,120,.55);
+      border: 1px solid transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       transition:
         left .5s cubic-bezier(.25,1,.35,1),
         width .5s cubic-bezier(.25,1,.35,1),
-        opacity .35s ease;
+        top .3s ease,
+        bottom .3s ease,
+        border-radius .35s ease,
+        transform .4s cubic-bezier(.34,1.56,.64,1),
+        opacity .35s ease,
+        background .25s ease,
+        backdrop-filter .25s ease,
+        -webkit-backdrop-filter .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease;
       pointer-events: none;
       z-index: 0;
+      will-change: transform, left, width;
     }
     .dock-indicator.ready { opacity: 1; }
-    /* 水滴弹跳：点击时滑块像水滴一样压扁-回弹 */
+    /* 水滴弹跳：点击时滑块像被摁扁→变大透明→回弹 */
     @keyframes dockBounce {
-      0%   { transform: scale(1, 1); }
-      30%  { transform: scale(1.16, .86); }
-      55%  { transform: scale(.94, 1.08); }
-      75%  { transform: scale(1.05, .97); }
-      100% { transform: scale(1, 1); }
+      0%   { transform: scale(1, 1); opacity: 1; }
+      18%  { transform: scale(1.12, .80) translateY(3px); opacity: .92; }
+      42%  { transform: scale(1.20, 1.20); opacity: .5; }
+      68%  { transform: scale(1.06, 1.06); opacity: .82; }
+      100% { transform: scale(1, 1); opacity: 1; }
     }
-    .dock-indicator.bounce { animation: dockBounce .55s cubic-bezier(.34,1.56,.64,1); }
-    [data-theme="light"] .dock-indicator {
-      background: rgba(255,255,255,.60);
-      border-color: rgba(255,255,255,.85);
+    .dock-indicator.bounce { animation: dockBounce .6s cubic-bezier(.34,1.56,.64,1); }
+    /* 形变滑动：点击移动时选中框变圆，滑动后恢复胶囊 */
+    .dock-indicator.shape-shift {
+      transform: scale(0.82, 1.22);
+    }
+    /* 移动/长按时：玻璃态+高光（性能优化版） */
+    .dock-indicator.moving {
+      transform: scale(1.28, 1.5);
+      opacity: .7;
+      transition: left .3s ease-out,
+                  width .3s ease-out,
+                  transform .12s cubic-bezier(.25,.46,.45,.94),
+                  opacity .2s ease;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      /* 简化玻璃：只保留模糊+饱和，去掉对比度和亮度，降低模糊半径 */
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border: 1.5px solid rgba(255,255,255,.5);
       box-shadow:
-        0 3px 10px rgba(0,0,0,.10),
-        inset 0 1px 0 rgba(255,255,255,.9),
-        inset 0 -1px 0 rgba(0,0,0,.05);
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    /* 合并高光层：只用一个简单的顶部渐变，去掉径向渐变和边缘折射 */
+    .dock-indicator.moving::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.08) 40%,
+        transparent 65%);
+      pointer-events: none;
+    }
+    .dock-indicator.moving::after { display: none; }
+    /* 滚动网页时：只变玻璃态不变大，q弹丝滑滑动 */
+    .dock-indicator.sliding {
+      transform: scale(1);
+      opacity: 1;
+      transition: left .45s cubic-bezier(.25,1,.35,1),
+                  width .45s cubic-bezier(.25,1,.35,1),
+                  background .25s ease,
+                  backdrop-filter .25s ease,
+                  -webkit-backdrop-filter .25s ease,
+                  border-color .25s ease,
+                  box-shadow .25s ease;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border: 1.5px solid rgba(255,255,255,.5);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    .dock-indicator.sliding::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.08) 40%,
+        transparent 65%);
+      pointer-events: none;
+    }
+    .dock-indicator.sliding::after { display: none; }
+    [data-theme="light"] .dock-indicator.moving {
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.72) 0%,
+        rgba(255,255,255,.50) 45%,
+        rgba(255,255,255,.58) 100%);
+      border-color: rgba(255,255,255,.9);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.12),
+        inset 0 1px 0 rgba(255,255,255,.95),
+        inset 0 -1px 0 rgba(0,0,0,.06),
+        0 0 18px rgba(255,255,255,.3);
+    }
+    /* 长按放大时的 Q 弹跳入动效 */
+    @keyframes dockPopIn {
+      0%   { transform: scale(1); opacity: 1; }
+      45%  { transform: scale(1.3, 1.55); opacity: .35; }
+      75%  { transform: scale(1.14, 1.34); opacity: .45; }
+      100% { transform: scale(1.2, 1.42); opacity: .42; }
+    }
+    .dock-indicator.pop-in { animation: dockPopIn .4s cubic-bezier(.34,1.56,.64,1); }
+    /* 拖拽结束：自然缩小一点再回弹 */
+    @keyframes dockSettle {
+      0%   { transform: scale(1.2, 1.42); opacity: .42; }
+      45%  { transform: scale(.95); opacity: 1; }
+      75%  { transform: scale(1.02); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .dock-indicator.settle { animation: dockSettle .45s cubic-bezier(.34,1.56,.64,1); }
+    [data-theme="light"] .dock-indicator {
+      /* 静止状态：纯灰色胶囊背景，没有玻璃、没有白色高光边缘圈 */
+      background: rgba(120,120,120,.55);
+      border-color: transparent;
+      box-shadow: none;
+    }
+    [data-theme="light"] .dock-indicator.moving {
+      /* 移动/放大状态：玻璃态+高光 */
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      border-color: rgba(255,255,255,.5);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    [data-theme="light"] .dock-indicator.sliding {
+      /* 滚动时：玻璃态+高光，不变大 */
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      border-color: rgba(255,255,255,.5);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
     }
     [data-theme="dark"] .dock-indicator {
-      background: rgba(255,255,255,.14);
-      border-color: rgba(255,255,255,.24);
+      /* 静止状态：纯灰色胶囊背景，没有玻璃、没有白色高光边缘圈 */
+      background: rgba(120,120,120,.55);
+      border-color: transparent;
+      box-shadow: none;
+    }
+    [data-theme="dark"] .dock-indicator.moving {
+      /* 移动/放大状态：玻璃态+高光 */
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      border-color: rgba(255,255,255,.5);
       box-shadow:
-        0 3px 12px rgba(0,0,0,.20),
-        inset 0 1px 0 rgba(255,255,255,.26),
-        inset 0 -1px 0 rgba(0,0,0,.12);
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
+    }
+    [data-theme="dark"] .dock-indicator.sliding {
+      /* 滚动时：玻璃态+高光，不变大 */
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.35) 0%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.22) 100%);
+      border-color: rgba(255,255,255,.5);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.55);
     }
     .dock::-webkit-scrollbar { display: none; }
     /* 浅色模式：dock 要有可见的毛玻璃底，不能透明到看不见 */
@@ -2162,7 +2340,7 @@ var(--glass-bg);
       </div>
       <div class="settings-input-row">
         <div class="secret-input-wrap">
-          <input type="password" class="secret-input" id="secretInput" placeholder="输入密钥进入调试菜单" autocomplete="off" spellcheck="false">
+          <input type="password" class="secret-input" id="secretInput" placeholder="输入团队密钥进入内部人员中心" autocomplete="off" spellcheck="false">
           <button class="secret-eye" id="secretEye" type="button" aria-label="显示或隐藏输入" tabindex="-1">
             <svg id="eyeOpen" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg id="eyeOff" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
@@ -2315,11 +2493,57 @@ var(--glass-bg);
       var indicator = document.getElementById("dockIndicator");
       var _jumping = false;
       var _settleTimer = null;
+      var _moveTimer = null;
+      var _shapeTimer = null;
+      var _moveTrackId = null;
+      var _activeFrameCount = 0;
       function moveIndicator(el) {
         if (!indicator || !el) return;
         indicator.style.left = el.offsetLeft + "px";
         indicator.style.width = el.offsetWidth + "px";
         indicator.classList.add("ready");
+      }
+      /* 根据选择框当前位置实时更新文字选中态（节流：每2帧更新一次） */
+      function updateActiveByIndicator() {
+        _activeFrameCount++;
+        if (_activeFrameCount % 2 !== 0) return;
+        if (!indicator || !indicator.classList.contains("ready")) return;
+        var indicatorRect = indicator.getBoundingClientRect();
+        var indicatorCenter = indicatorRect.left + indicatorRect.width / 2;
+        var target = null;
+        var minDist = Infinity;
+        map.forEach(function (it) {
+          var r = it.getBoundingClientRect();
+          var itemCenter = r.left + r.width / 2;
+          var dist = Math.abs(indicatorCenter - itemCenter);
+          if (dist < minDist) { minDist = dist; target = it; }
+        });
+        if (target) {
+          map.forEach(function (it) { it.classList.toggle("active", it === target); });
+        }
+      }
+      /* 点击移动时，用 rAF 轮询选择框位置，实时更新文字状态 */
+      function startMoveTracking() {
+        if (_moveTrackId) cancelAnimationFrame(_moveTrackId);
+        var start = performance.now();
+        function track() {
+          updateActiveByIndicator();
+          if (performance.now() - start < 500) {
+            _moveTrackId = requestAnimationFrame(track);
+          } else {
+            _moveTrackId = null;
+          }
+        }
+        _moveTrackId = requestAnimationFrame(track);
+      }
+      /* 只有点击 dock 栏时才触发变大透明的移动反馈 */
+      function pulseIndicator() {
+        if (!indicator) return;
+        indicator.classList.add("moving");
+        if (_moveTimer) clearTimeout(_moveTimer);
+        _moveTimer = setTimeout(function () {
+          indicator.classList.remove("moving");
+        }, 520);
       }
       function setActive(id) {
         var cur = null;
@@ -2337,16 +2561,241 @@ var(--glass-bg);
         indicator.classList.add("bounce");
       }
       if (indicator) {
-        indicator.addEventListener("animationend", function () { indicator.classList.remove("bounce"); });
+        indicator.addEventListener("animationend", function () {
+          indicator.classList.remove("bounce");
+          indicator.classList.remove("settle");
+          indicator.classList.remove("pop-in");
+        });
+      }
+      /* 长按拖拽：长按当前选中项后可拖动选择框到其他模块 */
+      var _drag = {
+        active: false,
+        longPressed: false,
+        timer: null,
+        currentTarget: null,
+        lastX: 0,
+        lastPointX: 0,
+        velocity: 0,
+        direction: 0,
+        rafId: null,
+        startX: 0,
+        startLeft: 0,
+        targetLeft: 0,
+        currentLeft: 0,
+        releaseVelocity: 0,
+        releaseDirection: 0
+      };
+      function _dragStart(e) {
+        var it = e.currentTarget;
+        if (!it.classList.contains("active")) return;
+        var point = e.touches ? e.touches[0] : e;
+        _drag.longPressed = false;
+        _drag.currentTarget = null;
+        _drag.lastX = point.clientX;
+        _drag.lastPointX = point.clientX;
+        _drag.velocity = 0;
+        _drag.direction = 0;
+        _drag.releaseVelocity = 0;
+        _drag.releaseDirection = 0;
+        _drag.timer = setTimeout(function () {
+          _drag.longPressed = true;
+          _drag.active = true;
+          indicator.classList.add("moving");
+          /* 长按放大时的 Q 弹跳入动效 */
+          indicator.classList.remove("pop-in");
+          void indicator.offsetWidth;
+          indicator.classList.add("pop-in");
+          document.body.style.userSelect = "none";
+          if (navigator.vibrate) navigator.vibrate(15);
+          /* 记录自由滑动的起始位置 */
+          _drag.startX = point.clientX;
+          _drag.startLeft = indicator.offsetLeft;
+          _drag.targetLeft = indicator.offsetLeft;
+          _drag.currentLeft = indicator.offsetLeft;
+          /* 启动丝滑滑动 rAF 循环 */
+          if (!_drag.rafId) {
+            _drag.rafId = requestAnimationFrame(updateDragFrame);
+          }
+        }, 280);
+      }
+      function _dragMove(e) {
+        if (!_drag.active) return;
+        e.preventDefault();
+        var point = e.touches ? e.touches[0] : e;
+        /* 自由滑动：记录目标位置，由 rAF 循环平滑插值 */
+        var deltaX = point.clientX - _drag.startX;
+        var newLeft = _drag.startLeft + deltaX;
+        var dockRect = dock.getBoundingClientRect();
+        var indicatorWidth = indicator.offsetWidth;
+        var maxLeft = dockRect.width - indicatorWidth;
+        newLeft = Math.max(0, Math.min(maxLeft, newLeft));
+        /* 磁铁吸引：模块会轻微吸着选择框，到达临界点后放开 */
+        var indicatorCenter = newLeft + indicatorWidth / 2;
+        var nearestItem = null;
+        var nearestDist = Infinity;
+        var nearestCenter = 0;
+        map.forEach(function (it) {
+          var r = it.getBoundingClientRect();
+          var itemCenter = r.left - dockRect.left + r.width / 2;
+          var dist = Math.abs(indicatorCenter - itemCenter);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestItem = it;
+            nearestCenter = itemCenter;
+          }
+        });
+        /* 磁力范围：模块宽度的 0.45 倍，超过就放开 */
+        if (nearestItem && nearestDist < nearestItem.offsetWidth * 0.45) {
+          var attractStrength = 0.32;
+          var targetLeft = nearestCenter - indicatorWidth / 2;
+          newLeft = newLeft + (targetLeft - newLeft) * attractStrength;
+        }
+        _drag.targetLeft = newLeft;
+        /* 拖拽过程中文字实时变化 */
+        updateActiveByIndicator();
+        /* 计算移动速度 */
+        var dx = point.clientX - _drag.lastX;
+        _drag.lastX = point.clientX;
+        _drag.lastPointX = point.clientX;
+        if (Math.abs(dx) > 0.5) {
+          _drag.velocity = Math.abs(dx);
+          _drag.direction = dx > 0 ? 1 : -1;
+          /* 记录松手瞬间的速度，用于惯性滑动（不被 rAF 衰减影响） */
+          _drag.releaseVelocity = Math.abs(dx);
+          _drag.releaseDirection = dx > 0 ? 1 : -1;
+        }
+      }
+      /* rAF 丝滑滑动循环：位置平滑插值 + transform 更新合并到同一帧 */
+      function updateDragFrame() {
+        _drag.rafId = null;
+        if (!_drag.active && _drag.velocity <= 0.3) {
+          indicator.style.transform = '';
+          indicator.style.transformOrigin = '';
+          return;
+        }
+        /* 位置直接跟随目标位置，完全跟手 */
+        _drag.currentLeft = _drag.targetLeft;
+        indicator.style.left = _drag.currentLeft + 'px';
+        /* 边缘挤压 + Q 弹拉伸 */
+        var dockRect = dock.getBoundingClientRect();
+        var overLeft = Math.max(0, dockRect.left - _drag.lastPointX);
+        var overRight = Math.max(0, _drag.lastPointX - dockRect.right);
+        if (overLeft > 5 || overRight > 5) {
+          /* 边缘挤压：果冻挤压变形，面积不变 */
+          var over = overLeft + overRight;
+          var squeeze = Math.min(0.04, over * 0.001);
+          var offset = Math.min(5, over * 0.05);
+          var dir = overRight > overLeft ? 1 : -1;
+          indicator.style.transformOrigin = 'center';
+          indicator.style.transform = 'scale(1.28, 1.5) scaleX(' + (1 + squeeze) + ') scaleY(' + (1 - squeeze * 0.8) + ') translateX(' + (dir * offset) + 'px)';
+        } else if (_drag.velocity > 1.5) {
+          /* 移动时的 Q 弹拉伸：速度越快拉伸越明显 */
+          var stretch = Math.min(0.05, _drag.velocity * 0.006);
+          var scaleY = 1 - stretch * 0.6;
+          var moveOffset = _drag.direction * Math.min(4, _drag.velocity * 0.04);
+          indicator.style.transformOrigin = 'center';
+          indicator.style.transform = 'scale(1.28, 1.5) scaleX(' + (1 + stretch) + ') scaleY(' + scaleY + ') translateX(' + moveOffset + 'px)';
+        } else {
+          indicator.style.transform = 'scale(1.28, 1.5)';
+          indicator.style.transformOrigin = 'center';
+        }
+        /* 速度衰减 */
+        _drag.velocity *= 0.82;
+        /* 持续更新直到速度归零或拖拽结束 */
+        if (_drag.active || _drag.velocity > 0.3 || overLeft > 5 || overRight > 5) {
+          _drag.rafId = requestAnimationFrame(updateDragFrame);
+        } else {
+          indicator.style.transform = '';
+          indicator.style.transformOrigin = '';
+        }
+      }
+      function _dragEnd(e) {
+        if (_drag.timer) { clearTimeout(_drag.timer); _drag.timer = null; }
+        if (!_drag.active) return;
+        if (e) e.preventDefault();
+        _drag.active = false;
+        document.body.style.userSelect = "";
+        /* 停止丝滑滑动 rAF 循环，清除 inline transform */
+        if (_drag.rafId) {
+          cancelAnimationFrame(_drag.rafId);
+          _drag.rafId = null;
+        }
+        indicator.style.transform = '';
+        indicator.style.transformOrigin = '';
+        /* 松手时根据滑动方向和速度计算惯性距离，速度越大滑得越远 */
+        /* 使用松手瞬间的速度，不被 rAF 衰减影响 */
+        var releaseVel = _drag.releaseVelocity || 0;
+        var releaseDir = _drag.releaseDirection || _drag.direction || 0;
+        var indicatorCenter = indicator.offsetLeft + indicator.offsetWidth / 2;
+        var dockRect = dock.getBoundingClientRect();
+        var target = null;
+        /* 惯性系数：速度越大，惯性距离越大，跳过的模块越多 */
+        var inertiaFactor = 8;
+        var targetCenter = indicatorCenter + (releaseVel * releaseDir * inertiaFactor);
+        /* 找到离目标位置最近的模块 */
+        var minDist = Infinity;
+        map.forEach(function (it) {
+          var r = it.getBoundingClientRect();
+          var itemCenter = r.left - dockRect.left + r.width / 2;
+          var dist = Math.abs(targetCenter - itemCenter);
+          if (dist < minDist) { minDist = dist; target = it; }
+        });
+        if (target) {
+          moveIndicator(target);
+          map.forEach(function (it) { it.classList.toggle("active", it === target); });
+          var id = target.getAttribute("data-target");
+          _jumping = true;
+          clearTimeout(_settleTimer);
+          setActive(id);
+          var el = document.querySelector(id);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          /* 拖拽结束：Q弹缩小-回弹 */
+          indicator.classList.remove("moving");
+          indicator.classList.remove("settle");
+          void indicator.offsetWidth;
+          indicator.classList.add("settle");
+        } else {
+          indicator.classList.remove("moving");
+        }
+        _drag.currentTarget = null;
       }
       map.forEach(function (it) {
+        it.addEventListener("touchstart", _dragStart, { passive: true });
+        it.addEventListener("mousedown", _dragStart);
+      });
+      document.addEventListener("touchmove", _dragMove, { passive: false });
+      document.addEventListener("mousemove", _dragMove);
+      document.addEventListener("touchend", _dragEnd);
+      document.addEventListener("mouseup", _dragEnd);
+      map.forEach(function (it) {
         it.addEventListener("click", function (e) {
+          if (_drag.longPressed) {
+            _drag.longPressed = false;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
           e.preventDefault();
           _jumping = true;
           clearTimeout(_settleTimer);
-          var el = document.querySelector(it.getAttribute("data-target"));
+          var targetId = it.getAttribute("data-target");
+          /* 点击跳转时更新当前模块，避免滚动时误判 */
+          _lastSection = targetId;
+          var el = document.querySelector(targetId);
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-          setActive(it.getAttribute("data-target"));
+          /* 移动选择框，文字状态实时跟踪 */
+          moveIndicator(it);
+          startMoveTracking();
+          /* 形变滑动：选中框先变圆，滑动后恢复胶囊 */
+          indicator.classList.remove("shape-shift");
+          void indicator.offsetWidth;
+          indicator.classList.add("shape-shift");
+          clearTimeout(_shapeTimer);
+          _shapeTimer = setTimeout(function () {
+            indicator.classList.remove("shape-shift");
+          }, 380);
+          /* 普通点击：点击弹性反馈 + 变为玻璃态 */
+          pulseIndicator();
           bounceIndicator();
         });
       });
@@ -2354,6 +2803,7 @@ var(--glass-bg);
         return document.querySelector(it.getAttribute("data-target"));
       }).filter(Boolean);
       var _st = false;
+      var _lastSection = "";
       function scan() {
         _st = false;
         var y = window.scrollY + window.innerHeight * 0.35;
@@ -2362,17 +2812,32 @@ var(--glass-bg);
           if (sections[i].offsetTop <= y) cur = map[i].getAttribute("data-target");
         }
         setActive(cur);
+        return cur;
       }
       window.addEventListener("scroll", function () {
         /* 点击跳转期间冻结选中框，滚动停止后一次性校正 */
-        if (!_jumping && !_st) { _st = true; requestAnimationFrame(scan); }
+        if (!_jumping && !_st) { 
+          _st = true; 
+          requestAnimationFrame(function () {
+            var cur = scan();
+            /* 只有当网页进入另一模块、选择框需要移动位置时，才变成玻璃态 */
+            if (cur !== _lastSection) {
+              indicator.classList.remove("moving");
+              indicator.classList.add("sliding");
+            }
+            _lastSection = cur;
+          }); 
+        }
         clearTimeout(_settleTimer);
         _settleTimer = setTimeout(function () {
           _jumping = false;
-          scan();
+          var cur = scan();
+          _lastSection = cur;
+          /* 滚动停止后恢复灰底 */
+          indicator.classList.remove("sliding");
         }, 250);
       }, { passive: true });
-      scan();
+      _lastSection = scan();
     }
   })();
   (function () {
@@ -2657,32 +3122,38 @@ var(--glass-bg);
   function initLogIsland() {
     var scroll = changelogModal.querySelector(".changelog-main");
     if (!scroll) return;
-    if (changelogModal._islandIO) { changelogModal._islandIO.disconnect(); changelogModal._islandIO = null; }
-    if (!("IntersectionObserver" in window)) return;
-    var cards = scroll.querySelectorAll(".log-item, .cl-v2");
-    /* 打开弹窗：视口内的直接显示，视口外的先收成胶囊（滚动进入时有展开动画） */
-    var sr = scroll.getBoundingClientRect();
-    cards.forEach(function (c) {
-      var r = c.getBoundingClientRect();
-      c.classList.toggle("island-min", !(r.top < sr.bottom && r.bottom > sr.top));
-    });
-    /* threshold 0 + 上下 8% 收缩带：进入检测带即展开，滚到边缘即收起；
-       不依赖高阈值，慢速滚动也不会丢动画；锁只防像素级快速抖动 */
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var card = en.target;
-        if (card._lock) return;
-        card._lock = true;
-        setTimeout(function () { card._lock = false; }, 250);
-        if (en.isIntersecting) {
-          card.classList.remove("island-min");
-        } else {
-          card.classList.add("island-min");
-        }
+    if (changelogModal._islandIO) { changelogModal._islandIO.disconnect(); changelogModal._islandIO = null; changelogModal._islandIO = undefined; }
+    if (changelogModal._logScroll) { scroll.removeEventListener("scroll", changelogModal._logScroll); changelogModal._logScroll = null; }
+    var cards = [].slice.call(scroll.querySelectorAll(".log-item, .cl-v2"));
+    /* 打开弹窗：所有卡片先缩小成胶囊（准备入场动画） */
+    cards.forEach(function (c) { c.classList.add("island-min"); });
+    /* 滚动定位 + 视口判断，不依赖 IntersectionObserver，移动端也可靠 */
+    function updateVisible() {
+      if (!scroll) return;
+      var vp = scroll.getBoundingClientRect();
+      var vTop = vp.top;
+      var vBottom = vp.bottom;
+      cards.forEach(function (c) {
+        var r = c.getBoundingClientRect();
+        var visible = r.bottom > vTop && r.top < vBottom;
+        c.classList.toggle("island-min", !visible);
       });
-    }, { root: scroll, threshold: 0, rootMargin: "-8% 0px -8% 0px" });
-    cards.forEach(function (c) { c._lock = false; io.observe(c); });
-    changelogModal._islandIO = io;
+    }
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        updateVisible();
+        ticking = false;
+      });
+    }
+    scroll.addEventListener("scroll", onScroll, { passive: true });
+    changelogModal._logScroll = onScroll;
+    /* 首帧：先全部缩小，下一帧再展开视口内的卡片，形成入场动画 */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(updateVisible);
+    });
   }
   var settingsModal = document.getElementById("settingsModal");
   /* 灵动岛：移动端从 dock 设置按钮放大展开，桌面端从导航栏设置图标放大展开 */
@@ -2803,12 +3274,43 @@ var(--glass-bg);
       }
     });
   }
-  /* 预留：密钥校验入口，后续按密钥解锁调试菜单 */
+  /* 团队成员密钥映射：密钥 -> 成员ID */
+  var memberKeys = {
+    "yacc-lzw": "lizhengwei",
+    "yacc-wpy": "wangpeiyu",
+    "yacc-zrx": "zhangruixuan",
+    "yacc-csy": "chushiying",
+    "yacc-hqj": "hanqingjie",
+    "yacc-syc": "songyucheng",
+    "yacc-gyb": "gongyanbo",
+    "yacc-ljc": "lijincan",
+    "yacc-yym": "yuanyiming",
+    "yacc-shm": "shihangming",
+    "yacc-zzc": "zhaozengchen"
+  };
+  /* 预留：密钥校验入口，校验通过后跳转内部人员页面 */
   function handleSecretKey(val) {
-    secretInput.value = "";
-    secretInput.type = "password";
-    secretEye.classList.remove("show");
-    /* TODO: 校验密钥后出现调试菜单 */
+    var userId = memberKeys[val.toLowerCase()];
+    if (userId) {
+      /* 密钥正确，跳转内部人员页面 */
+      secretInput.value = "";
+      secretInput.type = "password";
+      secretEye.classList.remove("show");
+      closeSettings();
+      setTimeout(function () {
+        window.location.href = "internal.html?user=" + userId;
+      }, 300);
+    } else {
+      /* 密钥错误，抖动提示 */
+      secretInput.style.animation = "none";
+      secretInput.offsetHeight;
+      secretInput.style.animation = "shake .4s ease";
+      secretInput.value = "";
+      secretInput.placeholder = "密钥错误，请重新输入";
+      setTimeout(function () {
+        secretInput.placeholder = "输入团队密钥进入内部人员中心";
+      }, 2000);
+    }
   }
   function openChangelog() {
     renderChangelog("__all__");
@@ -2855,15 +3357,26 @@ var(--glass-bg);
   if (logDragHandle) {
     var _logDrag = null;
     function _logDragEnd() { _logDrag = null; if (logDragHandle) logDragHandle.classList.remove("dragging"); }
+    /* 预测用户退出意图：滑动距离大或速度快就关闭 */
+    function _checkLogSwipe(dy, velocity) {
+      var distThreshold = 55;
+      var velThreshold = 0.35;
+      return dy < -distThreshold || (dy < -20 && velocity < -velThreshold);
+    }
     logDragHandle.addEventListener("touchstart", function (e) {
       if (changelogModal.hidden) return;
-      _logDrag = { y: e.touches[0].clientY };
+      _logDrag = { y: e.touches[0].clientY, t: Date.now(), lastY: e.touches[0].clientY, lastT: Date.now() };
       logDragHandle.classList.add("dragging");
     }, { passive: true });
     logDragHandle.addEventListener("touchmove", function (e) {
       if (!_logDrag) return;
+      var now = Date.now();
       var dy = e.touches[0].clientY - _logDrag.y;
-      if (dy < -28) {
+      var dt = now - _logDrag.lastT;
+      var velocity = dt > 0 ? (e.touches[0].clientY - _logDrag.lastY) / dt : 0;
+      _logDrag.lastY = e.touches[0].clientY;
+      _logDrag.lastT = now;
+      if (_checkLogSwipe(dy, velocity)) {
         _logDragEnd();
         closeChangelog();
       }
@@ -2872,13 +3385,18 @@ var(--glass-bg);
     logDragHandle.addEventListener("touchcancel", _logDragEnd, { passive: true });
     logDragHandle.addEventListener("mousedown", function (e) {
       if (changelogModal.hidden) return;
-      _logDrag = { y: e.clientY };
+      _logDrag = { y: e.clientY, t: Date.now(), lastY: e.clientY, lastT: Date.now() };
       logDragHandle.classList.add("dragging");
     });
     document.addEventListener("mousemove", function (e) {
       if (!_logDrag) return;
+      var now = Date.now();
       var dy = e.clientY - _logDrag.y;
-      if (dy < -28) {
+      var dt = now - _logDrag.lastT;
+      var velocity = dt > 0 ? (e.clientY - _logDrag.lastY) / dt : 0;
+      _logDrag.lastY = e.clientY;
+      _logDrag.lastT = now;
+      if (_checkLogSwipe(dy, velocity)) {
         _logDragEnd();
         closeChangelog();
       }

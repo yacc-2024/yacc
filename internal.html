@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>YACC 内部人员中心</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%231c1c22'/%3E%3Cpath d='M18 18h9l5 13 5-13h9l-9 20v8h-10v-8z' fill='%23ffd60a'/%3E%3C/svg%3E">
+<style>
+  /* ===== 设计令牌（适配 PhasWer 设计语言） ===== */
+  :root {
+    /* 圆角系统：圆角与元素尺寸成正比 */
+    --radius-sm: 20px;   /* 小元素 */
+    --radius-md: 30px;   /* 中元素 */
+    --radius-lg: 40px;   /* 大元素 */
+    --radius-pill: 9999px; /* 胶囊 */
+
+    /* 阴影系统：接触影 + 环境影双层物理模型 */
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04);
+    --shadow-md: 0 3px 10px rgba(0,0,0,.10), 0 8px 24px rgba(0,0,0,.05);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.10), 0 16px 40px rgba(0,0,0,.06);
+    --shadow-xxl: 0 6px 16px rgba(0,0,0,.12), 0 24px 60px rgba(0,0,0,.06);
+
+    /* 缓动函数 */
+    --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);      /* 吸附：hover / active / scale */
+    --ease-smooth: cubic-bezier(0.2, 0.8, 0.4, 1);   /* 平滑：大幅运动 / 渐入 */
+    --time-fast: .15s;
+    --time-normal: .3s;
+    --time-slow: .8s;
+
+    /* 毛玻璃（深色） */
+    --bg-card: rgba(255,255,255,.07);
+    --bg-card-hover: rgba(255,255,255,.11);
+    --bg-inset: rgba(255,255,255,.045);
+    --bg-inset-hover: rgba(255,255,255,.08);
+    --bg-icon: rgba(255,255,255,.10);
+    --border-glass: 2px solid rgba(255,255,255,.13);
+    --border-strong: 2px solid rgba(255,255,255,.22);
+    --blur: blur(8px) saturate(150%);
+
+    --bg: #0c0c10;
+    --ink: #f5f5f7;
+    --ink-2: rgba(245,245,247,.72);
+    --muted: rgba(245,245,247,.48);
+    --accent: #ffd60a;
+    --accent-soft: rgba(255,214,10,.14);
+    --ok: #30d158;
+    --ok-soft: rgba(48,209,88,.14);
+  }
+  [data-theme="light"] {
+    /* 毛玻璃（浅色，仿 PhasWer 原版白玻璃） */
+    --bg-card: rgba(255,255,255,.55);
+    --bg-card-hover: rgba(255,255,255,.72);
+    --bg-inset: rgba(255,255,255,.35);
+    --bg-inset-hover: rgba(255,255,255,.5);
+    --bg-icon: rgba(255,255,255,.65);
+    --border-glass: 2px solid rgba(255,255,255,.55);
+    --border-strong: 2px solid rgba(255,255,255,.8);
+    --blur: blur(8px) saturate(150%);
+
+    --bg: #f0f0f3;
+    --ink: #333;
+    --ink-2: rgba(51,51,51,.72);
+    --muted: rgba(51,51,51,.5);
+    --accent: #b58900;
+    --accent-soft: rgba(181,137,0,.12);
+    --ok: #248a3d;
+    --ok-soft: rgba(36,138,61,.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 背景：极淡静态渐变，为玻璃提供透感 */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -12%, rgba(255,214,10,.05), transparent 62%),
+      radial-gradient(ellipse 70% 45% at 108% 112%, rgba(120,140,255,.035), transparent 60%);
+  }
+  [data-theme="light"] body::before {
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -12%, rgba(181,137,0,.06), transparent 62%),
+      radial-gradient(ellipse 70% 45% at 108% 112%, rgba(120,140,255,.05), transparent 60%);
+  }
+
+  .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 40px 20px 72px; }
+
+  /* ===== 顶部导航 ===== */
+  .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: var(--radius-pill);
+    background: var(--bg-card); border: var(--border-glass);
+    color: var(--ink-2); font-size: 14px; font-weight: 500; text-decoration: none;
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--time-normal) var(--ease-snap), background var(--time-normal) ease, box-shadow var(--time-normal) ease, color var(--time-normal) ease;
+  }
+  .back-btn svg { width: 14px; height: 14px; opacity: .7; }
+  .back-btn:hover { transform: scale(1.08); background: var(--bg-card-hover); box-shadow: var(--shadow-md); color: var(--ink); }
+  .back-btn:active { transform: scale(.85); }
+  .theme-toggle {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--bg-card); border: var(--border-glass);
+    color: var(--ink); cursor: pointer;
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--time-normal) var(--ease-snap), background var(--time-normal) ease, box-shadow var(--time-normal) ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .theme-toggle svg { width: 19px; height: 19px; }
+  .theme-toggle:hover { transform: scale(1.08); background: var(--bg-card-hover); box-shadow: var(--shadow-md); }
+  .theme-toggle:active { transform: scale(.85); }
+  [data-theme="dark"] .icon-sun { display: none; }
+  [data-theme="light"] .icon-moon { display: none; }
+
+  /* ===== 玻璃卡片 ===== */
+  .card {
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    border: var(--border-glass);
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 24px;
+    transition: box-shadow var(--time-normal) ease, background var(--time-normal) ease, border-color var(--time-normal) ease;
+  }
+  .card:hover { box-shadow: var(--shadow-xxl); }
+
+  /* 渐入动画：translateY + opacity，平滑缓动 */
+  .card { opacity: 0; transform: translateY(40px); transition: opacity var(--time-slow) ease, transform var(--time-slow) var(--ease-smooth), box-shadow var(--time-normal) ease, background var(--time-normal) ease, border-color var(--time-normal) ease; }
+  .card.in { opacity: 1; transform: translateY(0); }
+
+  /* ===== 欢迎卡片 ===== */
+  .welcome-card { position: relative; overflow: hidden; padding: 42px 38px 38px; }
+  .welcome-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 16px; border-radius: var(--radius-pill);
+    background: var(--accent-soft); border: 2px solid rgba(255,214,10,.28);
+    color: var(--accent); font-size: 12px; font-weight: 600; letter-spacing: .08em;
+    margin-bottom: 26px;
+  }
+  .welcome-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .welcome-title { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-bottom: 10px; }
+  .welcome-title .name { background: linear-gradient(135deg, var(--accent), #ff9500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .welcome-sub { font-size: 15px; color: var(--ink-2); margin-bottom: 28px; }
+  .welcome-msg {
+    font-size: 14.5px; color: var(--ink-2); line-height: 1.95;
+    padding: 20px 24px; border-radius: var(--radius-md);
+    background: var(--bg-inset); border: var(--border-glass);
+  }
+
+  /* ===== 模块卡片 ===== */
+  .contrib-card, .work-card { padding: 34px 34px 36px; }
+  .section-title {
+    font-size: 17px; font-weight: 700; letter-spacing: .01em;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+  }
+  .section-title .t-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg-icon); border: var(--border-glass);
+    color: var(--accent);
+  }
+  .section-title .t-icon svg { width: 16px; height: 16px; }
+
+  /* 角色标签 */
+  .role-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  .role-tag {
+    padding: 7px 16px; border-radius: var(--radius-pill);
+    background: var(--bg-inset); border: var(--border-glass);
+    font-size: 13px; font-weight: 500; color: var(--ink-2);
+    transition: transform var(--time-normal) var(--ease-snap), background var(--time-normal) ease, color var(--time-normal) ease;
+  }
+  .role-tag.primary { background: var(--accent-soft); border-color: rgba(255,214,10,.3); color: var(--accent); font-weight: 600; }
+  .role-tag:hover { transform: scale(1.08); background: var(--bg-inset-hover); }
+  .role-tag:active { transform: scale(.85); }
+  .contrib-desc { font-size: 14.5px; color: var(--ink-2); line-height: 1.95; }
+
+  /* ===== 工作栏 ===== */
+  .work-list { display: flex; flex-direction: column; gap: 14px; }
+  .work-item {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 18px 20px; border-radius: var(--radius-md);
+    background: var(--bg-inset); border: var(--border-glass);
+    transition: transform var(--time-normal) var(--ease-snap), background var(--time-normal) ease, box-shadow var(--time-normal) ease, border-color var(--time-normal) ease;
+  }
+  .work-item:hover { transform: translateX(5px); background: var(--bg-inset-hover); border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+  .work-status {
+    flex-shrink: 0; width: 11px; height: 11px; border-radius: 50%;
+    margin-top: 7px;
+  }
+  .work-status.doing { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: pulseSoft 2.4s var(--ease-smooth) infinite; }
+  .work-status.done { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); }
+  .work-status.todo { background: var(--muted); box-shadow: 0 0 0 4px rgba(128,128,128,.08); }
+  @keyframes pulseSoft { 50% { opacity: .55; } }
+  .work-content { flex: 1; }
+  .work-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .work-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .work-date {
+    flex-shrink: 0; font-size: 12px; color: var(--muted);
+    padding: 4px 12px; border-radius: var(--radius-pill);
+    background: var(--bg-card); border: var(--border-glass);
+    margin-top: 2px;
+  }
+
+  .empty-work { text-align: center; padding: 42px 20px; color: var(--muted); font-size: 14px; }
+
+  /* ===== 移动端适配 ===== */
+  @media (max-width: 540px) {
+    .container { padding: 24px 14px 56px; }
+    .welcome-card { padding: 32px 24px 30px; }
+    .welcome-title { font-size: 28px; }
+    .welcome-sub { font-size: 14px; }
+    .welcome-msg { padding: 16px 18px; font-size: 14px; }
+    .contrib-card, .work-card { padding: 28px 22px 30px; }
+    .section-title { font-size: 16px; }
+    .role-tag { padding: 6px 13px; font-size: 12px; }
+    .work-item { padding: 15px 16px; gap: 13px; }
+    .work-title { font-size: 14px; }
+    .work-desc { font-size: 12.5px; }
+    .work-date { font-size: 11px; padding: 3px 9px; }
+    .card { transform: translateY(24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-nav">
+    <a href="index.html" class="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      返回主站
+    </a>
+    <button class="theme-toggle" id="themeToggle" aria-label="切换主题">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+
+  <div class="card welcome-card">
+    <div class="welcome-badge"><span class="dot"></span>YACC 内部人员中心</div>
+    <h1 class="welcome-title">欢迎 <span class="name" id="userName">成员</span></h1>
+    <p class="welcome-sub" id="userSubtitle">进入 YACC 反校园霸凌专项小组内部人员网站</p>
+    <div class="welcome-msg" id="welcomeMsg">
+      感谢你为 YACC 项目做出的贡献！这里是内部工作中心，你可以查看自己的角色分工、贡献记录，以及最新的工作安排。让我们一起把反校园霸凌的故事讲得更好。
+    </div>
+  </div>
+
+  <div class="card contrib-card">
+    <h2 class="section-title">
+      <span class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 14V5M10 21v-9M10 12V3M16 21v-5M16 16V7M22 21v-3M22 18V9"/></svg></span>
+      角色与贡献
+    </h2>
+    <div class="role-tags" id="roleTags"></div>
+    <p class="contrib-desc" id="contribDesc"></p>
+  </div>
+
+  <div class="card work-card">
+    <h2 class="section-title">
+      <span class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2.5V6M16 2.5V6M3 9.5h18"/></svg></span>
+      工作栏
+    </h2>
+    <div class="work-list" id="workList">
+      <div class="empty-work">暂无工作安排，后续会更新</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 团队成员数据
+  var members = {
+    "lizhengwei": {
+      name: "李政为",
+      subtitle: "总导演 · 核心主创",
+      roles: ["总导演", "导演", "编剧", "摄影指导", "录音师", "美术指导", "选角导演", "宣传"],
+      primaryRoles: ["总导演", "导演"],
+      contrib: "作为 YACC 项目的总导演，全面负责反校园霸凌短片的创意方向、拍摄统筹和后期把控。参与编剧、摄影、录音、美术等多个环节，是项目的核心推动者。",
+      works: [
+        { status: "doing", title: "第二季拍摄筹备", desc: "统筹第二季分集剧本、选角和拍摄计划", date: "进行中" },
+        { status: "done", title: "第一季总导演", desc: "完成第一季反校园霸凌短片的全部拍摄与后期", date: "已完成" }
+      ]
+    },
+    "wangpeiyu": {
+      name: "王裴煜",
+      subtitle: "制片人 · 导演 · 剪辑师",
+      roles: ["导演", "编剧", "制片人", "摄影指导", "录音师", "美术指导", "剪辑师", "宣传"],
+      primaryRoles: ["制片人", "剪辑师"],
+      contrib: "身兼制片人、导演、剪辑师数职，负责项目的整体运营、拍摄执行和后期剪辑。是 YACC 项目从创意到成片的关键执行者，同时参与宣传推广工作。",
+      works: [
+        { status: "doing", title: "第二季剪辑准备", desc: "搭建第二季后期剪辑流程和风格设定", date: "进行中" },
+        { status: "done", title: "第一季剪辑", desc: "完成第一季全部后期剪辑与调色", date: "已完成" }
+      ]
+    },
+    "zhangruixuan": {
+      name: "张睿轩",
+      subtitle: "领衔主演 · 编剧",
+      roles: ["编剧", "领衔主演", "摄影指导"],
+      primaryRoles: ["领衔主演"],
+      contrib: "作为领衔主演，在反校园霸凌短片中塑造核心角色，同时参与编剧创作和摄影工作，为项目贡献了出色的表演和创意。",
+      works: [
+        { status: "todo", title: "第二季角色准备", desc: "研读第二季剧本，准备角色塑造", date: "待开始" }
+      ]
+    },
+    "chushiying": {
+      name: "楚世瀛",
+      subtitle: "领衔主演 · 编剧",
+      roles: ["编剧", "领衔主演"],
+      primaryRoles: ["领衔主演"],
+      contrib: "作为领衔主演和编剧，既在镜头前呈现精彩表演，也在剧本创作阶段贡献创意，是项目的重要创作者。",
+      works: [
+        { status: "todo", title: "第二季剧本讨论", desc: "参与第二季分集剧本创作讨论", date: "待开始" }
+      ]
+    },
+    "hanqingjie": {
+      name: "韩庆颉",
+      subtitle: "领衔主演",
+      roles: ["领衔主演"],
+      primaryRoles: ["领衔主演"],
+      contrib: "作为领衔主演，在反校园霸凌主题中扮演重要角色，用表演传递反霸凌的核心信息，是第一季的关键演员。",
+      works: [
+        { status: "todo", title: "第二季参演确认", desc: "确认第二季参演计划和角色安排", date: "待开始" }
+      ]
+    },
+    "songyucheng": {
+      name: "宋禹成",
+      subtitle: "主演 · 摄影指导 · 宣传",
+      roles: ["主演", "摄影指导", "宣传"],
+      primaryRoles: ["摄影指导"],
+      contrib: "同时担任主演和摄影指导，既在台前表演，也在幕后负责影像创作。参与宣传推广工作，是项目的多面手。",
+      works: [
+        { status: "todo", title: "第二季摄影方案", desc: "制定第二季拍摄影像风格和设备方案", date: "待开始" }
+      ]
+    },
+    "gongyanbo": {
+      name: "宫研博",
+      subtitle: "主演 · 摄影指导",
+      roles: ["主演", "摄影指导"],
+      primaryRoles: ["摄影指导"],
+      contrib: "作为主演和摄影指导，参与项目的表演和影像创作，为反校园霸凌短片的视觉呈现做出贡献。",
+      works: [
+        { status: "todo", title: "第二季拍摄协助", desc: "协助第二季拍摄执行和现场调度", date: "待开始" }
+      ]
+    },
+    "lijincan": {
+      name: "李金灿",
+      subtitle: "主演",
+      roles: ["主演"],
+      primaryRoles: ["主演"],
+      contrib: "作为主演参与反校园霸凌短片的拍摄，用表演支持项目的主题表达，是第一季的重要演员之一。",
+      works: [
+        { status: "todo", title: "第二季参演", desc: "确认第二季参演安排", date: "待开始" }
+      ]
+    },
+    "yuanyiming": {
+      name: "元一茗",
+      subtitle: "特别主演 · 主演",
+      roles: ["主演", "特别主演"],
+      primaryRoles: ["特别主演"],
+      contrib: "作为特别主演，在短片中带来精彩的客串表演，为项目增添亮点，同时也是第一季的主演之一。",
+      works: [
+        { status: "todo", title: "第二季特别出演", desc: "安排第二季特别出演场次和角色", date: "待开始" }
+      ]
+    },
+    "shihangming": {
+      name: "史航铭",
+      subtitle: "友情出演 · 主演",
+      roles: ["主演", "友情出演"],
+      primaryRoles: ["友情出演"],
+      contrib: "作为友情出演和主演，支持项目的拍摄工作，用表演为反校园霸凌主题助力，是第一季的参演成员。",
+      works: [
+        { status: "todo", title: "第二季友情出演", desc: "协调第二季友情出演时间安排", date: "待开始" }
+      ]
+    },
+    "zhaozengchen": {
+      name: "赵增宸",
+      subtitle: "摄影指导 · 录音师 · 宣传",
+      roles: ["摄影指导", "录音师", "宣传"],
+      primaryRoles: ["录音师"],
+      contrib: "负责项目的摄影和录音工作，保障现场影像和声音质量。同时参与宣传推广，是项目幕后的重要技术支持者。",
+      works: [
+        { status: "todo", title: "第二季录音方案", desc: "制定第二季现场录音和后期音频方案", date: "待开始" }
+      ]
+    }
+  };
+
+  // 获取 URL 参数
+  function getParam(name) {
+    var params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
+
+  // 初始化页面
+  function initPage() {
+    var userId = getParam("user");
+    var member = members[userId];
+
+    if (!member) {
+      document.getElementById("userName").textContent = "成员";
+      document.getElementById("userSubtitle").textContent = "进入 YACC 内部人员中心";
+      document.getElementById("welcomeMsg").textContent = "未找到成员信息，请通过正确的密钥进入。";
+      document.getElementById("roleTags").innerHTML = '<span class="role-tag">访客</span>';
+      document.getElementById("contribDesc").textContent = "暂无贡献信息。";
+    } else {
+      document.getElementById("userName").textContent = member.name;
+      document.getElementById("userSubtitle").textContent = member.subtitle + " · 进入 YACC 内部人员网站";
+
+      var tagsHtml = "";
+      member.roles.forEach(function(role) {
+        var isPrimary = member.primaryRoles.indexOf(role) !== -1;
+        tagsHtml += '<span class="role-tag' + (isPrimary ? ' primary' : '') + '">' + role + '</span>';
+      });
+      document.getElementById("roleTags").innerHTML = tagsHtml;
+
+      document.getElementById("contribDesc").textContent = member.contrib;
+
+      var workHtml = "";
+      if (member.works && member.works.length > 0) {
+        member.works.forEach(function(work) {
+          workHtml += '<div class="work-item">' +
+            '<div class="work-status ' + work.status + '"></div>' +
+            '<div class="work-content">' +
+              '<div class="work-title">' + work.title + '</div>' +
+              '<div class="work-desc">' + work.desc + '</div>' +
+            '</div>' +
+            '<div class="work-date">' + work.date + '</div>' +
+          '</div>';
+        });
+      } else {
+        workHtml = '<div class="empty-work">暂无工作安排，后续会更新</div>';
+      }
+      document.getElementById("workList").innerHTML = workHtml;
+    }
+
+    // 卡片渐入动画（平滑缓动，依次浮现）
+    var cards = document.querySelectorAll(".card");
+    cards.forEach(function(card, i) {
+      setTimeout(function() { card.classList.add("in"); }, 60 + i * 110);
+    });
+  }
+
+  // 主题切换
+  var themeToggle = document.getElementById("themeToggle");
+  var savedTheme = localStorage.getItem("yacc-theme");
+  if (savedTheme) {
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }
+  themeToggle.addEventListener("click", function() {
+    var current = document.documentElement.getAttribute("data-theme");
+    var next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("yacc-theme", next);
+  });
+
+  initPage();
+</script>
+</body>
+</html>
