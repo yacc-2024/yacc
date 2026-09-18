@@ -1046,10 +1046,12 @@ var(--glass-bg);
   .modal-card::-webkit-scrollbar { width: 6px; }
   .modal-card::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
   .modal-card::-webkit-scrollbar-track { background: transparent; }
-  [data-theme="dark"] #changelogModal .changelog-title { color: #1E1D1A; }
-  [data-theme="dark"] #changelogModal .log-item:not(.log-item--major) .log-title { color: #1E1D1A; }
-  [data-theme="dark"] #changelogModal .log-date { color: #6B675E; }
-  [data-theme="dark"] #changelogModal .log-desc { color: #3D3B34; }
+  [data-theme="dark"] #changelogModal .changelog-title { color: var(--ink); }
+  [data-theme="dark"] #changelogModal .log-item:not(.log-item--major) .log-title { color: var(--ink); }
+  [data-theme="dark"] #changelogModal .log-date { color: rgba(245,245,247,.75); font-weight: 500; letter-spacing: .06em; }
+  [data-theme="dark"] #changelogModal .log-desc { color: var(--ink-2); }
+  [data-theme="dark"] #changelogModal .log-ver { color: var(--ink-2); border-color: var(--line); }
+  [data-theme="dark"] #changelogModal .log-badge { color: var(--accent); border-color: rgba(255,214,10,.4); background: rgba(255,214,10,.1); }
   [data-theme="dark"] #changelogModal .log-dot {
     background: #fff; border-color: #1E1D1A;
     box-shadow: 0 0 0 4px rgba(255,255,255,.4);
@@ -2003,16 +2005,17 @@ var(--glass-bg);
     background: rgba(125,125,132,.4);
     cursor: pointer;
     transition: background .3s;
+    overflow: visible;
   }
   .switch-thumb {
-    position: absolute; top: 2.5px; left: 2px;
-    width: 22px; height: 15px; border-radius: 999px;
+    position: absolute; top: 2px; left: 2px;
+    width: 26px; height: 16px; border-radius: 999px;
     background: #fff;
     box-shadow: 0 2px 6px rgba(0,0,0,.28);
     transition: transform .35s cubic-bezier(.34,1.56,.64,1);
   }
   .switch input:checked + .switch-track { background: #34C759; }
-  .switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); }
+  .switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
   /* 水滴胶囊形态：原地变大变透明 → 快速滑动 → 终点缩小，全程胶囊形 */
   .switch-thumb { z-index: 1; }
   .switch-thumb.droplet {
@@ -2027,16 +2030,16 @@ var(--glass-bg);
       0 0 14px rgba(255,255,255,.3);
   }
   @keyframes waterdropOn {
-    0%   { transform: translateX(0) scale(1, 1); }
-    50%  { transform: translateX(6px) scale(1.55, 1.55); }
-    85%  { transform: translateX(20px) scale(1.55, 1.55); }
-    100% { transform: translateX(20px) scale(1, 1); }
+    0%   { transform: translateX(0) scale(1); }
+    40%  { transform: translateX(3px) scale(1.85); }
+    80%  { transform: translateX(16px) scale(1.85); }
+    100% { transform: translateX(16px) scale(1); }
   }
   @keyframes waterdropOff {
-    0%   { transform: translateX(20px) scale(1, 1); }
-    50%  { transform: translateX(14px) scale(1.55, 1.55); }
-    85%  { transform: translateX(0) scale(1.55, 1.55); }
-    100% { transform: translateX(0) scale(1, 1); }
+    0%   { transform: translateX(16px) scale(1); }
+    40%  { transform: translateX(13px) scale(1.85); }
+    80%  { transform: translateX(0) scale(1.85); }
+    100% { transform: translateX(0) scale(1); }
   }
   .settings-more {
     margin-top: 16px; text-align: center;
@@ -2450,7 +2453,9 @@ var(--glass-bg);
     }
   })();
   var _wdSeq = 0;
+  var _skipNextWaterdrop = false;
   function waterdropKnob(input) {
+    if (_skipNextWaterdrop) { _skipNextWaterdrop = false; return; }
     var track = input.parentElement.querySelector(".switch-track");
     var thumb = track ? track.querySelector(".switch-thumb") : null;
     if (!thumb) return;
@@ -2463,8 +2468,193 @@ var(--glass-bg);
       if (my !== _wdSeq) return;
       thumb.style.animation = "";
       thumb.classList.remove("droplet");
-      thumb.style.transform = input.checked ? "translateX(20px)" : "translateX(0)";
+      thumb.style.transform = input.checked ? "translateX(16px)" : "translateX(0)";
     }, 580);
+  }
+  /* 开关滑动启动：长按放大 + 跟随滑动 + 预测意图 + 震动反馈 */
+  function initSwitchDrag(input) {
+    var track = input.parentElement.querySelector(".switch-track");
+    var thumb = track ? track.querySelector(".switch-thumb") : null;
+    if (!track || !thumb) return;
+
+    var MAX_X = 16; /* 最大滑动距离 */
+    var LONG_PRESS = 260; /* 长按触发时间 */
+    var VIBRATE = 12; /* 震动时长 */
+
+    var state = {
+      pressing: false,
+      dragged: false,
+      enlarged: false,
+      startX: 0,
+      currentX: 0,
+      startTime: 0,
+      velocity: 0,
+      lastX: 0,
+      lastT: 0,
+      timer: null
+    };
+
+    function vibrate() {
+      try { if (navigator.vibrate) navigator.vibrate(VIBRATE); } catch (e) {}
+    }
+
+    function enlarge() {
+      if (state.enlarged) return;
+      state.enlarged = true;
+      thumb.classList.add("droplet");
+      vibrate();
+      setThumb(state.currentX, 1.85);
+    }
+
+    function setThumb(x, scale) {
+      thumb.style.transition = "none";
+      thumb.style.transform = "translateX(" + x + "px)" + (scale ? " scale(" + scale + ")" : "");
+    }
+
+    function getX(e) {
+      if (e.touches && e.touches.length) return e.touches[0].clientX;
+      if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientX;
+      return e.clientX;
+    }
+
+    function onStart(e) {
+      if (input.disabled) return;
+      state.pressing = true;
+      state.dragged = false;
+      state.enlarged = false;
+      state.startX = getX(e);
+      state.currentX = input.checked ? MAX_X : 0;
+      state.lastX = state.startX;
+      state.startTime = Date.now();
+      state.lastT = state.startTime;
+      state.velocity = 0;
+      thumb.style.transition = "none";
+      /* 长按计时器 */
+      state.timer = setTimeout(function () {
+        if (!state.pressing) return;
+        enlarge();
+      }, LONG_PRESS);
+    }
+
+    function onMove(e) {
+      if (!state.pressing) return;
+      var x = getX(e);
+      var dx = x - state.startX;
+      var now = Date.now();
+      var dt = now - state.lastT;
+      if (dt > 0) {
+        state.velocity = (x - state.lastX) / dt; /* px/ms */
+      }
+      state.lastX = x;
+      state.lastT = now;
+
+      if (Math.abs(dx) > 6) state.dragged = true;
+
+      /* 点按滑动超过阈值也触发放大，实现预测效果 */
+      if (!state.enlarged && Math.abs(dx) > 10) {
+        if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+        enlarge();
+      }
+
+      if (state.enlarged) {
+        e.preventDefault();
+        var baseX = input.checked ? MAX_X : 0;
+        var targetX = baseX + dx;
+        /* 限制在 0 - MAX_X 范围内，带边缘阻尼 */
+        if (targetX < 0) targetX = targetX * 0.3;
+        if (targetX > MAX_X) targetX = MAX_X + (targetX - MAX_X) * 0.3;
+        state.currentX = Math.max(-5, Math.min(MAX_X + 5, targetX));
+        setThumb(state.currentX, 1.85);
+      }
+    }
+
+    function onEnd(e) {
+      if (!state.pressing) return;
+      state.pressing = false;
+      if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+
+      if (!state.enlarged) {
+        /* 短按：正常点击切换 */
+        if (!state.dragged) {
+          input.checked = !input.checked;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        return;
+      }
+
+      /* 长按滑动结束：预测意图 */
+      e.preventDefault();
+      var shouldOn;
+      if (Math.abs(state.velocity) > 0.3) {
+        /* 速度快：根据方向预测 */
+        shouldOn = state.velocity > 0;
+      } else {
+        /* 速度慢：根据位置判断（超过一半） */
+        shouldOn = state.currentX > MAX_X / 2;
+      }
+
+      /* 播放水滴动画到目标位置 */
+      thumb.style.transition = "";
+      var my = ++_wdSeq;
+      thumb.classList.add("droplet");
+      thumb.style.animation = "none";
+      void thumb.offsetWidth;
+      /* 自定义动画：从当前位置缩小到目标位置 */
+      var fromX = state.currentX;
+      var toX = shouldOn ? MAX_X : 0;
+      var animName = "switchSettle_" + (shouldOn ? "on" : "off");
+      /* 动态创建 keyframes */
+      var styleId = "switch-settle-kf";
+      var styleEl = document.getElementById(styleId);
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = styleId;
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent =
+        "@keyframes switchSettleOn { 0% { transform: translateX(" + fromX + "px) scale(1.85); } 60% { transform: translateX(" + toX + "px) scale(1.85); } 100% { transform: translateX(" + toX + "px) scale(1); } }" +
+        "@keyframes switchSettleOff { 0% { transform: translateX(" + fromX + "px) scale(1.85); } 60% { transform: translateX(" + toX + "px) scale(1.85); } 100% { transform: translateX(" + toX + "px) scale(1); } }";
+      thumb.style.animation = (shouldOn ? "switchSettleOn" : "switchSettleOff") + " .45s cubic-bezier(.34,1.56,.64,1) forwards";
+
+      if (input.checked !== shouldOn) {
+        input.checked = shouldOn;
+        _skipNextWaterdrop = true;
+        setTimeout(function () {
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }, 50);
+      }
+
+      setTimeout(function () {
+        if (my !== _wdSeq) return;
+        thumb.style.animation = "";
+        thumb.classList.remove("droplet");
+        thumb.style.transform = "translateX(" + toX + "px)";
+      }, 500);
+    }
+
+    /* 绑定事件 */
+    track.addEventListener("mousedown", onStart);
+    track.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchend", onEnd);
+    window.addEventListener("touchcancel", onEnd);
+  }
+  /* 初始化所有开关的滑动功能 */
+  function initAllSwitches() {
+    var switches = document.querySelectorAll(".switch input");
+    switches.forEach(function (sw) {
+      if (!sw._dragInited) {
+        sw._dragInited = true;
+        initSwitchDrag(sw);
+      }
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAllSwitches);
+  } else {
+    initAllSwitches();
   }
   (function () {
     var sw = document.getElementById("glowSwitch");
