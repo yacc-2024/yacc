@@ -21,9 +21,9 @@
     --shadow-sm: 0 2px 8px rgba(20,20,20,.08), 0 4px 12px rgba(20,20,20,.04);
     --shadow-md: 0 3px 10px rgba(20,20,20,.10), 0 8px 24px rgba(20,20,20,.05);
     --shadow-lg: 0 4px 12px rgba(20,20,20,.10), 0 16px 40px rgba(20,20,20,.06);
-    --r-lg: 44px;
-    --r-md: 26px;
-    --r-sm: 18px;
+    --r-lg: 48px;
+    --r-md: 30px;
+    --r-sm: 22px;
     --ease-snap: cubic-bezier(.16,1,.3,1);
     --ease-smooth: cubic-bezier(.2,.8,.4,1);
     --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -973,7 +973,17 @@ var(--glass-bg);
     display: flex; flex-direction: column; gap: 3px;
     align-self: stretch;
     background: rgba(0,0,0,.06);
+    overflow: hidden;
   }
+  .changelog-side-nav {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128,128,128,.35) transparent;
+  }
+  .changelog-side-nav::-webkit-scrollbar { width: 5px; }
+  .changelog-side-nav::-webkit-scrollbar-thumb { background: rgba(128,128,128,.35); border-radius: 999px; }
+  .changelog-side-nav::-webkit-scrollbar-track { background: transparent; }
   [data-theme="dark"] .changelog-side { background: rgba(255,255,255,.09); }
   .changelog-side-title {
     font-size: 10.5px; letter-spacing: .22em; font-weight: 700;
@@ -994,12 +1004,36 @@ var(--glass-bg);
   }
   [data-theme="dark"] .changelog-nav-item.active { background: rgba(255,255,255,.18); }
   .changelog-nav-item:active { transform: scale(.96); }
+  /* 大版本按钮：带展开箭头 */
+  .changelog-nav-item.nav-major { display: flex; align-items: center; gap: 4px; }
+  .changelog-nav-item .nav-arrow {
+    margin-left: auto; flex: none;
+    font-size: 9px; opacity: .55;
+    transition: transform .25s var(--ease-snap);
+  }
+  .changelog-nav-item.nav-major.major-open .nav-arrow { transform: rotate(180deg); }
+  /* 中版本子导航：默认收起，点击大版本展开 */
+  .changelog-nav-sub {
+    display: none;
+    flex-direction: column; gap: 2px;
+    padding-left: 14px;
+    margin: 2px 0 4px;
+  }
+  .changelog-nav-sub.open { display: flex; }
+  .changelog-nav-sub .changelog-nav-item { font-size: 12px; padding: 7px 10px; border-radius: 10px; color: var(--muted); }
+  .changelog-nav-sub .changelog-nav-item.active { color: var(--ink); font-weight: 700; }
   .changelog-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: clamp(28px, 5vw, 44px) clamp(28px, 5vw, 44px) 78px; }
+  @media (max-width: 430px) {
+    /* 窄屏 dock 适配：文字项略收窄，保证设置按钮完整可见，整体仍保持舒展比例 */
+    .dock-item, .dock-pill { padding: 0 14px; }
+  }
   @media (max-width: 480px) {
     /* 移动端日志界面适配 */
     .changelog-side { width: 72px; padding-left: 6px; padding-right: 6px; }
     .changelog-side-title { font-size: 10px; padding: 10px 6px; }
     .changelog-nav-item { font-size: 11px; padding: 7px 6px; }
+    .changelog-nav-sub { padding-left: 10px; }
+    .changelog-nav-sub .changelog-nav-item { font-size: 10.5px; padding: 6px 5px; }
     .changelog-main { padding: 20px 16px 70px; }
     .changelog-title { font-size: 20px; margin-bottom: 16px; }
     .changelog-list { padding-left: 22px; }
@@ -1020,7 +1054,7 @@ var(--glass-bg);
     .cl-v2-flow { margin: 14px 0 12px; }
     .cl-v2-soon { font-size: 11px; }
     /* 日志白条移动端适配 */
-    .log-drag-handle { width: 140px; height: 28px; bottom: 4px; }
+    .log-drag-handle { width: 140px; height: 28px; bottom: 1px; padding-bottom: 3px; }
     .log-drag-handle .drag-bar { width: 110px; height: 4px; }
   }
   /* 灵动岛动效：打开时从顶部小胶囊展开，关闭时缩小上滑消失 */
@@ -1074,13 +1108,16 @@ var(--glass-bg);
     border-radius: var(--r-lg);
     border: 1px solid var(--line);
     background: var(--cl-v2-bg);
-    backdrop-filter: saturate(160%) blur(16px);
-    -webkit-backdrop-filter: saturate(160%) blur(16px);
     box-shadow: 0 18px 50px rgba(20,20,20,.1), inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(255,255,255,.12);
     padding: 26px 28px 22px;
     margin-bottom: 30px;
     transform-origin: 50% 0;
-    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+    /* 更短的过渡时长 + 只过渡 transform/opacity，移动端更流畅 */
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .28s ease;
+  }
+  .cl-v2:not(.island-min) {
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
   }
   .cl-v2::after {
     content: ""; position: absolute; inset: -45%;
@@ -1144,13 +1181,13 @@ var(--glass-bg);
   .changelog-card { position: relative; }
   .log-drag-handle {
     position: absolute; left: 50%;
-    bottom: 6px;
+    bottom: 2px;
     transform: translateX(-50%);
     z-index: 6;
     width: 160px; height: 32px;
     display: none;
     align-items: flex-end; justify-content: center;
-    padding-bottom: 8px;
+    padding-bottom: 4px;
     cursor: grab; touch-action: none;
     background: transparent;
     border: none;
@@ -1176,7 +1213,7 @@ var(--glass-bg);
   .secret-input-wrap {
     position: relative; display: flex; align-items: center;
     border: 1px solid var(--line);
-    border-radius: 16px;
+    border-radius: 999px;
     background: rgba(255,255,255,.1);
     overflow: hidden;
     transition: border-color .2s, box-shadow .2s, background .2s;
@@ -1221,14 +1258,13 @@ var(--glass-bg);
   .log-item {
     position: relative; margin-bottom: 18px;
     background: var(--card-glass);
-    backdrop-filter: saturate(160%) blur(16px);
-    -webkit-backdrop-filter: saturate(160%) blur(16px);
     border: 1px solid var(--card-border);
     border-radius: var(--r-md);
     padding: 16px 20px;
     box-shadow: 0 12px 34px rgba(20,20,20,.05), inset 0 1px 0 rgba(255,255,255,.35);
     transform-origin: 50% 0;
-    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+    /* 更短的过渡时长 + 只过渡 transform/opacity，移动端更流畅 */
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .28s ease;
   }
   /* 日志卡片灵动岛：离开视口缩成小胶囊，进入视口从小胶囊展开；只缩放不折叠布局 */
   .changelog-card .log-item.island-min,
@@ -1237,7 +1273,18 @@ var(--glass-bg);
     opacity: 0;
     pointer-events: none;
     will-change: transform, opacity;
+    /* 收起状态去掉毛玻璃，避免大量卡片同时模糊导致移动端卡顿 */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
+  /* 展开状态恢复毛玻璃时不做模糊过渡，直接切换，避免每帧重绘 */
+  .changelog-card .log-item:not(.island-min),
+  .changelog-card .cl-v2:not(.island-min) {
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
+  }
+  /* 收起状态下停掉 2.0 卡片的旋转高光动画，减少移动端开销 */
+  .changelog-card .cl-v2.island-min::after { animation: none; }
   .log-item:hover {
     transform: translateY(-3px);
     box-shadow: 0 18px 44px rgba(20,20,20,.08), inset 0 1px 0 rgba(255,255,255,.4), 0 0 26px rgba(168,135,63,.08);
@@ -1687,7 +1734,7 @@ var(--glass-bg);
       position: fixed; left: 50%; transform: translateX(-50%);
       bottom: max(14px, env(safe-area-inset-bottom));
       z-index: 120;
-      align-items: center; gap: 8px;
+      align-items: center; gap: 4px;
       max-width: calc(100vw - 20px);
     }
     .dock {
@@ -1699,7 +1746,7 @@ var(--glass-bg);
         rgba(255,255,255,.30) 0%,
         rgba(255,255,255,.16) 55%,
         rgba(255,255,255,.12) 100%);
-      border: 1.5px solid rgba(255,255,255,.30);
+      border: 1px solid rgba(255,255,255,.30);
       box-shadow: 0 12px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.45);
       overflow: visible;
     }
@@ -1902,19 +1949,19 @@ var(--glass-bg);
     /* 浅色模式：dock 要有可见的毛玻璃底，不能透明到看不见 */
     [data-theme="light"] .dock, [data-theme="light"] .dock-pill {
       background: linear-gradient(180deg,
-        rgba(255,255,255,.62) 0%,
-        rgba(255,255,255,.46) 55%,
-        rgba(255,255,255,.40) 100%);
+        rgba(255,255,255,.50) 0%,
+        rgba(255,255,255,.34) 55%,
+        rgba(255,255,255,.28) 100%);
       border-color: rgba(255,255,255,.82);
-      backdrop-filter: blur(18px) saturate(180%);
-      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      backdrop-filter: blur(9px) saturate(160%);
+      -webkit-backdrop-filter: blur(9px) saturate(160%);
       box-shadow: 0 12px 40px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85);
     }
     [data-theme="dark"] .dock, [data-theme="dark"] .dock-pill {
-      background: rgba(26,28,36,.42);
+      background: rgba(26,28,36,.30);
       border-color: rgba(255,255,255,.14);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      backdrop-filter: blur(8px) saturate(160%);
+      -webkit-backdrop-filter: blur(8px) saturate(160%);
       box-shadow: 0 12px 40px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.10);
     }
     .dock-item, .dock-pill {
@@ -1931,13 +1978,19 @@ var(--glass-bg);
     /* 日志/设置胶囊与整个 Dock 容器同高 */
     .dock-pill {
       height: 46px;
-      background: rgba(255,255,255,.20);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background: rgba(255,255,255,.14);
+      backdrop-filter: blur(8px) saturate(160%);
+      -webkit-backdrop-filter: blur(8px) saturate(160%);
       border: 1.5px solid rgba(255,255,255,.30);
       box-shadow: 0 12px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.45);
     }
-    .dock-set { padding: 0 12px; }
+    /* 设置按钮：纯圆形图标按钮 */
+    .dock-set {
+      width: 46px; height: 46px;
+      padding: 0;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
     /* hover 仅在支持鼠标悬停的设备生效：触屏点击后 :hover 会粘滞，导致灰底残留 */
     @media (hover: hover) {
       .dock-item:hover { background: rgba(255,255,255,.2); color: var(--ink); transform: scale(1.05); }
@@ -2326,24 +2379,24 @@ var(--glass-bg);
     <div class="modal-card settings-card">
       <h3 class="settings-title">设置</h3>
       <div class="settings-list">
-        <label class="setting-row" for="themeSwitch">
+        <div class="setting-row">
           <span class="setting-label">深色模式</span>
           <span class="switch">
             <input type="checkbox" id="themeSwitch" aria-label="深浅色模式">
             <span class="switch-track"><span class="switch-thumb"></span></span>
           </span>
-        </label>
-        <label class="setting-row" for="glowSwitch">
+        </div>
+        <div class="setting-row">
           <span class="setting-label">背景光斑</span>
           <span class="switch">
             <input type="checkbox" id="glowSwitch" aria-label="背景光斑">
             <span class="switch-track"><span class="switch-thumb"></span></span>
           </span>
-        </label>
+        </div>
       </div>
       <div class="settings-input-row">
         <div class="secret-input-wrap">
-          <input type="password" class="secret-input" id="secretInput" placeholder="输入团队密钥进入内部人员中心" autocomplete="off" spellcheck="false">
+          <input type="password" class="secret-input" id="secretInput" placeholder="版本调试" autocomplete="off" spellcheck="false">
           <button class="secret-eye" id="secretEye" type="button" aria-label="显示或隐藏输入" tabindex="-1">
             <svg id="eyeOpen" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg id="eyeOff" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
@@ -2478,13 +2531,14 @@ var(--glass-bg);
     if (!track || !thumb) return;
 
     var MAX_X = 16; /* 最大滑动距离 */
-    var LONG_PRESS = 260; /* 长按触发时间 */
+    var LONG_PRESS = 480; /* 长按触发时间（接近 iOS 标准，避免正常点击误触发放大） */
     var VIBRATE = 12; /* 震动时长 */
 
     var state = {
       pressing: false,
       dragged: false,
       enlarged: false,
+      fromTouch: false,
       startX: 0,
       currentX: 0,
       startTime: 0,
@@ -2519,6 +2573,10 @@ var(--glass-bg);
 
     function onStart(e) {
       if (input.disabled) return;
+      /* 移动端触摸后浏览器会模拟鼠标事件，防止 onStart 重复触发导致两次 toggle */
+      var isTouch = e.type === "touchstart";
+      if (!isTouch && state.fromTouch) return;
+      if (isTouch) state.fromTouch = true;
       state.pressing = true;
       state.dragged = false;
       state.enlarged = false;
@@ -2550,12 +2608,7 @@ var(--glass-bg);
 
       if (Math.abs(dx) > 6) state.dragged = true;
 
-      /* 点按滑动超过阈值也触发放大，实现预测效果 */
-      if (!state.enlarged && Math.abs(dx) > 10) {
-        if (state.timer) { clearTimeout(state.timer); state.timer = null; }
-        enlarge();
-      }
-
+      /* 只有长按放大后才跟随滑动；点按滑动不触发放大，统一按点击处理 */
       if (state.enlarged) {
         e.preventDefault();
         var baseX = input.checked ? MAX_X : 0;
@@ -2572,17 +2625,47 @@ var(--glass-bg);
       if (!state.pressing) return;
       state.pressing = false;
       if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+      /* 触摸结束后延迟清除标志，防止浏览器模拟的鼠标事件再次触发 */
+      if (e.type === "touchend" || e.type === "touchcancel") {
+        var _ft = state.fromTouch;
+        setTimeout(function () { if (_ft) state.fromTouch = false; }, 500);
+      }
 
-      if (!state.enlarged) {
-        /* 短按：正常点击切换 */
-        if (!state.dragged) {
+      if (!state.dragged) {
+        if (!state.enlarged) {
+          /* 短按：点击切换状态 */
           input.checked = !input.checked;
           input.dispatchEvent(new Event("change", { bubbles: true }));
+        } else {
+          /* 长按未拖动：保持原状态，回弹到原位 */
+          e.preventDefault();
+          var baseX = input.checked ? MAX_X : 0;
+          var my = ++_wdSeq;
+          thumb.classList.add("droplet");
+          thumb.style.animation = "none";
+          void thumb.offsetWidth;
+          var styleId = "switch-settle-kf";
+          var styleEl = document.getElementById(styleId);
+          if (!styleEl) {
+            styleEl = document.createElement("style");
+            styleEl.id = styleId;
+            document.head.appendChild(styleEl);
+          }
+          styleEl.textContent =
+            "@keyframes switchSettleOn { 0% { transform: translateX(" + state.currentX + "px) scale(1.85); } 100% { transform: translateX(" + baseX + "px) scale(1); } }" +
+            "@keyframes switchSettleOff { 0% { transform: translateX(" + state.currentX + "px) scale(1.85); } 100% { transform: translateX(" + baseX + "px) scale(1); } }";
+          thumb.style.animation = (input.checked ? "switchSettleOn" : "switchSettleOff") + " .35s cubic-bezier(.34,1.56,.64,1) forwards";
+          setTimeout(function () {
+            if (my !== _wdSeq) return;
+            thumb.style.animation = "";
+            thumb.classList.remove("droplet");
+            thumb.style.transform = "translateX(" + baseX + "px)";
+          }, 400);
         }
         return;
       }
 
-      /* 长按滑动结束：预测意图 */
+      /* 长按放大态 + 拖动：预测式决定最终状态 */
       e.preventDefault();
       var shouldOn;
       if (Math.abs(state.velocity) > 0.3) {
@@ -3023,9 +3106,11 @@ var(--glass-bg);
           _jumping = false;
           var cur = scan();
           _lastSection = cur;
-          /* 滚动停止后恢复灰底 */
+          /* 滚动到位后统一恢复静止灰底态：同时清掉滑动玻璃态与放大玻璃态，
+             延迟与 left/width 滑动过渡（.45s）匹配，保证到达位置后才变灰底 */
           indicator.classList.remove("sliding");
-        }, 250);
+          indicator.classList.remove("moving");
+        }, 450);
       }, { passive: true });
       _lastSection = scan();
     }
@@ -3213,6 +3298,7 @@ var(--glass-bg);
     if (e.key === "Escape" && !schoolModal.hidden) closeSchool();
   });
   var CHANGELOG = [
+    { date: "2026.09.27", version: "v2.1.6", title: "界面UI优化", desc: "优化界面UI。修改了移动端日志动画加载卡顿、加载不出来的问题。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.5", title: "更新日志动画优化", desc: "优化了更新日志的动画，优化了导航栏移动的动画，优化了玻璃显示的效果。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.4", title: "设置新增背景光斑开关", desc: "设置内支持开关背景光斑，以满足不同人群观感。加大主页 yacc 字符大小，显示主题。", isMajor: false },
     { date: "2026.09.13", version: "v2.1.3", title: "弹窗玻璃效果修复", desc: "修复移动端设置与日志弹窗在深色模式下无玻璃效果的问题，统一深色模式毛玻璃显示参数。", isMajor: false },
@@ -3255,7 +3341,7 @@ var(--glass-bg);
   }
   function changelogItemHTML(item) {
     if (item.isMajor && item.version.indexOf("v2") === 0) {
-      return '<div class="cl-v2">' +
+      return '<div class="cl-v2" data-version="' + item.version + '">' +
         '<div class="cl-v2-inner">' +
           '<div class="cl-v2-badge"><span class="dot"></span>重大更新</div>' +
           '<div class="log-head"><span class="log-date">' + item.date + '</span><span class="log-ver">' + item.version + '</span></div>' +
@@ -3268,7 +3354,7 @@ var(--glass-bg);
     }
     var major = item.isMajor ? ' log-item--major' : '';
     var badge = item.isMajor ? '<span class="log-badge">重大更新</span>' : '';
-    return '<div class="log-item' + major + '">' +
+    return '<div class="log-item' + major + '" data-version="' + item.version + '">' +
       '<div class="log-dot"></div>' +
       '<div class="log-content">' +
       '<div class="log-head"><span class="log-date">' + item.date + '</span>' +
@@ -3290,24 +3376,93 @@ var(--glass-bg);
     }
     list.innerHTML = items.map(changelogItemHTML).join("");
   }
-  /* 左侧版本导航 */
+  /* 版本号转排序数字：v2.1.5 → 20105 */
+  function versionRank(v) {
+    var parts = (v || "").replace(/^v/i, "").split(".").map(function (s) { return parseInt(s, 10) || 0; });
+    while (parts.length < 3) parts.push(0);
+    return parts[0] * 10000 + parts[1] * 100 + parts[2];
+  }
+  /* 左侧版本导航：两级结构——大版本导航 + 中版本导航，小版本不做导航。
+     默认只显示大版本按钮，点击大版本展开其下的中版本按钮，点击中版本平滑滚动到该系列最新卡片。 */
   function renderChangelogNav() {
     var nav = document.getElementById("changelogNav");
     if (!nav) return;
-    var g = changelogGroups();
-    var html = '<button type="button" class="changelog-nav-item active" data-group="__all__">全部</button>';
-    g.order.forEach(function (k) {
-      html += '<button type="button" class="changelog-nav-item" data-group="' + k + '">' + k + '</button>';
+    var items = CHANGELOG.slice().sort(function (a, b) { return versionRank(b.version) - versionRank(a.version); });
+    /* 大版本分组：v2 / v1 */
+    var majorMap = {};
+    items.forEach(function (it) {
+      var m = (it.version.match(/^v(\d+)/) || [])[1];
+      if (!m) return;
+      (majorMap[m] = majorMap[m] || []).push(it);
+    });
+    var majorKeys = Object.keys(majorMap).sort(function (a, b) { return parseInt(b, 10) - parseInt(a, 10); });
+    var html = '<button type="button" class="changelog-nav-item active" data-prefix="__all__" data-version="__all__">全部</button>';
+    majorKeys.forEach(function (mk) {
+      var list = majorMap[mk];
+      var hasMinor = list.some(function (it) { return /^v\d+\.\d+\.\d+/.test(it.version); });
+      html += '<button type="button" class="changelog-nav-item nav-major" data-prefix="maj:v' + mk + '" data-major="v' + mk + '">v' + mk + '.x<span class="nav-arrow">▾</span></button>';
+      html += '<div class="changelog-nav-sub" data-major-sub="v' + mk + '">';
+      if (hasMinor) {
+        /* 中版本分组：v2.1.x / v2.0.x */
+        var minorMap = {};
+        list.forEach(function (it) {
+          var mm = (it.version.match(/^v\d+\.\d+/) || [])[0];
+          if (!mm) return;
+          (minorMap[mm] = minorMap[mm] || []).push(it);
+        });
+        var minorKeys = Object.keys(minorMap).sort(function (a, b) {
+          return versionRank(b + ".0") - versionRank(a + ".0");
+        });
+        minorKeys.forEach(function (mk2) {
+          var newest = minorMap[mk2][0]; /* 该中版本系列最新卡片（已降序） */
+          html += '<button type="button" class="changelog-nav-item nav-minor" data-prefix="' + mk2 + '" data-version="' + newest.version + '">' + mk2 + '.x</button>';
+        });
+      } else {
+        /* 无中版本（如 v1.x）：中导航里直接放一个滚动入口 */
+        html += '<button type="button" class="changelog-nav-item nav-minor" data-prefix="v' + mk + '" data-version="' + list[0].version + '">v' + mk + '.x</button>';
+      }
+      html += '</div>';
     });
     nav.innerHTML = html;
     nav.onclick = function (e) {
       var b = e.target.closest(".changelog-nav-item");
       if (!b) return;
+      var majorBtn = b.getAttribute("data-major");
+      if (majorBtn !== null) {
+        /* 大版本按钮：展开/收起其下的中版本导航 */
+        var sub = nav.querySelector('[data-major-sub="' + majorBtn + '"]');
+        var wasOpen = sub && sub.classList.contains("open");
+        nav.querySelectorAll(".changelog-nav-sub").forEach(function (s) { s.classList.remove("open"); });
+        nav.querySelectorAll(".nav-major").forEach(function (n) { n.classList.remove("major-open"); });
+        if (!wasOpen && sub) {
+          sub.classList.add("open");
+          b.classList.add("major-open");
+        }
+        /* 同时滚动到大版本最新卡片 */
+        var newest = null;
+        CHANGELOG.forEach(function (it) {
+          if (!newest && it.version.indexOf(majorBtn) === 0) newest = it.version;
+        });
+        if (newest) scrollToVersion(newest);
+        return;
+      }
+      /* 中版本/全部按钮：滚动定位 */
       nav.querySelectorAll(".changelog-nav-item").forEach(function (n) { n.classList.remove("active"); });
       b.classList.add("active");
-      renderChangelog(b.getAttribute("data-group"));
-      initLogIsland();
+      scrollToVersion(b.getAttribute("data-version"));
     };
+  }
+  /* 平滑滚动到指定版本卡片位置；__all__ 回到顶部 */
+  function scrollToVersion(ver) {
+    var main = changelogModal.querySelector(".changelog-main");
+    if (!main) return;
+    if (ver === "__all__") { main.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    var el = main.querySelector('[data-version="' + ver + '"]');
+    if (!el) return;
+    var mr = main.getBoundingClientRect();
+    var er = el.getBoundingClientRect();
+    var top = er.top - mr.top + main.scrollTop - 24;
+    main.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }
   function initLogIsland() {
     var scroll = changelogModal.querySelector(".changelog-main");
@@ -3317,17 +3472,57 @@ var(--glass-bg);
     var cards = [].slice.call(scroll.querySelectorAll(".log-item, .cl-v2"));
     /* 打开弹窗：所有卡片先缩小成胶囊（准备入场动画） */
     cards.forEach(function (c) { c.classList.add("island-min"); });
+    var entering = true; /* 首帧展开时启用错峰延迟，之后滚动不跟手延迟 */
     /* 滚动定位 + 视口判断，不依赖 IntersectionObserver，移动端也可靠 */
     function updateVisible() {
       if (!scroll) return;
       var vp = scroll.getBoundingClientRect();
       var vTop = vp.top;
       var vBottom = vp.bottom;
-      cards.forEach(function (c) {
+      var currentVer = null;
+      cards.forEach(function (c, idx) {
         var r = c.getBoundingClientRect();
         var visible = r.bottom > vTop && r.top < vBottom;
+        var wasMin = c.classList.contains("island-min");
         c.classList.toggle("island-min", !visible);
+        /* 首帧展开：可见卡片按顺序错峰出现；收起或滚动切换时零延迟 */
+        if (entering && visible && wasMin) {
+          c.style.transitionDelay = (idx % 6) * 40 + "ms";
+        } else {
+          c.style.transitionDelay = "";
+        }
+        /* 记录视口内最靠上的版本，用于导航高亮 */
+        if (visible && !currentVer) currentVer = c.getAttribute("data-version") || null;
       });
+      var nav = document.getElementById("changelogNav");
+      if (nav) {
+        var btns = nav.querySelectorAll(".changelog-nav-item");
+        /* 仅可见按钮参与高亮（收起的中版本子项不参与） */
+        function navVisible(n) {
+          var sub = n.closest(".changelog-nav-sub");
+          return !sub || sub.classList.contains("open");
+        }
+        function navPrefixOf(v) {
+          var m = (v || "").match(/^v\d+(\.\d+)?/);
+          return m ? m[0] : "";
+        }
+        var best = "__all__";
+        if (scroll.scrollTop > 2 && currentVer) {
+          var cp = navPrefixOf(currentVer);
+          var exact = null, major = null;
+          var mp = (currentVer.match(/^v\d+/) || [])[0];
+          btns.forEach(function (n) {
+            if (!navVisible(n)) return;
+            var p = n.getAttribute("data-prefix");
+            if (p === cp) exact = p;
+            if (mp && p === "maj:" + mp) major = p;
+          });
+          best = exact || major || null;
+        }
+        btns.forEach(function (n) {
+          n.classList.toggle("active", n.getAttribute("data-prefix") === best);
+        });
+      }
     }
     var ticking = false;
     function onScroll() {
@@ -3342,7 +3537,11 @@ var(--glass-bg);
     changelogModal._logScroll = onScroll;
     /* 首帧：先全部缩小，下一帧再展开视口内的卡片，形成入场动画 */
     requestAnimationFrame(function () {
-      requestAnimationFrame(updateVisible);
+      requestAnimationFrame(function () {
+        updateVisible();
+        /* 展开动画播完后关闭错峰，后续滚动切换零延迟 */
+        setTimeout(function () { entering = false; }, 400);
+      });
     });
   }
   var settingsModal = document.getElementById("settingsModal");
@@ -3498,7 +3697,7 @@ var(--glass-bg);
       secretInput.value = "";
       secretInput.placeholder = "密钥错误，请重新输入";
       setTimeout(function () {
-        secretInput.placeholder = "输入团队密钥进入内部人员中心";
+        secretInput.placeholder = "版本调试";
       }, 2000);
     }
   }
