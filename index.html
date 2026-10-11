@@ -1050,23 +1050,6 @@ var(--glass-bg);
     pointer-events: none;
   }
   .hero .rec, .hero h1, .hero .sub { position: relative; z-index: 2; }
-  /* welcome 背景大字（修改版专属）：低透明度贴在 YACC 大字后方，正式衬线体与手写 YACC 形成对比 */
-  .hero-welcome {
-    position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    font-family: Georgia, "Times New Roman", "Noto Serif SC", serif;
-    font-size: clamp(170px, 46vw, 720px);
-    font-weight: 700;
-    letter-spacing: .12em;
-    line-height: 1;
-    color: var(--ink);
-    opacity: .05;
-    white-space: nowrap;
-    pointer-events: none;
-    user-select: none;
-    z-index: 0;
-  }
-  [data-theme="light"] .hero-welcome { opacity: .06; }
   .hero .rec {
     display: inline-flex; align-items: center; gap: 10px;
     font-size: 12px; letter-spacing: .34em; color: var(--muted);
@@ -1564,7 +1547,8 @@ var(--glass-bg);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     opacity: 0;
-    transition: opacity .3s ease;
+    transition: opacity .4s ease, transform .55s cubic-bezier(.22,.61,.36,1), border-radius .55s ease;
+    will-change: transform, opacity;
   }
   .modal.open .modal-backdrop { opacity: 1; }
   .m-inner {
@@ -2569,6 +2553,19 @@ var(--glass-bg);
       box-shadow: 0 12px 40px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.22);
       overflow: visible;
     }
+    /* WebGL 液态玻璃选中框画布 */
+    #dockLiquidCanvas {
+      position: absolute;
+      top: -28px; bottom: -28px;
+      left: -16px; right: -16px;
+      width: calc(100% + 32px);
+      height: calc(100% + 56px);
+      pointer-events: none;
+      z-index: 0;
+      display: none; /* 纯CSS液态玻璃方案，隐藏WebGL canvas */
+    }
+    .dock-item { position: relative; z-index: 1; }
+    /* 纯CSS液态玻璃：选中框可见 */
     /* 选中滑块：静止时纯灰底，滑动/放大时玻璃+高光+折射 */
     .dock-indicator {
       position: absolute;
@@ -2613,7 +2610,43 @@ var(--glass-bg);
     .dock-indicator.shape-shift {
       transform: scale(0.82, 1.22);
     }
-    /* 移动/长按时：玻璃态+高光（性能优化版） */
+    /* 纯CSS液态玻璃：moving + sliding 共用玻璃视觉 */
+    .dock-indicator.moving,
+    .dock-indicator.sliding {
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.42) 0%,
+        rgba(255,255,255,.18) 45%,
+        rgba(255,255,255,.28) 100%);
+      backdrop-filter: blur(28px) saturate(200%) brightness(1.15);
+      -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.15);
+      border: 1.5px solid rgba(255,255,255,.6);
+      outline: 1.5px solid rgba(255,255,255,.25);
+      outline-offset: -4px;
+      box-shadow:
+        inset 0 1.5px 0 rgba(255,255,255,.8),
+        inset 0 -1.5px 0 rgba(255,255,255,.3),
+        inset 0 3px 14px rgba(0,0,0,.12),
+        inset 0 1px 3px rgba(255,255,255,.25),
+        0 6px 20px rgba(0,0,0,.15),
+        0 2px 6px rgba(0,0,0,.08);
+      filter: contrast(1.12);
+    }
+    /* 渐变延伸层：延伸阴影和高光 */
+    .dock-indicator.moving::before,
+    .dock-indicator.sliding::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,.45) 0%,
+        rgba(255,255,255,.12) 35%,
+        transparent 62%);
+      pointer-events: none;
+    }
+    .dock-indicator.moving::after,
+    .dock-indicator.sliding::after { display: none; }
+    /* moving 特有：放大+快过渡 */
     .dock-indicator.moving {
       transform: scale(1.28, 1.5);
       opacity: .7;
@@ -2621,32 +2654,8 @@ var(--glass-bg);
                   width .3s ease-out,
                   transform .12s cubic-bezier(.25,.46,.45,.94),
                   opacity .2s ease;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
-      /* 简化玻璃：只保留模糊+饱和，去掉对比度和亮度，降低模糊半径 */
-      backdrop-filter: blur(18px) saturate(180%);
-      -webkit-backdrop-filter: blur(18px) saturate(180%);
-      border: 1.5px solid rgba(255,255,255,.5);
-      box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
     }
-    /* 合并高光层：只用一个简单的顶部渐变，去掉径向渐变和边缘折射 */
-    .dock-indicator.moving::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 999px;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.08) 40%,
-        transparent 65%);
-      pointer-events: none;
-    }
-    .dock-indicator.moving::after { display: none; }
-    /* 滚动网页时：只变玻璃态不变大，q弹丝滑滑动 */
+    /* sliding 特有：原大小+丝滑过渡 */
     .dock-indicator.sliding {
       transform: scale(1);
       opacity: 1;
@@ -2657,40 +2666,6 @@ var(--glass-bg);
                   -webkit-backdrop-filter .25s ease,
                   border-color .25s ease,
                   box-shadow .25s ease;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
-      backdrop-filter: blur(18px) saturate(180%);
-      -webkit-backdrop-filter: blur(18px) saturate(180%);
-      border: 1.5px solid rgba(255,255,255,.5);
-      box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
-    }
-    .dock-indicator.sliding::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 999px;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.08) 40%,
-        transparent 65%);
-      pointer-events: none;
-    }
-    .dock-indicator.sliding::after { display: none; }
-    [data-theme="light"] .dock-indicator.moving {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.72) 0%,
-        rgba(255,255,255,.50) 45%,
-        rgba(255,255,255,.58) 100%);
-      border-color: rgba(255,255,255,.9);
-      box-shadow:
-        0 6px 24px rgba(0,0,0,.12),
-        inset 0 1px 0 rgba(255,255,255,.95),
-        inset 0 -1px 0 rgba(0,0,0,.06),
-        0 0 18px rgba(255,255,255,.3);
     }
     /* 长按放大时的 Q 弹跳入动效 */
     @keyframes dockPopIn {
@@ -2709,60 +2684,52 @@ var(--glass-bg);
     }
     .dock-indicator.settle { animation: dockSettle .45s cubic-bezier(.34,1.56,.64,1); }
     [data-theme="light"] .dock-indicator {
-      /* 静止状态：纯灰色胶囊背景，没有玻璃、没有白色高光边缘圈 */
       background: rgba(120,120,120,.55);
       border-color: transparent;
       box-shadow: none;
+      outline: none;
+      filter: none;
     }
-    [data-theme="light"] .dock-indicator.moving {
-      /* 移动/放大状态：玻璃态+高光 */
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
-      border-color: rgba(255,255,255,.5);
-      box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
-    }
+    [data-theme="light"] .dock-indicator.moving,
     [data-theme="light"] .dock-indicator.sliding {
-      /* 滚动时：玻璃态+高光，不变大 */
       background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
-      border-color: rgba(255,255,255,.5);
+        rgba(255,255,255,.82) 0%,
+        rgba(255,255,255,.58) 45%,
+        rgba(255,255,255,.68) 100%);
+      border-color: rgba(255,255,255,.95);
+      outline-color: rgba(255,255,255,.4);
       box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
+        inset 0 1.5px 0 rgba(255,255,255,1),
+        inset 0 -1.5px 0 rgba(255,255,255,.4),
+        inset 0 3px 14px rgba(0,0,0,.08),
+        inset 0 1px 3px rgba(255,255,255,.35),
+        0 6px 20px rgba(0,0,0,.12),
+        0 2px 6px rgba(0,0,0,.06),
+        0 0 24px rgba(255,255,255,.35);
+      filter: contrast(1.12);
     }
     [data-theme="dark"] .dock-indicator {
-      /* 静止状态：纯灰色胶囊背景，没有玻璃、没有白色高光边缘圈 */
       background: rgba(120,120,120,.55);
       border-color: transparent;
       box-shadow: none;
+      outline: none;
+      filter: none;
     }
-    [data-theme="dark"] .dock-indicator.moving {
-      /* 移动/放大状态：玻璃态+高光 */
-      background: linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
-      border-color: rgba(255,255,255,.5);
-      box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
-    }
+    [data-theme="dark"] .dock-indicator.moving,
     [data-theme="dark"] .dock-indicator.sliding {
-      /* 滚动时：玻璃态+高光，不变大 */
       background: linear-gradient(180deg,
         rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.22) 100%);
+        rgba(255,255,255,.14) 45%,
+        rgba(255,255,255,.24) 100%);
       border-color: rgba(255,255,255,.5);
+      outline-color: rgba(255,255,255,.2);
       box-shadow:
-        0 6px 24px rgba(0,0,0,.2),
-        inset 0 1px 0 rgba(255,255,255,.55);
+        inset 0 1.5px 0 rgba(255,255,255,.6),
+        inset 0 -1.5px 0 rgba(255,255,255,.2),
+        inset 0 3px 14px rgba(0,0,0,.28),
+        inset 0 1px 3px rgba(255,255,255,.18),
+        0 6px 20px rgba(0,0,0,.4);
+      filter: contrast(1.08);
     }
     .dock::-webkit-scrollbar { display: none; }
     /* 浅色模式：dock 要有可见的毛玻璃底，不能透明到看不见 */
@@ -3171,7 +3138,6 @@ var(--glass-bg);
       <div class="orb orb-c"></div>
       <div class="hero-grain"></div>
     </div>
-    <div class="hero-welcome" id="heroWelcome" aria-hidden="true">WELCOME</div>
     <div class="hero-glow" id="heroGlow" aria-hidden="true"></div>
     <div class="hero-fade" aria-hidden="true"></div>
     <div class="rec hero-anim hero-float" aria-hidden="true"><span class="dot"></span><span class="dot" style="animation-delay:.45s"></span><span class="dot" style="animation-delay:.9s"></span></div>
@@ -3380,6 +3346,7 @@ var(--glass-bg);
   
   <nav class="mobile-nav" id="mobileNav" aria-label="移动端导航">
     <div class="dock" id="dockNav">
+      <canvas id="dockLiquidCanvas"></canvas>
       <span class="dock-indicator" id="dockIndicator" aria-hidden="true"></span>
       <button class="dock-item active" type="button" data-target="#about">关于</button>
       <button class="dock-item" type="button" data-target="#team">团队</button>
@@ -4213,6 +4180,152 @@ var(--glass-bg);
       _lastSection = scan();
     }
   })();
+  /* ===== Dock 液态玻璃选中框（WebGL） ===== */
+  (function () {
+    var canvas = document.getElementById("dockLiquidCanvas");
+    var indicator = document.getElementById("dockIndicator");
+    if (!canvas || !indicator) return;
+    var gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
+    if (!gl) { canvas.style.display = "none"; return; }
+
+    var VS = "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}";
+    var FS = [
+      "precision highp float;",
+      "uniform vec2 u_res;",
+      "uniform float u_time;",
+      "uniform int u_theme;",
+      "uniform vec4 u_ind;",
+      "uniform float u_moving;",
+      "uniform float u_opacity;",
+      "float sdRB(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return min(max(q.x,q.y),0.)+length(max(q,0.))-r;}",
+      "vec3 bgL(vec2 uv){",
+      "  vec3 c=mix(vec3(.95,.95,.93),vec3(.93,.94,.96),smoothstep(0.,.5,uv.y));",
+      "  c=mix(c,vec3(.96,.94,.91),smoothstep(.5,1.,uv.y));",
+      "  c+=.08*vec3(.4,.5,.9)*exp(-length(uv-vec2(.2,.4))*2.5);",
+      "  c+=.07*vec3(.9,.65,.4)*exp(-length(uv-vec2(.8,.6))*2.5);",
+      "  return c;",
+      "}",
+      "vec3 bgD(vec2 uv){",
+      "  vec3 c=mix(vec3(.07,.08,.11),vec3(.10,.11,.15),smoothstep(0.,.5,uv.y));",
+      "  c=mix(c,vec3(.06,.07,.10),smoothstep(.5,1.,uv.y));",
+      "  c+=.12*vec3(.3,.4,.85)*exp(-length(uv-vec2(.2,.4))*2.2);",
+      "  c+=.10*vec3(.65,.3,.5)*exp(-length(uv-vec2(.8,.6))*2.2);",
+      "  return c;",
+      "}",
+      "void main(){",
+      "  vec2 uv=gl_FragCoord.xy/u_res;",
+      "  vec2 p=(gl_FragCoord.xy-.5*u_res)/u_res.y;",
+      "  float d=sdRB(p-u_ind.xy,u_ind.zw,u_ind.w*.97);",
+      "  if(d>.012){gl_FragColor=vec4(0.);return;}",
+      "  float alpha=smoothstep(.012,-.006,d)*u_opacity;",
+      "  if(u_moving<.5){",
+      "    vec3 gy=u_theme==0?vec3(.46,.46,.50):vec3(.36,.36,.41);",
+      "    gl_FragColor=vec4(gy,alpha*.62);return;",
+      "  }",
+      "  float e=.0012;",
+      "  vec2 g=vec2(sdRB(p+vec2(e,0.0)-u_ind.xy,u_ind.zw,u_ind.w*.97)-d,",
+      "                  sdRB(p+vec2(0.0,e)-u_ind.xy,u_ind.zw,u_ind.w*.97)-d)/e;",
+      "  vec3 n=normalize(vec3(-g,.55));",
+      "  float em=smoothstep(0.,-.014,d);",
+      "  vec2 ruv=uv+n.xy*.08*em;",
+      "  vec3 rbg=u_theme==0?bgL(ruv):bgD(ruv);",
+      "  vec3 tint=u_theme==0?vec3(.95,.96,.98):vec3(.78,.78,.80);",
+      "  vec3 col=u_theme==0?(rbg*.8+tint*.2):(rbg*.72+tint*.28);",
+      "  vec3 ld=normalize(vec3(.35,.75,.55));",
+      "  float sp=pow(max(dot(n,ld),0.),u_theme==0?60.:24.);",
+      "  col+=sp*(u_theme==0?.45:0.);",
+      "  float rim=smoothstep(.006,-.003,d);",
+      "  col+=rim*(u_theme==0?.15:0.);",
+      "  float disp=smoothstep(.005,-.005,d)*(u_theme==0?.12:0.);",
+      "  col.r+=disp*.4;col.b+=disp*.35;",
+      "  gl_FragColor=vec4(col,alpha*(u_theme==0?1.:.82));",
+      "}"
+    ].join("\n");
+
+    function compile(type, src) {
+      var s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.warn("shader error:", gl.getShaderInfoLog(s));
+        canvas.style.background = "rgba(255,200,0,.5)";
+      }
+      return s;
+    }
+    var prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.warn("link error:", gl.getProgramInfoLog(prog));
+      canvas.style.background = "rgba(255,0,0,.5)";
+      return;
+    }
+    gl.useProgram(prog);
+
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    var aLoc = gl.getAttribLocation(prog, "a");
+    gl.enableVertexAttribArray(aLoc);
+    gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+
+    var uRes = gl.getUniformLocation(prog, "u_res");
+    var uTime = gl.getUniformLocation(prog, "u_time");
+    var uTheme = gl.getUniformLocation(prog, "u_theme");
+    var uInd = gl.getUniformLocation(prog, "u_ind");
+    var uMoving = gl.getUniformLocation(prog, "u_moving");
+    var uOpacity = gl.getUniformLocation(prog, "u_opacity");
+
+    function resize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var r = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(r.width * dpr));
+      canvas.height = Math.max(1, Math.round(r.height * dpr));
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    var start = performance.now();
+    function isScaled() {
+      var tr = getComputedStyle(indicator).transform;
+      if (!tr || tr === "none") return false;
+      var m = tr.match(/matrix\(([^)]+)\)/);
+      if (!m) return false;
+      var v = m[1].split(",").map(parseFloat);
+      return Math.abs(v[0]) > 1.06 || Math.abs(v[3]) > 1.06;
+    }
+    function frame() {
+      var t = (performance.now() - start) / 1000;
+      var cr = canvas.getBoundingClientRect();
+      var ir = indicator.getBoundingClientRect();
+      var ch = Math.max(1, cr.height);
+      var ix = (ir.left + ir.width / 2 - cr.left - cr.width / 2) / ch;
+      var iy = -(ir.top + ir.height / 2 - cr.top - cr.height / 2) / ch;
+      var iw = ir.width / ch / 2;
+      var ih = ir.height / ch / 2;
+      var moving = (indicator.classList.contains("moving") ||
+                   indicator.classList.contains("sliding") ||
+                   indicator.classList.contains("bounce") ||
+                   indicator.classList.contains("pop-in") ||
+                   indicator.classList.contains("shape-shift") ||
+                   isScaled()) ? 1 : 0;
+      var ready = indicator.classList.contains("ready") ? 1 : 0;
+      var theme = document.documentElement.getAttribute("data-theme") === "light" ? 0 : 1;
+
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, t);
+      gl.uniform1i(uTheme, theme);
+      gl.uniform4f(uInd, ix, iy, iw, ih);
+      gl.uniform1f(uMoving, moving);
+      gl.uniform1f(uOpacity, ready);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
   (function () {
     var blobs = document.querySelectorAll(".bg-blobs .blob");
     if (!blobs.length) return;
@@ -4357,14 +4470,15 @@ var(--glass-bg);
       _card.style.opacity = "";
       _card.style.willChange = "";
     }
-    /* 记录触发的小卡片，展开/收起时作为灵动岛的起点与落点 */
+    /* 记录触发的小卡片，展开/收起时作为共享元素转场的起点与落点 */
     modal._anchor = card || null;
     modal.hidden = false;
     var mc2 = modal.querySelector(".modal-card");
+    var bd2 = modal.querySelector(".modal-backdrop");
     modal.classList.remove("open");
     var anchor = modal._anchor;
     if (anchor && mc2 && anchor.isConnected) {
-      /* 灵动岛展开：卡片先以触发小卡片的大小出现在其位置，再放大展开到屏幕中央 */
+      /* 共享元素转场：卡片从触发小卡片位置放大展开，背景遮罩同步从卡片中心扩散 */
       var br2 = anchor.getBoundingClientRect();
       var bw = mc2.offsetWidth, bh = mc2.offsetHeight;
       var vw2 = window.innerWidth || document.documentElement.clientWidth;
@@ -4372,14 +4486,31 @@ var(--glass-bg);
       var dx2 = (br2.left + br2.width / 2) - vw2 / 2;
       var dy2 = (br2.top + br2.height / 2) - vh2 / 2;
       var s2 = Math.max(0.05, Math.min(br2.width / bw, br2.height / bh));
+      /* 背景遮罩的扩散原点 = 小卡片中心在视口中的位置（百分比） */
+      var ox = ((br2.left + br2.width / 2) / vw2 * 100).toFixed(2) + "%";
+      var oy = ((br2.top + br2.height / 2) / vh2 * 100).toFixed(2) + "%";
       mc2.style.transition = "none";
       mc2.style.transform = "translate(" + dx2 + "px," + dy2 + "px) scale(" + s2 + ")";
       mc2.style.opacity = "0";
       mc2.style.willChange = "transform, opacity";
+      if (bd2) {
+        bd2.style.transition = "none";
+        bd2.style.transformOrigin = ox + " " + oy;
+        bd2.style.transform = "scale(0.02)";
+        bd2.style.opacity = "0";
+        bd2.style.borderRadius = "50%";
+        bd2.style.willChange = "transform, opacity";
+      }
       void mc2.offsetWidth;
-      mc2.style.transition = "transform .55s cubic-bezier(.34,1.2,.64,1), opacity .32s ease";
+      mc2.style.transition = "transform .55s cubic-bezier(.22,.61,.36,1), opacity .35s ease";
       mc2.style.transform = "translate(0px,0px) scale(1)";
       mc2.style.opacity = "1";
+      if (bd2) {
+        bd2.style.transition = "transform .55s cubic-bezier(.22,.61,.36,1), opacity .4s ease, border-radius .55s ease";
+        bd2.style.transform = "scale(1)";
+        bd2.style.opacity = "1";
+        bd2.style.borderRadius = "0";
+      }
       modal.classList.add("open");
     } else {
       void modal.offsetWidth;
@@ -4389,19 +4520,31 @@ var(--glass-bg);
   }
   function closeModal() {
     var _card = modal.querySelector(".modal-card");
+    var _bd = modal.querySelector(".modal-backdrop");
     var anchor = modal._anchor;
     if (anchor && _card && anchor.isConnected) {
-      /* 灵动岛收起：卡片缩小并飞回触发它的成员小卡片位置 */
+      /* 共享元素转场收起：卡片缩小飞回小卡片位置，背景遮罩同步收缩回卡片中心 */
       var br = anchor.getBoundingClientRect();
       var cr = _card.getBoundingClientRect();
       var dx = (br.left + br.width / 2) - (cr.left + cr.width / 2);
       var dy = (br.top + br.height / 2) - (cr.top + cr.height / 2);
       var s = Math.max(0.05, Math.min(br.width / cr.width, br.height / cr.height));
-      /* 灵动岛收起统一为日志同款速度：快而优雅 */
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var ox = ((br.left + br.width / 2) / vw * 100).toFixed(2) + "%";
+      var oy = ((br.top + br.height / 2) / vh * 100).toFixed(2) + "%";
       _card.style.transition = "transform .5s cubic-bezier(.22,.61,.36,1), opacity .45s ease";
       _card.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + s + ")";
       _card.style.opacity = "0";
       _card.style.willChange = "transform, opacity";
+      if (_bd) {
+        _bd.style.transition = "transform .5s cubic-bezier(.22,.61,.36,1), opacity .45s ease, border-radius .5s ease";
+        _bd.style.transformOrigin = ox + " " + oy;
+        _bd.style.transform = "scale(0.02)";
+        _bd.style.opacity = "0";
+        _bd.style.borderRadius = "50%";
+        _bd.style.willChange = "transform, opacity";
+      }
     }
     modal.classList.add("closing");
     modal.classList.remove("open");
@@ -4415,8 +4558,16 @@ var(--glass-bg);
         _card.style.opacity = "";
         _card.style.willChange = "";
       }
+      if (_bd) {
+        _bd.style.transition = "";
+        _bd.style.transform = "";
+        _bd.style.transformOrigin = "";
+        _bd.style.opacity = "";
+        _bd.style.borderRadius = "";
+        _bd.style.willChange = "";
+      }
       modal._anchor = null;
-    }, 460);
+    }, 520);
     if (modal._timer) clearTimeout(modal._timer);
     modal._timer = t;
   }
@@ -4981,6 +5132,17 @@ var(--glass-bg);
       secretEye.classList.remove("show");
       closeSettings();
       setTimeout(function () { openLocation(); }, 480);
+      return;
+    }
+    /* 调试指令：history-9 —— 跳转 history-9.html 网站 */
+    if (v === "history-9") {
+      secretInput.value = "";
+      secretInput.type = "password";
+      secretEye.classList.remove("show");
+      closeSettings();
+      setTimeout(function () {
+        window.location.href = "history-9.html";
+      }, 300);
       return;
     }
     var userId = memberKeys[v];
