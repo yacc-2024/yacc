@@ -52,8 +52,9 @@ export interface SessionUser {
   uid?: number | null
   name: string
   avatar?: string | null
-  role: 'admin' | 'member' | 'visitor'
+  role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
+  perms?: string[]
 }
 
 export interface ToastItem {
@@ -71,6 +72,8 @@ interface AppContextValue {
   conflict: boolean
   dirty: boolean
   externalChange: boolean
+  kicked: boolean
+  dismissKicked: () => void
   online: boolean
   account: SessionUser | null
   favorites: FavRef[]
@@ -112,6 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [conflict, setConflict] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [externalChange, setExternalChange] = useState(false)
+  const [kicked, setKicked] = useState(false)
   const [networkOnline, setNetworkOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine !== false,
   )
@@ -129,7 +133,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toast = useCallback((message: string, type: 'ok' | 'error' = 'ok') => {
     toastSeq.current += 1
     const id = toastSeq.current
-    setToasts((prev) => [...prev, { id, message, type }])
+    setToasts((prev) => {
+      // 同一条提示不重复堆叠，并且最多同时显示 3 条
+      const deduped = prev.filter((t) => t.message !== message)
+      return [...deduped, { id, message, type }].slice(-3)
+    })
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
     }, 2800)
@@ -263,10 +271,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch {
         /* 忽略 */
       }
-      toast('账号已在别处登录', 'error')
+      setKicked(true)
     })
     return () => setUnauthorizedHandler(null)
   }, [toast])
+
+  /* ---------------- 登录态巡检 ---------------- */
+
+  useEffect(() => {
+    if (mode !== 'online' || !account) return
+    let stopped = false
+
+    const check = async () => {
+      if (stopped) return
+      if (typeof document !== 'undefined' && document.hidden) return
+      try {
+        await api.me()
+      } catch (err) {
+        if (isAuthError(err)) setKicked(true)
+      }
+    }
+
+    const timer = window.setInterval(() => void check(), 20_000)
+    const onVisible = () => {
+      if (!document.hidden) void check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
+    return () => {
+      stopped = true
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [mode, account])
 
   /* ---------------- 网络状态 / 跨标签 ---------------- */
 
@@ -476,6 +515,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setHistory(await listHistory())
   }, [])
 
+  const dismissKicked = useCallback(() => setKicked(false), [])
+
   const reloadExternal = useCallback(async () => {
     await reload()
     setExternalChange(false)
@@ -491,6 +532,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       conflict,
       dirty,
       externalChange,
+      kicked,
+      dismissKicked,
       online: networkOnline,
       account,
       favorites,
@@ -523,6 +566,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       conflict,
       dirty,
       externalChange,
+      kicked,
+      dismissKicked,
       networkOnline,
       account,
       favorites,

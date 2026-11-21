@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow } from '../components/ui'
 import { Icon } from '../components/Icon'
+import { formatUid, uidTitle } from '../lib/uid'
 
 export function Me() {
   const { content, account } = useApp()
@@ -30,19 +31,23 @@ export function Me() {
             </div>
           </div>
           <p className="t-tag faint" style={{ textAlign: 'center', marginTop: 24 }}>
-            认证密钥可以找负责人要
+            用密钥注册后即可评论
           </p>
         </div>
       ) : (
         <div className="page__body">
           <div className="row gap-3" style={{ marginTop: 8, marginBottom: 20 }}>
-            <Avatar name={account.name} src={account.avatar} size={56} />
+            <Link to="/me/settings/profile" aria-label="编辑个人资料">
+              <Avatar name={account.name} src={account.avatar} size={56} />
+            </Link>
             <div className="grow">
               <p className="t-title3">{account.name}</p>
-              <p className="t-caption faint t-num">
-                {account.uid ? `ID ${account.uid} · ` : ''}
-                {account.role === 'admin' ? '管理员' : '认证访客'}
+              <p className="t-caption faint t-num" style={{ marginTop: 2 }}>
+                ID {formatUid(account.uid)}
               </p>
+              <span className="title-chip">
+                {uidTitle(account.uid, account.role, account.verified)}
+              </span>
             </div>
           </div>
 
@@ -53,7 +58,7 @@ export function Me() {
             <ListRow icon="info" title="版本与更新日志" to="/me/version" />
           </div>
 
-          {account.role === 'admin' ? (
+          {account.role === 'admin' || account.role === 'superadmin' ? (
             <Link
               to="/admin"
               className="card--ink"

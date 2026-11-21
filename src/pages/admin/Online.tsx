@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Segmented, EmptyState, useConfirm, Avatar, Sheet } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
-import { api } from '../../lib/api'
+import { api, type AdminPerm } from '../../lib/api'
 import { formatDate } from '../../lib/format'
 import { Icon } from '../../components/Icon'
 
@@ -22,12 +22,21 @@ interface KeyRow {
   expiresAt: string | null
 }
 
-export function KeysAdmin() {
-  const { mode, toast } = useApp()
+const PERM_LABELS: Array<[AdminPerm, string]> = [
+  ['content', '内容编辑'],
+  ['users', '账号管理'],
+  ['keys', '密钥发放'],
+  ['comments', '评论审核'],
+]
+
+export function KeysPanel() {
+  const { mode, toast, account } = useApp()
+  const isSuper = account?.role === 'superadmin'
   const confirm = useConfirm()
   const [keys, setKeys] = useState<KeyRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [kind, setKind] = useState<'crew' | 'member'>('member')
+  const [kind, setKind] = useState<'crew' | 'member' | 'admin'>('member')
+  const [perms, setPerms] = useState<AdminPerm[]>(['content'])
   const [crewRole, setCrewRole] = useState(1)
   const [crewSeason, setCrewSeason] = useState(1)
   const [grade, setGrade] = useState(8)
@@ -59,14 +68,11 @@ export function KeysAdmin() {
 
   if (mode !== 'online') {
     return (
-      <>
-        <NavBar title="密钥管理" back />
-        <EmptyState
-          icon="lock"
-          title="现在是离线模式"
-          desc="密钥管理需要后端服务。启动 API 后再打开这一页。"
-        />
-      </>
+      <EmptyState
+        icon="lock"
+        title="现在是离线模式"
+        desc="密钥管理需要后端服务。"
+      />
     )
   }
 
@@ -74,9 +80,11 @@ export function KeysAdmin() {
     setBusy(true)
     try {
       const spec =
-        kind === 'crew'
-          ? { kind: 'crew' as const, role: crewRole, season: crewSeason }
-          : { kind: 'member' as const, grade, klass }
+        kind === 'admin'
+          ? { kind: 'admin' as const, perms }
+          : kind === 'crew'
+            ? { kind: 'crew' as const, role: crewRole, season: crewSeason }
+            : { kind: 'member' as const, grade, klass }
       const res = await api.admin.createKeys(spec, count, days, note)
       setFresh(res.keys)
       toast(`生成了 ${res.keys.length} 个密钥`)
@@ -116,7 +124,6 @@ export function KeysAdmin() {
 
   return (
     <>
-      <NavBar title="密钥管理" back />
       <DirtyBanner />
       <div className="page__body">
         <p className="t-caption faint" style={{ marginTop: 8, lineHeight: 1.6 }}>
@@ -125,17 +132,43 @@ export function KeysAdmin() {
         </p>
 
         <div className="card" style={{ marginTop: 16 }}>
-          <Segmented<'crew' | 'member'>
+          <Segmented<'crew' | 'member' | 'admin'>
             label="密钥类型"
             value={kind}
             onChange={setKind}
             options={[
               { value: 'member', label: '认证成员' },
               { value: 'crew', label: '剧组成员' },
+              ...(isSuper ? [{ value: 'admin' as const, label: '管理员' }] : []),
             ]}
           />
 
-          {kind === 'crew' ? (
+          {kind === 'admin' ? (
+            <>
+              <p className="field__label" style={{ marginTop: 16 }}>
+                这名管理员可以做什么
+              </p>
+              <div className="chips">
+                {PERM_LABELS.map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="chip"
+                    aria-pressed={perms.includes(value)}
+                    onClick={() =>
+                      setPerms((prev) =>
+                        prev.includes(value)
+                          ? prev.filter((p) => p !== value)
+                          : [...prev, value],
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : kind === 'crew' ? (
             <>
               <p className="field__label" style={{ marginTop: 16 }}>
                 剧组身份（编号第 2 位）
@@ -516,10 +549,11 @@ interface AdminUser {
   role: string
   verified: boolean
   label: string
+  keyCode: string | null
   createdAt: string
 }
 
-export function UsersAdmin() {
+export function UsersPanel() {
   const { mode, toast } = useApp()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -546,19 +580,15 @@ export function UsersAdmin() {
 
   if (mode !== 'online') {
     return (
-      <>
-        <NavBar title="账号管理" back />
-        <EmptyState icon="users" title="现在是离线模式" desc="账号管理需要后端服务。" />
-      </>
+      <EmptyState icon="users" title="现在是离线模式" desc="账号管理需要后端服务。" />
     )
   }
 
   return (
     <>
-      <NavBar title="账号管理" back />
       <div className="page__body">
         <p className="t-caption faint" style={{ marginTop: 8, lineHeight: 1.6 }}>
-          这里是所有注册过的账号。点开可以改昵称、重置密码、取消认证。
+          所有注册过的账号。点开可以改昵称、编号、密码和认证状态。
         </p>
 
         {loading ? (
@@ -586,6 +616,11 @@ export function UsersAdmin() {
                   <span className="list__sub t-num">
                     {u.uid} · {u.label || (u.verified ? '认证访客' : '普通访客')}
                   </span>
+                  {u.keyCode ? (
+                    <span className="t-tag faint" style={{ display: 'block' }}>
+                      密钥 {u.keyCode}
+                    </span>
+                  ) : null}
                 </span>
                 <Icon name="chevron-right" size={18} />
               </button>
@@ -619,6 +654,7 @@ function UserForm({
 }) {
   const { toast } = useApp()
   const [name, setName] = useState(user.name)
+  const [uid, setUid] = useState(user.uid)
   const [password, setPassword] = useState('')
   const [verified, setVerified] = useState(user.verified)
   const [busy, setBusy] = useState(false)
@@ -630,11 +666,16 @@ function UserForm({
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
       if (verified !== user.verified) patch.verified = verified
-      if (Object.keys(patch).length === 0) {
-        onClose()
-        return
+
+      if (uid.trim() && uid.trim() !== user.uid) {
+        const numeric = Number(uid.trim())
+        if (!Number.isInteger(numeric) || numeric < 1 || numeric > 99999) {
+          throw new Error('编号要是 1–99999 的整数')
+        }
+        await api.admin.setUid(user.id, numeric)
       }
-      await api.admin.updateUser(user.id, patch)
+
+      if (Object.keys(patch).length > 0) await api.admin.updateUser(user.id, patch)
       toast('已保存')
       onSaved()
     } catch (err) {
@@ -660,7 +701,19 @@ function UserForm({
         </>
       }
     >
-      <p className="t-caption faint t-num">账号编号 {user.uid}（不会变）</p>
+      <div className="field" style={{ marginTop: 0 }}>
+        <label className="field__label" htmlFor="user-uid">
+          数字编号
+        </label>
+        <input
+          id="user-uid"
+          className="input t-num"
+          value={uid}
+          onChange={(e) => setUid(e.target.value)}
+          inputMode="numeric"
+        />
+        <p className="field__hint">五位编号，改动会影响身份称号。</p>
+      </div>
 
       <div className="field">
         <label className="field__label" htmlFor="user-name">
@@ -698,5 +751,31 @@ function UserForm({
         <span className="t-body">认证访客（可以评论、点赞）</span>
       </label>
     </Sheet>
+  )
+}
+
+
+/* ============================================================
+   账号与密钥（合并页）
+   ============================================================ */
+
+export function AccountsAdmin() {
+  const [tab, setTab] = useState<'users' | 'keys'>('users')
+  return (
+    <>
+      <NavBar title="账号与密钥" back />
+      <div className="page__body">
+        <Segmented<'users' | 'keys'>
+          label="账号与密钥"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'users', label: '账号' },
+            { value: 'keys', label: '密钥' },
+          ]}
+        />
+      </div>
+      {tab === 'users' ? <UsersPanel /> : <KeysPanel />}
+    </>
   )
 }

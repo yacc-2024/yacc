@@ -41,7 +41,7 @@ export function Login() {
   }
 
   const subtitle = useMemo(() => {
-    if (mode === 'admin') return '输入负责人给你的激活码，把这台设备设为管理端。'
+    if (mode === 'admin') return '输入激活口令，把当前设备设为管理端。'
     if (mode === 'register') return '输入认证密钥，成为认证访客。'
     return '用你的账号登录。'
   }, [mode])
@@ -140,15 +140,7 @@ export function Login() {
             管理员激活
           </p>
           <p className="t-caption faint" style={{ marginTop: 6, lineHeight: 1.6 }}>
-            这一页只用于第一次激活。如果管理员已经建好了，
-            <button
-              type="button"
-              className="linklike"
-              style={{ marginLeft: 4 }}
-              onClick={() => switchMode('login')}
-            >
-              直接用账号密码登录
-            </button>
+            这一页用于首次激活管理端。
           </p>
         </>
       )}
@@ -165,7 +157,7 @@ export function Login() {
               value={adminCode}
               onChange={(e) => setAdminCode(e.target.value)}
               autoComplete="off"
-              placeholder="负责人提供"
+              placeholder="激活口令"
             />
           </div>
         ) : null}
@@ -181,10 +173,10 @@ export function Login() {
               value={invite}
               onChange={(e) => setInvite(e.target.value)}
               autoComplete="off"
-              placeholder="向负责人要，形如 YACC-XXXX-XXXX"
+              placeholder="激活账号的密钥"
             />
             <p className="field__hint">
-              没有密钥也能注册，但只是普通访客，只能看，不能评论。
+              没有密钥也能注册，但只能浏览，不能评论。
             </p>
           </div>
         ) : null}
@@ -261,22 +253,7 @@ export function Login() {
         </p>
       ) : null}
 
-      <p className="auth__foot">
-        忘记密码请找负责人重置。
-        {mode !== 'admin' ? (
-          <>
-            <br />
-            <button
-              type="button"
-              className="linklike"
-              style={{ marginTop: 8 }}
-              onClick={() => switchMode('admin')}
-            >
-              我是负责人
-            </button>
-          </>
-        ) : null}
-      </p>
+      <p className="auth__foot">忘记密码请联系管理员重置。</p>
     </div>
   )
 }

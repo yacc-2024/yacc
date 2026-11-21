@@ -5,10 +5,11 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
   useNavigationType,
 } from 'react-router-dom'
 import { useApp } from './state/AppContext'
-import { TabBar, PageSkeleton } from './components/ui'
+import { TabBar, PageSkeleton, Sheet } from './components/ui'
 import { RequireAdmin } from './components/guards'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
@@ -33,7 +34,7 @@ import { HomeEdit, AboutEdit } from './pages/admin/ContentEdit'
 import { MembersAdmin } from './pages/admin/MembersAdmin'
 import { WorksAdmin } from './pages/admin/WorksAdmin'
 import { DataAdmin } from './pages/admin/DataAdmin'
-import { KeysAdmin, CommentsAdmin, UsersAdmin } from './pages/admin/Online'
+import { AccountsAdmin, CommentsAdmin } from './pages/admin/Online'
 import { ChangelogAdmin } from './pages/admin/Changelog'
 
 /** 记住每个历史记录项的滚动位置，返回时还原 */
@@ -115,7 +116,8 @@ function ErrorScreen({ message, onRetry }: { message: string; onRetry: () => voi
 }
 
 export function App() {
-  const { content, loading, error, reload } = useApp()
+  const { content, loading, error, reload, kicked, dismissKicked } = useApp()
+  const navigate = useNavigate()
 
   if (loading && !content) {
     return (
@@ -134,7 +136,8 @@ export function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route element={<TabLayout />}>
         <Route index element={<Home />} />
         <Route path="members" element={<Members />} />
@@ -171,15 +174,47 @@ export function App() {
           path="admin/changelog"
           element={<RequireAdmin><ChangelogAdmin /></RequireAdmin>}
         />
-        <Route path="admin/keys" element={<RequireAdmin><KeysAdmin /></RequireAdmin>} />
+        <Route
+          path="admin/accounts"
+          element={<RequireAdmin><AccountsAdmin /></RequireAdmin>}
+        />
+        <Route path="admin/keys" element={<RequireAdmin><AccountsAdmin /></RequireAdmin>} />
         <Route
           path="admin/comments"
           element={<RequireAdmin><CommentsAdmin /></RequireAdmin>}
         />
-        <Route path="admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
+
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+      </Routes>
+
+      <Sheet
+        open={kicked}
+        title="账号已在别处登录"
+        onClose={dismissKicked}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={dismissKicked}>
+              知道了
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                dismissKicked()
+                navigate('/login')
+              }}
+            >
+              重新登录
+            </button>
+          </>
+        }
+      >
+        <p className="t-body muted">
+          同一个账号只能在一台设备上使用。如果不是你本人操作，建议尽快修改密码。
+        </p>
+      </Sheet>
+    </>
   )
 }

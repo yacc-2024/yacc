@@ -23,14 +23,18 @@ export interface Env {
   adminCode: string
 }
 
+export type AdminPerm = 'content' | 'users' | 'keys' | 'comments'
+
 export interface User {
   id: string
   /** 固定的数字账号 ID，注册后不再变化 */
   uid: number | null
   name: string
   avatar: string | null
-  role: 'admin' | 'member' | 'visitor'
+  role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
+  /** 分管理员的权限；总管理员恒为全部 */
+  perms: AdminPerm[]
 }
 
 interface UserRow {
@@ -38,6 +42,7 @@ interface UserRow {
   uid: number | null
   name: string
   avatar: string | null
+  perms: string | null
   password_hash: string
   salt: string
   role: string
@@ -80,6 +85,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN avatar TEXT',
         'ALTER TABLE users ADD COLUMN signup_ip TEXT',
         'ALTER TABLE activation_keys ADD COLUMN spec TEXT',
+        'ALTER TABLE users ADD COLUMN perms TEXT',
       ]) {
         try {
           await db.prepare(sql).run()
@@ -120,9 +126,35 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
-    role: row.role === 'admin' ? 'admin' : row.role === 'member' ? 'member' : 'visitor',
+    role:
+      row.role === 'superadmin'
+        ? 'superadmin'
+        : row.role === 'admin'
+          ? 'admin'
+          : 'visitor',
     verified: row.verified === 1,
+    perms: parsePerms(row.perms),
   }
+}
+
+const ALL_PERMS: AdminPerm[] = ['content', 'users', 'keys', 'comments']
+
+function parsePerms(raw: string | null | undefined): AdminPerm[] {
+  if (!raw) return []
+  try {
+    const list = JSON.parse(raw)
+    if (!Array.isArray(list)) return []
+    return list.filter((x): x is AdminPerm => ALL_PERMS.includes(x as AdminPerm))
+  } catch {
+    return []
+  }
+}
+
+function can(me: User | null, perm: AdminPerm): boolean {
+  if (!me) return false
+  if (me.role === 'superadmin') return true
+  if (me.role !== 'admin') return false
+  return me.perms.includes(perm)
 }
 
 /**
@@ -299,6 +331,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       let spec: IdSpec = { kind: 'guest' }
       let verified = 0
       let keyRow: KeyRow | null = null
+      let isAdminSignup = false
+      let adminPerms: AdminPerm[] = []
 
       if (key) {
         keyRow = await db
@@ -317,11 +351,22 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         } catch {
           parsed = null
         }
-        spec =
-          normaliseSpec(parsed) ??
-          normaliseSpec({ kind: keyRow.kind === 'member' ? 'crew' : 'member', grade: 0, klass: 0 }) ??
-          { kind: 'member', grade: 0, klass: 0 }
-        verified = 1
+        const adminSpec = parsed as { kind?: string; perms?: string[] } | null
+        if (adminSpec?.kind === 'admin') {
+          const perms = (adminSpec.perms ?? []).filter((p): p is AdminPerm =>
+            ALL_PERMS.includes(p as AdminPerm),
+          )
+          adminPerms = perms.length ? perms : ['content']
+          spec = { kind: 'crew', role: 1, season: 9 }
+          verified = 1
+          isAdminSignup = true
+        } else {
+          spec =
+            normaliseSpec(parsed) ??
+            normaliseSpec({ kind: keyRow.kind === 'member' ? 'crew' : 'member', grade: 0, klass: 0 }) ??
+            { kind: 'member', grade: 0, klass: 0 }
+          verified = 1
+        }
       } else {
         // 普通访客：不用密钥，但同一台设备一天最多 3 个账号
         const ip = clientIp(request)
@@ -346,18 +391,20 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       const salt = randomHex(16)
       const passwordHash = await hashPassword(password, salt)
       const uid = await allocateUid(db, spec)
+      const role = isAdminSignup ? 'admin' : 'visitor'
       const user: User = {
         id: randomHex(8),
         uid,
         name,
         avatar: null,
-        role: 'visitor',
+        role,
         verified: verified === 1,
+        perms: isAdminSignup ? adminPerms : [],
       }
 
       await db
         .prepare(
-          'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at, signup_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO users (id, uid, name, password_hash, salt, role, perms, verified, created_at, signup_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         )
         .bind(
           user.id,
@@ -365,7 +412,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           name,
           passwordHash,
           salt,
-          'visitor',
+          role,
+          isAdminSignup ? JSON.stringify(adminPerms) : null,
           verified,
           nowIso(),
           clientIp(request),
@@ -411,7 +459,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       if (!password) return fail('密码至少 6 位')
 
       const admin = await db
-        .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
+        .prepare("SELECT id FROM users WHERE role IN ('admin', 'superadmin') LIMIT 1")
         .first<{ id: string }>()
       if (admin) return fail('已经存在管理员了，直接用那个账号登录', 409)
 
@@ -423,20 +471,22 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         uid,
         name,
         avatar: null,
-        role: 'admin',
+        role: 'superadmin',
         verified: true,
+        perms: ALL_PERMS,
       }
       await db
         .prepare(
           'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         )
-        .bind(user.id, uid, name, passwordHash, salt, 'admin', 1, nowIso())
+        .bind(user.id, uid, name, passwordHash, salt, 'superadmin', 1, nowIso())
         .run()
 
       // 顺手生成第一批密钥，省得注册完还要再点一次
       const seed = await issueKeys(
         db,
-        { kind: 'crew', role: 1, season: 9 },
+        'crew',
+        JSON.stringify({ kind: 'crew', role: 1, season: 9 }),
         6,
         365,
         '初始认证密钥',
@@ -674,13 +724,20 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
     /* ---------- 管理端 ---------- */
 
-    const isAdmin = me?.role === 'admin'
+    const isAdmin = me?.role === 'admin' || me?.role === 'superadmin'
 
     if (path.startsWith('/admin/') && !isAdmin) {
       return me ? fail('没有权限', 403) : fail('未登录', 401)
     }
 
+    const need = (perm: AdminPerm) => {
+      if (can(me, perm)) return null
+      return fail('没有这个权限', 403)
+    }
+
     if (path === '/admin/publish' && method === 'POST') {
+      const denied = need('content')
+      if (denied) return denied
       const body = await readJson(request)
       if (!body || typeof body.content !== 'object') return fail('请求格式不对')
       const check = validateContent(body.content)
@@ -699,6 +756,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/keys' && method === 'GET') {
+      const denied = need('keys')
+      if (denied) return denied
       const rows = await db
         .prepare(
           `SELECT k.*, u.name AS used_by_name FROM activation_keys k
@@ -722,20 +781,38 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/keys' && method === 'POST') {
+      const denied = need('keys')
+      if (denied) return denied
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
-      const spec =
-        normaliseSpec({
-          kind: body.kind,
-          role: body.role,
-          season: body.season,
-          grade: body.grade,
-          klass: body.klass,
-        }) ?? { kind: 'member', grade: 8, klass: 0 }
+      let kind = 'member'
+      let specJson = ''
+      if (body.kind === 'admin') {
+        if (me!.role !== 'superadmin') return fail('没有权限发放管理员密钥', 403)
+        const perms = Array.isArray(body.perms)
+          ? (body.perms as unknown[]).filter((p): p is AdminPerm =>
+              ALL_PERMS.includes(p as AdminPerm),
+            )
+          : []
+        if (perms.length === 0) return fail('至少要给一项权限')
+        kind = 'admin'
+        specJson = JSON.stringify({ kind: 'admin', perms })
+      } else {
+        const spec =
+          normaliseSpec({
+            kind: body.kind,
+            role: body.role,
+            season: body.season,
+            grade: body.grade,
+            klass: body.klass,
+          }) ?? { kind: 'member', grade: 0, klass: 0 }
+        kind = spec.kind
+        specJson = JSON.stringify(spec)
+      }
       const count = Math.min(50, Math.max(1, Number(body.count) || 1))
       const days = Math.min(365, Math.max(1, Number(body.expiresInDays) || 30))
       const note = typeof body.note === 'string' ? body.note.slice(0, 40) : ''
-      const keys = await issueKeys(db, spec, count, days, note, me!.id)
+      const keys = await issueKeys(db, kind, specJson, count, days, note, me!.id)
       return ok({ keys })
     }
 
@@ -749,6 +826,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/comments' && method === 'GET') {
+      const denied = need('comments')
+      if (denied) return denied
       const status = url.searchParams.get('status') ?? 'pending'
       const rows = await db
         .prepare(
@@ -774,6 +853,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
     const moderate = /^\/admin\/comments\/([a-z0-9]+)$/.exec(path)
     if (moderate && method === 'POST') {
+      const denied = need('comments')
+      if (denied) return denied
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
       const status = String(body.status ?? '')
@@ -786,9 +867,15 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/users' && method === 'GET') {
+      const denied = need('users')
+      if (denied) return denied
       const rows = await db
         .prepare(
-          'SELECT id, uid, name, avatar, role, verified, created_at FROM users ORDER BY uid ASC',
+          `SELECT u.id, u.uid, u.name, u.avatar, u.role, u.verified, u.created_at,
+                  k.code AS key_code
+           FROM users u
+           LEFT JOIN activation_keys k ON k.used_by = u.id
+           ORDER BY u.uid ASC`,
         )
         .all<Record<string, unknown>>()
       return ok({
@@ -800,6 +887,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           role: r.role,
           verified: r.verified === 1,
           label: describeUid(r.uid as number | null).label,
+          keyCode: (r.key_code as string | null) ?? null,
           createdAt: r.created_at,
         })),
       })
@@ -843,7 +931,41 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           .bind(body.verified ? 1 : 0, target.id)
           .run()
       }
+
+      if (Array.isArray(body.perms)) {
+        if (me!.role !== 'superadmin') return fail('只有总管理员能改权限', 403)
+        const perms = (body.perms as unknown[]).filter((p): p is AdminPerm =>
+          ALL_PERMS.includes(p as AdminPerm),
+        )
+        await db
+          .prepare('UPDATE users SET perms = ? WHERE id = ?')
+          .bind(JSON.stringify(perms), target.id)
+          .run()
+      }
       return ok()
+    }
+
+    const changeUid = /^\/admin\/users\/([a-z0-9]+)\/uid$/.exec(path)
+    if (changeUid && method === 'POST') {
+      if (me!.role !== 'superadmin') return fail('只有总管理员能改编号', 403)
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const raw = Number(body.uid)
+      if (!Number.isInteger(raw) || raw < 1 || raw > 99999) {
+        return fail('编号要是 1–99999 的整数')
+      }
+      const taken = await db
+        .prepare('SELECT id FROM users WHERE uid = ? AND id <> ?')
+        .bind(raw, changeUid[1])
+        .first<{ id: string }>()
+      if (taken) return fail('这个编号已经被占用了', 409)
+      const target = await db
+        .prepare('SELECT id FROM users WHERE id = ?')
+        .bind(changeUid[1])
+        .first<{ id: string }>()
+      if (!target) return fail('找不到这个账号', 404)
+      await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(raw, target.id).run()
+      return ok({ uid: formatUid(raw) })
     }
 
     if (path === '/admin/settings' && method === 'POST') {
@@ -871,7 +993,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
 async function issueKeys(
   db: DB,
-  spec: IdSpec,
+  kind: string,
+  specJson: string,
   count: number,
   days: number,
   note: string,
@@ -894,7 +1017,7 @@ async function issueKeys(
       .prepare(
         'INSERT INTO activation_keys (code, kind, spec, note, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(code, spec.kind, JSON.stringify(spec), note, createdBy, nowIso(), expires)
+      .bind(code, kind, specJson, note, createdBy, nowIso(), expires)
       .run()
     codes.push(code)
   }

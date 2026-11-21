@@ -3,7 +3,7 @@ const MOTION_KEY = 'yacc:motion'
 const FONT_KEY = 'yacc:font'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
-export type MotionMode = 'full' | 'reduced'
+export type MotionMode = 'smooth' | 'balanced' | 'performance'
 export type FontScale = 100 | 112 | 125
 
 function read(key: string, fallback: string): string {
@@ -44,7 +44,11 @@ export function setThemeMode(mode: ThemeMode): void {
 /* ---------------- 动效 ---------------- */
 
 export function getMotionMode(): MotionMode {
-  return read(MOTION_KEY, 'full') === 'reduced' ? 'reduced' : 'full'
+  const raw = read(MOTION_KEY, 'balanced')
+  // 兼容旧值：full → balanced，reduced → performance
+  if (raw === 'full') return 'balanced'
+  if (raw === 'reduced') return 'performance'
+  return raw === 'smooth' || raw === 'performance' ? raw : 'balanced'
 }
 
 export function applyMotionMode(mode: MotionMode): void {

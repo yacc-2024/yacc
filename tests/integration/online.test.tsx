@@ -110,7 +110,7 @@ describe('在线模式：认证密钥与评论', () => {
     await userEvent.setup().type(box, '这条要审核')
     await userEvent.setup().click(screen.getByRole('button', { name: '发布' }))
 
-    expect(await screen.findByText(/等负责人审核/)).toBeInTheDocument()
+    expect(await screen.findByText(/审核通过后显示/)).toBeInTheDocument()
     expect(screen.queryByText('这条要审核')).toBeNull()
     viewer.unmount()
 

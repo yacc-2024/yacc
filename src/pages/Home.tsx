@@ -66,11 +66,19 @@ export function Home() {
         {headline ? (
           <Link to="/news" className="notice" aria-label={`公告：${headline.title}`}>
             <span className="notice__head">
+              <span className="notice__icon" aria-hidden="true">
+                <Icon name="bell" size={15} />
+              </span>
               <span className="notice__tag">{headline.pinned ? '置顶公告' : '最新公告'}</span>
+              <span className="grow" />
               <span className="t-tag faint t-num">{formatShortDate(headline.date)}</span>
             </span>
             <span className="notice__title clamp-1">{headline.title}</span>
-            <span className="notice__sub clamp-1">{headline.body}</span>
+            <span className="notice__sub clamp-2">{headline.body}</span>
+            <span className="notice__more">
+              查看全部公告
+              <Icon name="chevron-right" size={13} />
+            </span>
           </Link>
         ) : null}
 

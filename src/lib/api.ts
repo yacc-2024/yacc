@@ -20,14 +20,17 @@ export class ApiError extends Error {
   }
 }
 
+export type AdminPerm = 'content' | 'users' | 'keys' | 'comments'
+
 export interface SessionUser {
   id: string
   /** 固定的数字账号 ID，注册后不再变化 */
   uid?: number | null
   name: string
   avatar?: string | null
-  role: 'admin' | 'member' | 'visitor'
+  role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
+  perms?: AdminPerm[]
 }
 
 export function getToken(): string | null {
@@ -222,11 +225,12 @@ export const api = {
 
     createKeys: (
       spec: {
-        kind: 'crew' | 'member'
+        kind: 'crew' | 'member' | 'admin'
         role?: number
         season?: number
         grade?: number
         klass?: number
+        perms?: AdminPerm[]
       },
       count: number,
       expiresInDays: number,
@@ -261,7 +265,17 @@ export const api = {
 
     users: () =>
       call<{
-        users: Array<{ id: string; name: string; role: string; verified: boolean; createdAt: string }>
+        users: Array<{
+          id: string
+          uid: string
+          name: string
+          avatar: string | null
+          role: string
+          verified: boolean
+          label: string
+          keyCode: string | null
+          createdAt: string
+        }>
       }>('/admin/users'),
 
     setVerified: (id: string, verified: boolean) =>
@@ -272,6 +286,9 @@ export const api = {
 
     updateUser: (id: string, patch: { name?: string; password?: string; verified?: boolean }) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
+
+    setUid: (id: string, uid: number) =>
+      call<{ uid: string }>(`/admin/users/${id}/uid`, { method: 'POST', body: { uid } }),
 
     setModeration: (moderation: 'on' | 'off') =>
       call<{ moderation: string }>('/admin/settings', {

@@ -133,7 +133,7 @@ export function Comments({
       const res = await api.postComment(targetType, targetId, text)
       setBody('')
       if (res.status === 'pending') {
-        toast('已提交，等负责人审核后出现')
+        toast('已提交，审核通过后显示')
       } else {
         toast('评论已发布')
         await load()
@@ -174,7 +174,7 @@ export function Comments({
         <p className="t-caption faint">登录并通过学校认证后才能评论。</p>
       ) : !account.verified ? (
         <p className="t-caption faint">
-          你的账号还没有通过学校认证，暂时只能看。找负责人要一个认证密钥。
+          你的账号还没有通过认证，暂时只能浏览。
         </p>
       ) : (
         <div className="composer">

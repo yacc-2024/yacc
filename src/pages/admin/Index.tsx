@@ -4,7 +4,10 @@ import { NavBar, ListRow } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
 
 export function AdminIndex() {
-  const { content, mode } = useApp()
+  const { content, mode, account } = useApp()
+  const all = account?.role === 'superadmin'
+  const perms = account?.perms ?? []
+  const can = (p: string) => all || perms.includes(p)
   const c = content!
 
   return (
@@ -21,36 +24,46 @@ export function AdminIndex() {
       <DirtyBanner />
       <div className="page__body">
         <div className="list" style={{ marginTop: 8 }}>
+          {can('content') ? (
           <ListRow
             icon="home"
             title="主页管理"
             sub={`推荐 ${c.home.featured.length} · 公告 ${c.announcements.length} · 活动 ${c.events.length}`}
             to="/admin/home"
           />
+          ) : null}
+          {can('content') ? (
           <ListRow
             icon="info"
             title="关于页管理"
             sub={`历程 ${c.about.timeline.length} 条`}
             to="/admin/about"
           />
+          ) : null}
+          {can('content') ? (
           <ListRow
             icon="users"
             title="成员管理"
             sub={`${c.members.length} 人`}
             to="/admin/members"
           />
+          ) : null}
+          {can('content') ? (
           <ListRow
             icon="film"
             title="作品管理"
             sub={`${c.seasons.length} 季 · ${c.episodes.length} 集 · ${c.extras.length} 条花絮`}
             to="/admin/works"
           />
+          ) : null}
+          {can('content') ? (
           <ListRow
             icon="info"
             title="更新日志"
             sub={`${c.changelog.length} 个版本`}
             to="/admin/changelog"
           />
+          ) : null}
           <ListRow
             icon="download"
             title="数据管理"
@@ -71,13 +84,15 @@ export function AdminIndex() {
                 sub="发学校认证密钥给访客"
                 to="/admin/keys"
               />
-              <ListRow
-                icon="info"
-                title="评论审核"
-                sub="通过或隐藏别人的评论"
-                to="/admin/comments"
-              />
             </>
+          ) : null}
+          {mode === 'online' && can('comments') ? (
+            <ListRow
+              icon="info"
+              title="评论审核"
+              sub="通过或隐藏别人的评论"
+              to="/admin/comments"
+            />
           ) : null}
         </div>
 

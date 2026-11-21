@@ -263,7 +263,7 @@ export function DataAdmin() {
 
         <div className="card" style={{ marginTop: 20 }}>
           <p className="t-caption" style={{ lineHeight: 1.65 }}>
-            数据保存在这台设备上。网站上的内容由负责人发布，你自己改的东西只有你能看到，除非导出后发布。
+            数据保存在这台设备上。网站内容以线上发布为准，本地修改只有自己可见。
           </p>
         </div>
 

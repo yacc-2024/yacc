@@ -4,6 +4,7 @@ import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui'
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
+import { formatUid, uidTitle } from '../lib/uid'
 import {
   DEFAULT_BLUR,
   MAX_BLUR,
@@ -61,10 +62,12 @@ function SettingsHome() {
           <Avatar name={account.name} src={account.avatar} size={56} />
           <div className="grow">
             <p className="t-title3">{account.name}</p>
-            <p className="t-caption faint t-num">
-              {account.uid ? `ID ${account.uid}` : '本地账号'} ·{' '}
-              {account.role === 'admin' ? '管理员' : '认证访客'}
+            <p className="t-caption faint t-num" style={{ marginTop: 2 }}>
+              ID {formatUid(account.uid)}
             </p>
+            <span className="title-chip">
+              {uidTitle(account.uid, account.role, account.verified)}
+            </span>
           </div>
         </div>
 
@@ -344,7 +347,9 @@ export function AppearanceSettings() {
   const onMotion = (value: MotionMode) => {
     setMotion(value)
     setMotionMode(value)
-    toast(value === 'reduced' ? '已减弱动效' : '已恢复完整动效')
+    const label =
+      value === 'smooth' ? '丝滑' : value === 'performance' ? '性能优先' : '均衡'
+    toast(`动效已切换为${label}`)
   }
   const onFont = (value: FontScale) => {
     setFont(value)
@@ -401,12 +406,13 @@ export function AppearanceSettings() {
             value={motion}
             onChange={onMotion}
             options={[
-              { value: 'full', label: '标准' },
-              { value: 'reduced', label: '减弱' },
+              { value: 'smooth', label: '丝滑' },
+              { value: 'balanced', label: '均衡' },
+              { value: 'performance', label: '性能' },
             ]}
           />
           <p className="field__hint" style={{ marginTop: 8 }}>
-            减弱后页面切换和按压反馈会变快，适合觉得动画拖沓或头晕的时候。
+            丝滑：过渡更慢更柔和；均衡：默认手感；性能：几乎不动画，老手机更顺。
           </p>
         </section>
 

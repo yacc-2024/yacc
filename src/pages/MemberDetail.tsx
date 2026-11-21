@@ -51,7 +51,7 @@ export function MemberDetail() {
         title={member.name}
         back
         action={
-          account.role === 'admin' ? (
+          (account.role === 'admin' || account.role === 'superadmin') ? (
             <Link to="/admin/members" className="nav__action" aria-label="管理成员">
               <Icon name="edit" size={21} />
             </Link>

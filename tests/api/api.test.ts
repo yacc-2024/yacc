@@ -122,7 +122,7 @@ describe('管理员初始化', () => {
       password: 'abc123',
     })
     expect(res.status).toBe(200)
-    expect(res.body.data.user.role).toBe('admin')
+    expect(res.body.data.user.role).toBe('superadmin')
     expect(res.body.data.keys.length).toBeGreaterThan(0)
   })
 
@@ -190,7 +190,7 @@ describe('登录', () => {
     const token = await bootstrapAdmin()
     const res = await call('GET', '/auth/me', undefined, token)
     expect(res.status).toBe(200)
-    expect(res.body.data.user.role).toBe('admin')
+    expect(res.body.data.user.role).toBe('superadmin')
   })
 
   it('退出后 token 失效', async () => {
