@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { useApp } from '../state/AppContext'
+import { api, ApiError } from '../lib/api'
 
 type Mode = 'login' | 'register' | 'admin'
 
 export function Login() {
-  const { signIn, signUp, createAdmin, toast, toggleFavorite, secureCrypto } = useApp()
+  const { signIn, signUp, createAdmin, toast, toggleFavorite, secureCrypto, adoptToken } = useApp()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -22,7 +23,34 @@ export function Login() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [ended, setEnded] = useState(false)
+  const [pending, setPending] = useState('')
+  const [pendingState, setPendingState] = useState<'pending' | 'denied' | 'expired'>('pending')
   const secure = secureCrypto
+
+  useEffect(() => {
+    if (!pending) return
+    let alive = true
+    const timer = window.setInterval(async () => {
+      try {
+        const res = await api.requestStatus(pending)
+        if (!alive) return
+        if (res.status === 'approved' && res.token) {
+          window.clearInterval(timer)
+          await adoptToken(res.token)
+          await finish()
+        } else if (res.status === 'denied' || res.status === 'expired') {
+          window.clearInterval(timer)
+          setPendingState(res.status)
+        }
+      } catch {
+        /* 网络抖动继续等 */
+      }
+    }, 3000)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
+  }, [pending, adoptToken, finish])
 
   useEffect(() => {
     try {
@@ -46,7 +74,7 @@ export function Login() {
     return '用你的账号登录。'
   }, [mode])
 
-  const finish = async () => {
+  async function finish() {
     if (state.favorite) {
       await toggleFavorite(state.favorite.type, state.favorite.id)
       toast('已收藏')
@@ -72,6 +100,13 @@ export function Login() {
       }
       await finish()
     } catch (err) {
+      // 另一台设备正在使用：转成「申请同时登录」
+      const data = err instanceof ApiError ? (err.data as { code?: string; requestId?: string } | null) : null
+      if (err instanceof ApiError && err.status === 409 && data?.code === 'need_authorize') {
+        setPending(data.requestId ?? '')
+        setError(null)
+        return
+      }
       const message = err instanceof Error ? err.message : '出错了，再试一次'
       if (mode === 'admin' && message.includes('已经存在管理员')) {
         setMode('login')
@@ -145,6 +180,54 @@ export function Login() {
         </>
       )}
 
+      {pending ? (
+        <div className="auth__form">
+          <div className="card" style={{ padding: 18 }}>
+            <p className="t-body" style={{ fontWeight: 600 }}>
+              这个账号正在另一台设备上使用
+            </p>
+            <p className="t-caption faint" style={{ marginTop: 6, lineHeight: 1.6 }}>
+              {pendingState === 'pending'
+                ? '已经向那台设备发送申请。打开那台设备，在「我的 → 账号设置 → 设备管理」里点「批准」，这里就会自动登录。'
+                : pendingState === 'denied'
+                  ? '另一台设备拒绝了这次登录。'
+                  : '申请超时了，重新试一次吧。'}
+            </p>
+            {pendingState === 'pending' ? (
+              <p className="t-caption" style={{ marginTop: 12, color: 'var(--accent)' }}>
+                等待授权中…
+              </p>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn--primary btn--block"
+            style={{ marginTop: 14 }}
+            onClick={async () => {
+              try {
+                await signIn(name, password, { replace: true })
+                await finish()
+              } catch (err) {
+                setError(err instanceof Error ? err.message : '登录失败')
+              }
+            }}
+          >
+            直接顶掉原设备登录
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--block"
+            style={{ marginTop: 8 }}
+            onClick={() => {
+              setPending('')
+              setPendingState('pending')
+            }}
+          >
+            取消
+          </button>
+        </div>
+      ) : (
       <form className="auth__form" onSubmit={(e) => void submit(e)}>
         {mode === 'admin' ? (
           <div className="field" style={{ marginTop: 0 }}>
@@ -237,6 +320,7 @@ export function Login() {
           {busy ? '处理中…' : submitLabel}
         </button>
       </form>
+      )}
 
       {mode === 'admin' ? (
         <p className="auth__switch">

@@ -117,6 +117,13 @@ function SettingsHome() {
             sub="深浅色、毛玻璃、动效、字号"
             to="/me/settings/appearance"
           />
+          <ListRow
+            icon="lock"
+            title="设备管理"
+            sub="查看登录设备、批准新设备"
+            to="/me/settings/devices"
+          />
+
           {!installed && (canInstall || ios) ? (
             <ListRow
               icon="download"

@@ -88,7 +88,13 @@ interface AppContextValue {
   discardDraft: () => Promise<void>
   restoreMyDraft: () => Promise<void>
   publishToServer: () => Promise<number>
-  signIn: (name: string, password: string) => Promise<void>
+  signIn: (
+    name: string,
+    password: string,
+    options?: { replace?: boolean },
+  ) => Promise<void>
+  /** 授权通过后，用服务端发来的令牌直接登录 */
+  adoptToken: (token: string) => Promise<void>
   signUp: (key: string, name: string, password: string) => Promise<void>
   createAdmin: (name: string, password: string, code: string) => Promise<string[]>
   signOut: () => Promise<void>
@@ -424,9 +430,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /* ---------------- 账号 ---------------- */
 
-  const signIn = useCallback(async (name: string, password: string) => {
+  const signIn = useCallback(async (
+    name: string,
+    password: string,
+    options?: { replace?: boolean },
+  ) => {
     if (modeRef.current === 'online') {
-      const res = await api.login(name, password)
+      const res = await api.login(name, password, options)
       setToken(res.token)
       cacheUser(res.user)
       setAccount(res.user)
@@ -440,6 +450,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role: acc.role === 'admin' ? 'superadmin' : acc.role,
       verified: true,
     })
+  }, [])
+
+  const adoptToken = useCallback(async (token: string) => {
+    setToken(token)
+    const res = await api.me()
+    cacheUser(res.user)
+    setAccount(res.user)
   }, [])
 
   const signUp = useCallback(async (key: string, name: string, password: string) => {
@@ -590,6 +607,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       restoreMyDraft,
       publishToServer,
       signIn,
+      adoptToken,
       signUp,
       createAdmin,
       signOut,
@@ -624,6 +642,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       restoreMyDraft,
       publishToServer,
       signIn,
+      adoptToken,
       signUp,
       createAdmin,
       signOut,

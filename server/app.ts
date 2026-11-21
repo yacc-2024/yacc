@@ -128,6 +128,7 @@ function ensureSchema(db: DB): Promise<void> {
       }
       // 老库补列：新库这两条会报「duplicate column」，忽略
       for (const sql of [
+        'ALTER TABLE sessions ADD COLUMN device TEXT',
         'ALTER TABLE users ADD COLUMN uid INTEGER',
         'ALTER TABLE users ADD COLUMN avatar TEXT',
         'ALTER TABLE users ADD COLUMN signup_ip TEXT',
@@ -361,17 +362,17 @@ async function readJson(request: Request): Promise<Record<string, unknown> | nul
 
 /* ---------------- 会话 ---------------- */
 
-async function createSession(db: DB, userId: string): Promise<string> {
-  // 单设备登录：新会话建立时，把旧设备上的会话全部作废
+async function createSession(db: DB, userId: string, device = ''): Promise<string> {
+  // 默认单设备：新会话建立时把旧会话作废（多设备授权走 login_requests）
   await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run()
   const token = randomHex(32)
   const tokenHash = await sha256Hex(token)
   const expires = new Date(Date.now() + SESSION_DAYS * 86400_000).toISOString()
   await db
     .prepare(
-      'INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO sessions (token_hash, user_id, device, created_at, expires_at) VALUES (?, ?, ?, ?, ?)',
     )
-    .bind(tokenHash, userId, nowIso(), expires)
+    .bind(tokenHash, userId, device, nowIso(), expires)
     .run()
   return token
 }
@@ -651,8 +652,164 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (!row) return fail('没有这个账号', 401)
       const passed = await verifyPassword(password, row.salt, row.password_hash)
       if (!passed) return fail('密码不对，再试一次', 401)
-      const token = await createSession(db, row.id)
+      const device = typeof body.device === 'string' ? body.device.slice(0, 40) : ''
+      const replace = body.replace === true
+
+      // 已经有「别的设备」在线，且没有要求顶掉
+      // 同一台设备重复登录（比如换了浏览器）不拦截，直接替换
+      const active = await db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM sessions WHERE user_id = ? AND expires_at > ? AND IFNULL(device, '') <> ?",
+        )
+        .bind(row.id, nowIso(), device)
+        .first<{ n: number }>()
+
+      if (Number(active?.n ?? 0) > 0 && !replace) {
+        // 复用同一个设备上一次的申请，避免重复点登录堆积
+        const existing = await db
+          .prepare(
+            "SELECT id FROM login_requests WHERE user_id = ? AND status = 'pending' AND device = ? ORDER BY created_at DESC LIMIT 1",
+          )
+          .bind(row.id, device)
+          .first<{ id: string }>()
+
+        let requestId = existing?.id
+        if (!requestId) {
+          requestId = randomHex(8)
+          await db
+            .prepare(
+              'INSERT INTO login_requests (id, user_id, device, status, created_at) VALUES (?, ?, ?, ?, ?)',
+            )
+            .bind(requestId, row.id, device, 'pending', nowIso())
+            .run()
+        }
+
+        return json(
+          {
+            ok: false,
+            error: '这个账号正在另一台设备上使用',
+            code: 'need_authorize',
+            requestId,
+            user: toUser(row),
+          },
+          409,
+        )
+      }
+
+      const token = await createSession(db, row.id, device)
       return ok({ token, user: toUser(row) })
+    }
+
+    /* ---------- 授权登录 ---------- */
+
+    const who = await currentUser(db, request)
+
+
+    if (path === '/auth/request-status' && method === 'GET') {
+      const id = url.searchParams.get('id') ?? ''
+      const req = await db
+        .prepare('SELECT * FROM login_requests WHERE id = ?')
+        .bind(id)
+        .first<{ id: string; status: string; token: string | null; created_at: string }>()
+      if (!req) return fail('申请不在了', 404)
+
+      // 超过 5 分钟自动作废
+      if (req.status === 'pending' && Date.now() - new Date(req.created_at).getTime() > 300_000) {
+        await db
+          .prepare("UPDATE login_requests SET status = 'expired' WHERE id = ?")
+          .bind(id)
+          .run()
+        return ok({ status: 'expired' })
+      }
+      return ok({ status: req.status, token: req.token ?? null })
+    }
+
+    if (path === '/auth/requests' && method === 'GET') {
+      if (!who) return fail('未登录', 401)
+      const rows = await db
+        .prepare(
+          "SELECT id, device, created_at FROM login_requests WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 10",
+        )
+        .bind(who.id)
+        .all<{ id: string; device: string | null; created_at: string }>()
+      return ok({
+        requests: rows.map((r) => ({
+          id: r.id,
+          device: r.device ?? '',
+          createdAt: r.created_at,
+        })),
+      })
+    }
+
+    const decideRequest = /^\/auth\/requests\/([a-z0-9]+)$/.exec(path)
+    if (decideRequest && method === 'POST') {
+      if (!who) return fail('未登录', 401)
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const action = String(body.action ?? '')
+      const req = await db
+        .prepare('SELECT * FROM login_requests WHERE id = ? AND user_id = ?')
+        .bind(decideRequest[1], who.id)
+        .first<{ id: string; user_id: string; device: string | null; status: string }>()
+      if (!req) return fail('找不到这条申请', 404)
+      if (req.status !== 'pending') return fail('这条申请已经处理过了', 409)
+
+      if (action === 'deny') {
+        await db
+          .prepare("UPDATE login_requests SET status = 'denied' WHERE id = ?")
+          .bind(req.id)
+          .run()
+        return ok()
+      }
+      if (action !== 'approve') return fail('参数不对')
+
+      // 批准：为那台设备建一个独立会话，把令牌交给它
+      const token = randomHex(32)
+      const tokenHash = await sha256Hex(token)
+      const expires = new Date(Date.now() + SESSION_DAYS * 86400_000).toISOString()
+      await db
+        .prepare(
+          'INSERT INTO sessions (token_hash, user_id, device, created_at, expires_at) VALUES (?, ?, ?, ?, ?)',
+        )
+        .bind(tokenHash, who.id, req.device ?? '', nowIso(), expires)
+        .run()
+      await db
+        .prepare("UPDATE login_requests SET status = 'approved', token = ? WHERE id = ?")
+        .bind(token, req.id)
+        .run()
+      return ok()
+    }
+
+    /* ---------- 已登录设备 ---------- */
+
+    if (path === '/auth/sessions' && method === 'GET') {
+      if (!who) return fail('未登录', 401)
+      const rows = await db
+        .prepare(
+          'SELECT device, created_at, expires_at FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC',
+        )
+        .bind(who.id, nowIso())
+        .all<{ device: string | null; created_at: string; expires_at: string }>()
+      return ok({
+        sessions: rows.map((r) => ({
+          device: r.device || '未知设备',
+          createdAt: r.created_at,
+          expiresAt: r.expires_at,
+        })),
+      })
+    }
+
+    if (path === '/auth/session' && method === 'DELETE') {
+      if (!who) return fail('未登录', 401)
+      const header = request.headers.get('authorization') ?? ''
+      const token = header.replace(/^Bearer\s+/i, '').trim()
+      if (token) {
+        await db
+          .prepare('DELETE FROM sessions WHERE token_hash = ?')
+          .bind(await sha256Hex(token))
+          .run()
+      }
+      return ok()
     }
 
     if (path === '/auth/activate-admin' && method === 'POST') {

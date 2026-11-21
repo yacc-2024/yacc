@@ -5,6 +5,18 @@
 
 const TOKEN_KEY = 'yacc:token'
 
+/** 给服务器看的设备名，方便在主设备上区分 */
+export function deviceLabel(): string {
+  if (typeof navigator === 'undefined') return '未知设备'
+  const ua = navigator.userAgent
+  if (/iPhone/.test(ua)) return 'iPhone'
+  if (/iPad/.test(ua)) return 'iPad'
+  if (/Android/.test(ua)) return /Mobile/.test(ua) ? '安卓手机' : '安卓平板'
+  if (/Macintosh/.test(ua)) return 'Mac 电脑'
+  if (/Windows/.test(ua)) return 'Windows 电脑'
+  return '浏览器'
+}
+
 /**
  * 网页版走同源的 /api；装成 apk 后页面在本地壳里，
  * 构建时用 VITE_API_BASE=https://yacc2026.pages.dev 指到线上。
@@ -20,9 +32,11 @@ export function setUnauthorizedHandler(fn: (() => void) | null): void {
 
 export class ApiError extends Error {
   status: number
-  constructor(message: string, status: number) {
+  data: unknown
+  constructor(message: string, status: number, data?: unknown) {
     super(message)
     this.status = status
+    this.data = data
   }
 }
 
@@ -105,7 +119,7 @@ async function request<T>(
     if (res.status === 401 && token && !isAuthRoute) {
       onUnauthorized?.()
     }
-    throw new ApiError(message, res.status)
+    throw new ApiError(message, res.status, payload)
   }
   return payload as T
 }
@@ -148,11 +162,33 @@ export const api = {
     return { content: await res.json(), publishedAt: res.headers.get('x-published-at') }
   },
 
-  login: (name: string, password: string) =>
+  login: (name: string, password: string, options?: { replace?: boolean; device?: string }) =>
     call<{ token: string; user: SessionUser }>('/auth/login', {
       method: 'POST',
-      body: { name, password },
+      body: {
+        name,
+        password,
+        replace: options?.replace ?? false,
+        device: options?.device ?? deviceLabel(),
+      },
     }),
+
+  requestStatus: (id: string) =>
+    call<{ status: string; token: string | null }>(`/auth/request-status?id=${encodeURIComponent(id)}`),
+
+  authRequests: () =>
+    call<{ requests: Array<{ id: string; device: string; createdAt: string }> }>('/auth/requests'),
+
+  decideRequest: (id: string, action: 'approve' | 'deny') =>
+    call<Record<string, never>>(`/auth/requests/${id}`, { method: 'POST', body: { action } }),
+
+  sessions: () =>
+    call<{ sessions: Array<{ device: string; createdAt: string; expiresAt: string }> }>(
+      '/auth/sessions',
+    ),
+
+  revokeCurrentSession: () =>
+    call<Record<string, never>>('/auth/session', { method: 'DELETE' }),
 
   register: (name: string, password: string, key: string) =>
     call<{ token: string; user: SessionUser }>('/auth/register', {

@@ -1203,3 +1203,78 @@ describe('楼中楼与评论点赞（v1.3.0）', () => {
     expect(after.body.data.comments[0].pinned).toBe(true)
   })
 })
+
+describe('多设备授权登录（v1.4.0）', () => {
+  it('第二台设备登录时先返回 need_authorize', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+
+    const first = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A', replace: true })
+    expect(first.status).toBe(200)
+
+    const second = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机B' })
+    expect(second.status).toBe(409)
+    expect(second.body.code).toBe('need_authorize')
+    expect(second.body.requestId).toBeTruthy()
+  })
+
+  it('主设备批准后，第二台设备拿到令牌', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A', replace: true })
+    const b = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机B' })
+
+    // 主设备看到申请
+    const inbox = await call('GET', '/auth/requests', undefined, a.body.data.token)
+    expect(inbox.body.data.requests).toHaveLength(1)
+    expect(inbox.body.data.requests[0].device).toBe('手机B')
+
+    // 批准
+    expect(
+      (await call('POST', `/auth/requests/${b.body.requestId}`, { action: 'approve' }, a.body.data.token)).status,
+    ).toBe(200)
+
+    // 第二台设备轮询到令牌
+    const status = await call('GET', `/auth/request-status?id=${b.body.requestId}`)
+    expect(status.body.data.status).toBe('approved')
+    expect(status.body.data.token).toBeTruthy()
+
+    // 两台设备都能用
+    expect((await call('GET', '/auth/me', undefined, a.body.data.token)).status).toBe(200)
+    expect((await call('GET', '/auth/me', undefined, status.body.data.token)).status).toBe(200)
+  })
+
+  it('拒绝后第二台拿不到令牌', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A', replace: true })
+    const b = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机B' })
+
+    await call('POST', `/auth/requests/${b.body.requestId}`, { action: 'deny' }, a.body.data.token)
+    const status = await call('GET', `/auth/request-status?id=${b.body.requestId}`)
+    expect(status.body.data.status).toBe('denied')
+    expect(status.body.data.token).toBeNull()
+  })
+
+  it('直接顶掉时不需要授权', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A' })
+    const b = await call('POST', '/auth/login', {
+      name: '导演',
+      password: 'abc123',
+      device: '手机B',
+      replace: true,
+    })
+    expect(b.status).toBe(200)
+    expect(b.body.data.token).toBeTruthy()
+  })
+
+  it('能看到当前登录的设备', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A', replace: true })
+    const list = await call('GET', '/auth/sessions', undefined, a.body.data.token)
+    expect(list.body.data.sessions[0].device).toBe('手机A')
+  })
+})

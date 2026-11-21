@@ -20,8 +20,18 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
+  device TEXT,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS login_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  device TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  token TEXT,
+  created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS activation_keys (
