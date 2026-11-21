@@ -63,7 +63,7 @@ function SettingsHome() {
             <p className="t-title3">{account.name}</p>
             <p className="t-caption faint t-num">
               {account.uid ? `ID ${account.uid}` : '本地账号'} ·{' '}
-              {account.role === 'admin' ? '管理员' : account.role === 'member' ? '船员' : '认证访客'}
+              {account.role === 'admin' ? '管理员' : '认证访客'}
             </p>
           </div>
         </div>

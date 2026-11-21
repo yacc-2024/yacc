@@ -1,4 +1,5 @@
 import type { Content, Episode, Extra, Member, Season } from '../data/schema'
+import { cnNum } from './format'
 
 export function findEpisode(content: Content, id: string): Episode | undefined {
   return content.episodes.find((e) => e.id === id)
@@ -28,7 +29,8 @@ export function episodesOfSeason(content: Content, seasonId: string): Episode[] 
 
 export function episodeBadge(content: Content, ep: Episode): string {
   const season = findSeason(content, ep.seasonId)
-  return season ? `S${season.no} · E${ep.no}` : `E${ep.no}`
+  const label = `第${cnNum(ep.no)}集`
+  return season ? `${season.title} · ${label}` : label
 }
 
 export function extraBadge(content: Content, extra: Extra): string {

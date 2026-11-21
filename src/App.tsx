@@ -17,6 +17,7 @@ import { Members } from './pages/Members'
 import { MemberDetail } from './pages/MemberDetail'
 import { Works } from './pages/Works'
 import { Watch } from './pages/Watch'
+import { UserProfile } from './pages/UserProfile'
 import { Me } from './pages/Me'
 import { Login } from './pages/Login'
 import { Favorites, History } from './pages/Library'
@@ -32,7 +33,7 @@ import { HomeEdit, AboutEdit } from './pages/admin/ContentEdit'
 import { MembersAdmin } from './pages/admin/MembersAdmin'
 import { WorksAdmin } from './pages/admin/WorksAdmin'
 import { DataAdmin } from './pages/admin/DataAdmin'
-import { KeysAdmin, CommentsAdmin } from './pages/admin/Online'
+import { KeysAdmin, CommentsAdmin, UsersAdmin } from './pages/admin/Online'
 import { ChangelogAdmin } from './pages/admin/Changelog'
 
 /** 记住每个历史记录项的滚动位置，返回时还原 */
@@ -148,6 +149,7 @@ export function App() {
         <Route path="events" element={<EventsList />} />
         <Route path="watch/:id" element={<Watch />} />
         <Route path="login" element={<Login />} />
+        <Route path="u/:uid" element={<UserProfile />} />
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
         <Route path="me/settings" element={<Settings />} />
@@ -174,6 +176,7 @@ export function App() {
           path="admin/comments"
           element={<RequireAdmin><CommentsAdmin /></RequireAdmin>}
         />
+        <Route path="admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

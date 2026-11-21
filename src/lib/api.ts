@@ -5,6 +5,13 @@
 
 const TOKEN_KEY = 'yacc:token'
 
+let onUnauthorized: (() => void) | null = null
+
+/** 请求带着 token 却被拒（多半是被别的设备顶掉），交给上层处理 */
+export function setUnauthorizedHandler(fn: (() => void) | null): void {
+  onUnauthorized = fn
+}
+
 export class ApiError extends Error {
   status: number
   constructor(message: string, status: number) {
@@ -65,6 +72,10 @@ async function request<T>(
   if (!res.ok) {
     const message =
       (payload as { error?: string } | null)?.error ?? `请求失败（${res.status}）`
+    const isAuthRoute = path.startsWith('/auth/login') || path.startsWith('/auth/register')
+    if (res.status === 401 && token && !isAuthRoute) {
+      onUnauthorized?.()
+    }
     throw new ApiError(message, res.status)
   }
   return payload as T
@@ -139,6 +150,21 @@ export const api = {
       body: { oldPassword, newPassword },
     }),
 
+  userProfile: (uid: string) =>
+    call<{
+      user: {
+        uid: string
+        rawUid: number | null
+        name: string
+        avatar: string | null
+        role: string
+        verified: boolean
+        memberSince: string
+        label: string
+        commentCount: number
+      }
+    }>(`/users/${uid}`),
+
   comments: (targetType: string, targetId: string) =>
     call<{
       comments: Array<{
@@ -146,6 +172,8 @@ export const api = {
         body: string
         createdAt: string
         author: string
+        avatar: string | null
+        uid: string
         mine: boolean
       }>
       me: SessionUser | null
@@ -182,6 +210,8 @@ export const api = {
         keys: Array<{
           code: string
           kind: string
+          spec: string | null
+          specLabel: string
           note: string
           createdAt: string
           usedAt: string | null
@@ -190,10 +220,21 @@ export const api = {
         }>
       }>('/admin/keys'),
 
-    createKeys: (kind: 'member' | 'visitor', count: number, expiresInDays: number, note: string) =>
+    createKeys: (
+      spec: {
+        kind: 'crew' | 'member'
+        role?: number
+        season?: number
+        grade?: number
+        klass?: number
+      },
+      count: number,
+      expiresInDays: number,
+      note: string,
+    ) =>
       call<{ keys: string[] }>('/admin/keys', {
         method: 'POST',
-        body: { kind, count, expiresInDays, note },
+        body: { ...spec, count, expiresInDays, note },
       }),
 
     revokeKey: (code: string) =>
@@ -228,6 +269,9 @@ export const api = {
         method: 'POST',
         body: { verified },
       }),
+
+    updateUser: (id: string, patch: { name?: string; password?: string; verified?: boolean }) =>
+      call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
 
     setModeration: (moderation: 'on' | 'off') =>
       call<{ moderation: string }>('/admin/settings', {

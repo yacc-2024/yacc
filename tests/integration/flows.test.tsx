@@ -82,7 +82,7 @@ describe('注册与登录', () => {
     const user = userEvent.setup()
     renderApp(['/login?mode=register'])
 
-    await user.type(await screen.findByLabelText('邀请码'), 'YACC2026')
+    await user.type(await screen.findByLabelText('认证密钥'), 'YACC2026')
     await user.type(screen.getByLabelText('昵称'), '新成员')
     await user.type(screen.getByLabelText('密码'), 'abc123')
     await user.type(screen.getByLabelText('确认密码'), 'abc123')
@@ -97,7 +97,7 @@ describe('注册与登录', () => {
     const user = userEvent.setup()
     renderApp(['/login?mode=register'])
 
-    await user.type(await screen.findByLabelText('邀请码'), 'WRONG')
+    await user.type(await screen.findByLabelText('认证密钥'), 'WRONG')
     await user.type(screen.getByLabelText('昵称'), '新成员')
     await user.type(screen.getByLabelText('密码'), 'abc123')
     await user.type(screen.getByLabelText('确认密码'), 'abc123')
@@ -112,7 +112,7 @@ describe('注册与登录', () => {
     const user = userEvent.setup()
     renderApp(['/login?mode=register'])
 
-    await user.type(await screen.findByLabelText('邀请码'), 'YACC2026')
+    await user.type(await screen.findByLabelText('认证密钥'), 'YACC2026')
     await user.type(screen.getByLabelText('昵称'), '新成员')
     await user.type(screen.getByLabelText('密码'), 'abc123')
     await user.type(screen.getByLabelText('确认密码'), 'abc999')

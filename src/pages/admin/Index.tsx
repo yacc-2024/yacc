@@ -60,6 +60,12 @@ export function AdminIndex() {
           {mode === 'online' ? (
             <>
               <ListRow
+                icon="users"
+                title="账号管理"
+                sub="改昵称、重置密码、取消认证"
+                to="/admin/users"
+              />
+              <ListRow
                 icon="lock"
                 title="密钥管理"
                 sub="发学校认证密钥给访客"

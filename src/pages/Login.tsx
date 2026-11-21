@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Icon } from '../components/Icon'
 import { useApp } from '../state/AppContext'
 
 type Mode = 'login' | 'register' | 'admin'
@@ -20,7 +21,19 @@ export function Login() {
   const [adminCode, setAdminCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [ended, setEnded] = useState(false)
   const secure = secureCrypto
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('yacc:session-ended') === '1') {
+        localStorage.removeItem('yacc:session-ended')
+        setEnded(true)
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }, [])
 
   const state = (location.state ?? {}) as {
     from?: string
@@ -29,7 +42,7 @@ export function Login() {
 
   const subtitle = useMemo(() => {
     if (mode === 'admin') return '输入负责人给你的激活码，把这台设备设为管理端。'
-    if (mode === 'register') return '输入邀请码，加入 YACC 创作组。'
+    if (mode === 'register') return '输入认证密钥，成为认证访客。'
     return '用你的账号登录。'
   }, [mode])
 
@@ -87,6 +100,15 @@ export function Login() {
         yacc
       </Link>
       <p className="auth__sub">{subtitle}</p>
+
+      {ended ? (
+        <div className="banner" style={{ marginTop: 14 }} role="status">
+          <Icon name="info" size={16} />
+          <span className="grow">
+            上次的登录已失效：可能是太久没登录，或者账号在别的设备上登录了。
+          </span>
+        </div>
+      ) : null}
 
       {mode !== 'admin' ? (
         <div className="seg" style={{ marginTop: 22 }} role="tablist" aria-label="切换模式">
@@ -151,7 +173,7 @@ export function Login() {
         {mode === 'register' ? (
           <div className="field" style={{ marginTop: 0 }}>
             <label className="field__label" htmlFor="invite">
-              邀请码
+              认证密钥
             </label>
             <input
               id="invite"
@@ -159,8 +181,11 @@ export function Login() {
               value={invite}
               onChange={(e) => setInvite(e.target.value)}
               autoComplete="off"
-              placeholder="向负责人要"
+              placeholder="向负责人要，形如 YACC-XXXX-XXXX"
             />
+            <p className="field__hint">
+              没有密钥也能注册，但只是普通访客，只能看，不能评论。
+            </p>
           </div>
         ) : null}
 

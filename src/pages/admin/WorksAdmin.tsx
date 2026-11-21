@@ -213,7 +213,7 @@ export function WorksAdmin() {
                     >
                       <span className="grow" style={{ textAlign: 'left', minWidth: 0 }}>
                         <span className="list__title clamp-1" style={{ display: 'block' }}>
-                          E{ep.no} · {ep.title}
+                          第{ep.no}集 · {ep.title}
                         </span>
                         <span className="list__sub">
                           {season?.title} · {formatDuration(ep.durationSec)} · {ep.videoId}
@@ -646,7 +646,7 @@ function ExtraForm({
         <option value="">不关联</option>
         {episodes.map((ep) => (
           <option key={ep.id} value={ep.id}>
-            E{ep.no} · {ep.title}
+            第{ep.no}集 · {ep.title}
           </option>
         ))}
       </select>

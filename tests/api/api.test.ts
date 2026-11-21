@@ -151,12 +151,13 @@ describe('密钥注册', () => {
     expect((await registerWithKey(key, '同学乙')).status).toBe(409)
   })
 
-  it('船员密钥注册出来是 member 且已认证', async () => {
+  it('非管理员注册后统一是「认证访客」', async () => {
     const token = await bootstrapAdmin()
     const key = await makeKey(token, 'member')
     const res = await registerWithKey(key, '同学甲')
     expect(res.status).toBe(200)
-    expect(res.body.data.user.role).toBe('member')
+    // 即使拿的是老的船员密钥，身份也按认证访客处理
+    expect(res.body.data.user.role).toBe('visitor')
     expect(res.body.data.user.verified).toBe(true)
   })
 
@@ -439,8 +440,10 @@ describe('账号资料（v1.0.1）', () => {
     const uidA = a.body.data.user.uid
     const uidB = b.body.data.user.uid
     expect(typeof uidA).toBe('number')
-    expect(uidA).toBeGreaterThanOrEqual(100001)
-    expect(uidB).toBeGreaterThan(uidA)
+    // 访客密钥默认是认证成员（2 开头，8 年级 0 班）
+    expect(uidA).toBeGreaterThanOrEqual(20000)
+    expect(uidA).toBeLessThan(30000)
+    expect(uidB).toBe(uidA + 1)
   })
 
   it('管理员也有自己的数字 ID', async () => {
@@ -484,5 +487,154 @@ describe('账号资料（v1.0.1）', () => {
     await registerWithKey(key, '占名字的人')
     const res = await call('POST', '/auth/profile', { name: '占名字的人' }, token)
     expect(res.status).toBe(409)
+  })
+})
+
+
+describe('单设备登录（v1.0.2）', () => {
+  it('新设备登录后，旧设备的 token 立刻失效', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+
+    const first = await call('POST', '/auth/login', { name: '导演', password: 'abc123' })
+    const firstToken = first.body.data.token
+    expect((await call('GET', '/auth/me', undefined, firstToken)).status).toBe(200)
+
+    // 第二台设备登录同一账号
+    const second = await call('POST', '/auth/login', { name: '导演', password: 'abc123' })
+    expect(second.status).toBe(200)
+    const secondToken = second.body.data.token
+
+    // 旧设备被顶掉
+    expect((await call('GET', '/auth/me', undefined, firstToken)).status).toBe(401)
+    // 新设备正常
+    expect((await call('GET', '/auth/me', undefined, secondToken)).status).toBe(200)
+  })
+
+  it('账号下始终只有一条会话', async () => {
+    await bootstrapAdmin()
+    await call('POST', '/auth/login', { name: '导演', password: 'abc123' })
+    await call('POST', '/auth/login', { name: '导演', password: 'abc123' })
+    const rows = await env.db
+      .prepare('SELECT COUNT(*) AS n FROM sessions')
+      .first<{ n: number }>()
+    expect(Number(rows?.n)).toBe(1)
+  })
+
+  it('换设备登录不影响其他账号', async () => {
+    const adminToken = await bootstrapAdmin()
+    const key = await makeKey(adminToken, 'visitor')
+    const reg = await registerWithKey(key, '访客甲')
+    const visitorToken = reg.body.data.token
+
+    await call('POST', '/auth/login', { name: '导演', password: 'abc123' })
+
+    // 访客的会话不受管理员登录影响
+    expect((await call('GET', '/auth/me', undefined, visitorToken)).status).toBe(200)
+  })
+})
+
+describe('五位数字账号编号', () => {
+  it('剧组成员：1 + 身份 + 季 + 顺序', async () => {
+    const token = await bootstrapAdmin()
+    // 编剧 = 2，第二季 = 2
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'crew', role: 2, season: 2, count: 2, expiresInDays: 30 },
+      token,
+    )
+    const [k1, k2] = res.body.data.keys
+    const a = await registerWithKey(k1, '编剧甲')
+    const b = await registerWithKey(k2, '编剧乙')
+    expect(a.body.data.user.uid).toBe(12201)
+    expect(b.body.data.user.uid).toBe(12202)
+  })
+
+  it('认证成员：2 + 年级 + 班级 + 顺序', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'member', grade: 8, klass: 7, count: 2, expiresInDays: 30 },
+      token,
+    )
+    const [k1, k2] = res.body.data.keys
+    const a = await registerWithKey(k1, '八七甲')
+    const b = await registerWithKey(k2, '八七乙')
+    expect(a.body.data.user.uid).toBe(28701)
+    expect(b.body.data.user.uid).toBe(28702)
+  })
+
+  it('两季都参与用 9 表示', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'crew', role: 4, season: 9, count: 1, expiresInDays: 30 },
+      token,
+    )
+    const reg = await registerWithKey(res.body.data.keys[0], '摄影甲')
+    expect(reg.body.data.user.uid).toBe(14901)
+  })
+
+  it('普通访客不用密钥，编号 0 开头并依次排', async () => {
+    const a = await call('POST', '/auth/register', { name: '路人甲', password: 'abc123' })
+    const b = await call('POST', '/auth/register', { name: '路人乙', password: 'abc123' })
+    expect(a.status).toBe(200)
+    expect(a.body.data.user.uid).toBe(1)
+    expect(b.body.data.user.uid).toBe(2)
+    // 普通访客没有认证，不能评论
+    const c = await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '我能说话吗' },
+      a.body.data.token,
+    )
+    expect(c.status).toBe(403)
+  })
+
+  it('同一台设备一天最多注册 3 个普通访客', async () => {
+    const ip = '203.0.113.9'
+    const reg = (name: string) =>
+      call(
+        'POST',
+        '/auth/register',
+        { name, password: 'abc123' },
+        undefined,
+      )
+    // 通过 header 模拟同一 IP
+    const doReg = async (name: string) => {
+      const res = await handleApi(
+        new Request('http://localhost/api/auth/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip },
+          body: JSON.stringify({ name, password: 'abc123' }),
+        }),
+        env,
+      )
+      return { status: res.status, body: await res.json() }
+    }
+    expect((await doReg('设备甲')).status).toBe(200)
+    expect((await doReg('设备乙')).status).toBe(200)
+    expect((await doReg('设备丙')).status).toBe(200)
+    const fourth = await doReg('设备丁')
+    expect(fourth.status).toBe(429)
+    expect(reg).toBeTruthy()
+  })
+
+  it('用户主页能按编号查到', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'member', grade: 7, klass: 3, count: 1, expiresInDays: 30 },
+      token,
+    )
+    await registerWithKey(res.body.data.keys[0], '七三班同学')
+    const page = await call('GET', '/users/27301')
+    expect(page.status).toBe(200)
+    expect(page.body.data.user.name).toBe('七三班同学')
+    expect(page.body.data.user.label).toContain('7 年级')
   })
 })

@@ -87,7 +87,7 @@ describe('登录状态保持', () => {
     renderApp(['/me'])
     await waitFor(() => expect(localStorage.getItem('yacc:token')).toBeNull())
     // 登录卡片回来了
-    expect(await screen.findByText('用邀请码加入剧组，收藏喜欢的作品。')).toBeInTheDocument()
+    expect(await screen.findByText('用认证密钥加入，收藏喜欢的作品。')).toBeInTheDocument()
   })
 
   it('退出登录会清掉本地登录态', async () => {
@@ -103,5 +103,30 @@ describe('登录状态保持', () => {
 
     await waitFor(() => expect(localStorage.getItem('yacc:token')).toBeNull())
     expect(localStorage.getItem('yacc:user')).toBeNull()
+  })
+})
+
+describe('单设备登录', () => {
+  it('在别处登录后，这台设备下次打开会被退出并给出提示', async () => {
+    await activateAdmin()
+    const view = renderApp(['/me'])
+    await screen.findByText(/管理员/)
+    view.unmount()
+
+    // 模拟「另一台设备登录了同一账号」：直接让后端把当前 token 作废
+    const token = localStorage.getItem('yacc:token')!
+    await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: '导演', password: 'abc123' }),
+    })
+
+    renderApp(['/me'])
+    await waitFor(() => expect(localStorage.getItem('yacc:token')).toBeNull())
+
+    const loginPage = renderApp(['/login'])
+    expect(await screen.findByText(/上次的登录已失效/)).toBeInTheDocument()
+    loginPage.unmount()
+    expect(token).toBeTruthy()
   })
 })

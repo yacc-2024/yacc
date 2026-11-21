@@ -33,7 +33,7 @@ export function LoginGate({
             登录
           </Link>
           <Link to="/login?mode=register" className="btn btn--ghost" style={{ flex: 1 }}>
-            用邀请码注册
+            用认证密钥注册
           </Link>
         </div>
       </div>
@@ -49,7 +49,7 @@ function MemberCard({ m }: { m: Member }) {
       <span className="member__role">
         {m.roles.join(' · ')}
         {' · '}
-        {m.seasons.map((s) => `S${s}`).join(' ')}
+        {m.seasons.map((s) => `第${s}季`).join(' ')}
       </span>
     </Link>
   )

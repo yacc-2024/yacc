@@ -8,6 +8,14 @@ import {
   verifyPassword,
 } from './crypto'
 import { validateContent } from '../src/data/validate'
+import {
+  allocateUid,
+  describeSpec,
+  describeUid,
+  formatUid,
+  normaliseSpec,
+  type IdSpec,
+} from './uid'
 
 export interface Env {
   db: DB
@@ -70,6 +78,8 @@ function ensureSchema(db: DB): Promise<void> {
       for (const sql of [
         'ALTER TABLE users ADD COLUMN uid INTEGER',
         'ALTER TABLE users ADD COLUMN avatar TEXT',
+        'ALTER TABLE users ADD COLUMN signup_ip TEXT',
+        'ALTER TABLE activation_keys ADD COLUMN spec TEXT',
       ]) {
         try {
           await db.prepare(sql).run()
@@ -77,7 +87,7 @@ function ensureSchema(db: DB): Promise<void> {
           /* 列已存在 */
         }
       }
-      await assignMissingUids(db)
+      await normaliseLegacyUids(db)
     })().catch((err) => {
       schemas.delete(db)
       throw err
@@ -115,29 +125,27 @@ function toUser(row: UserRow): User {
   }
 }
 
-const UID_START = 100000
-
-/** 给还没编号的用户补上固定的数字 ID */
-async function assignMissingUids(db: DB): Promise<void> {
+/**
+ * 老版本用的是 6 位流水号，这里统一重排成新的五位规则。
+ * 老账号先按「剧组成员 · 导演 · 两季都参与」占位，之后可以在后台改。
+ */
+async function normaliseLegacyUids(db: DB): Promise<void> {
   const rows = await db
-    .prepare('SELECT id FROM users WHERE uid IS NULL ORDER BY created_at ASC')
+    .prepare('SELECT id FROM users WHERE uid IS NULL OR uid >= 100000 ORDER BY created_at ASC')
     .all<{ id: string }>()
-  if (rows.length === 0) return
-  const maxRow = await db
-    .prepare(`SELECT COALESCE(MAX(uid), ${UID_START}) AS m FROM users`)
-    .first<{ m: number }>()
-  let next = Number(maxRow?.m ?? UID_START) + 1
   for (const row of rows) {
-    await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(next, row.id).run()
-    next += 1
+    const uid = await allocateUid(db, { kind: 'crew', role: 1, season: 9 })
+    await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
   }
 }
 
-async function nextUid(db: DB): Promise<number> {
-  const maxRow = await db
-    .prepare(`SELECT COALESCE(MAX(uid), ${UID_START}) AS m FROM users`)
-    .first<{ m: number }>()
-  return Number(maxRow?.m ?? UID_START) + 1
+/** 取客户端 IP（Cloudflare 会带 cf-connecting-ip） */
+function clientIp(request: Request): string {
+  return (
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown'
+  )
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
@@ -157,6 +165,8 @@ async function readJson(request: Request): Promise<Record<string, unknown> | nul
 /* ---------------- 会话 ---------------- */
 
 async function createSession(db: DB, userId: string): Promise<string> {
+  // 单设备登录：新会话建立时，把旧设备上的会话全部作废
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run()
   const token = randomHex(32)
   const tokenHash = await sha256Hex(token)
   const expires = new Date(Date.now() + SESSION_DAYS * 86400_000).toISOString()
@@ -237,6 +247,36 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       })
     }
 
+    /* ---------- 公开：用户主页 ---------- */
+
+    const userPage = /^\/users\/(\d{1,6})$/.exec(path)
+    if (userPage && method === 'GET') {
+      const raw = Number(userPage[1])
+      const row = await db
+        .prepare('SELECT * FROM users WHERE uid = ?')
+        .bind(raw)
+        .first<UserRow>()
+      if (!row) return fail('找不到这个账号', 404)
+      const summary = describeUid(row.uid)
+      const commentCount = await db
+        .prepare("SELECT COUNT(*) AS n FROM comments WHERE user_id = ? AND status = 'published'")
+        .bind(row.id)
+        .first<{ n: number }>()
+      return ok({
+        user: {
+          uid: formatUid(row.uid),
+          rawUid: row.uid,
+          name: row.name,
+          avatar: row.avatar ?? null,
+          role: toUser(row).role,
+          verified: row.verified === 1,
+          memberSince: row.created_at,
+          label: summary.label,
+          commentCount: Number(commentCount?.n ?? 0),
+        },
+      })
+    }
+
     /* ---------- 注册登录 ---------- */
 
     if (path === '/auth/register' && method === 'POST') {
@@ -247,16 +287,54 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       const key = typeof body.key === 'string' ? body.key.trim().toUpperCase() : ''
       if (!name) return fail('昵称需要 2–12 个字符')
       if (!password) return fail('密码至少 6 位')
-      if (!key) return fail('需要邀请码或认证密钥')
 
-      const keyRow = await db
-        .prepare('SELECT * FROM activation_keys WHERE code = ?')
-        .bind(key)
-        .first<{ code: string; kind: string; used_by: string | null; expires_at: string | null }>()
-      if (!keyRow) return fail('这个密钥无效', 401)
-      if (keyRow.used_by) return fail('这个密钥已经被用过了', 409)
-      if (keyRow.expires_at && keyRow.expires_at < nowIso()) {
-        return fail('这个密钥已经过期', 410)
+      interface KeyRow {
+        code: string
+        kind: string
+        spec: string | null
+        used_by: string | null
+        expires_at: string | null
+      }
+
+      let spec: IdSpec = { kind: 'guest' }
+      let verified = 0
+      let keyRow: KeyRow | null = null
+
+      if (key) {
+        keyRow = await db
+          .prepare('SELECT * FROM activation_keys WHERE code = ?')
+          .bind(key)
+          .first<KeyRow>()
+        if (!keyRow) return fail('这个密钥无效', 401)
+        if (keyRow.used_by) return fail('这个密钥已经被用过了', 409)
+        if (keyRow.expires_at && keyRow.expires_at < nowIso()) {
+          return fail('这个密钥已经过期', 410)
+        }
+
+        let parsed: unknown = null
+        try {
+          parsed = keyRow.spec ? JSON.parse(keyRow.spec) : null
+        } catch {
+          parsed = null
+        }
+        spec =
+          normaliseSpec(parsed) ??
+          normaliseSpec({ kind: keyRow.kind === 'member' ? 'crew' : 'member', grade: 0, klass: 0 }) ??
+          { kind: 'member', grade: 0, klass: 0 }
+        verified = 1
+      } else {
+        // 普通访客：不用密钥，但同一台设备一天最多 3 个账号
+        const ip = clientIp(request)
+        if (ip !== 'unknown') {
+          const since = new Date(Date.now() - 86400_000).toISOString()
+          const row = await db
+            .prepare('SELECT COUNT(*) AS n FROM users WHERE signup_ip = ? AND created_at > ?')
+            .bind(ip, since)
+            .first<{ n: number }>()
+          if (Number(row?.n ?? 0) >= 3) {
+            return fail('这台设备今天注册的账号太多了，明天再来或找负责人要认证密钥', 429)
+          }
+        }
       }
 
       const exists = await db
@@ -267,27 +345,39 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       const salt = randomHex(16)
       const passwordHash = await hashPassword(password, salt)
-      const uid = await nextUid(db)
+      const uid = await allocateUid(db, spec)
       const user: User = {
         id: randomHex(8),
         uid,
         name,
         avatar: null,
-        role: keyRow.kind === 'member' ? 'member' : 'visitor',
-        verified: true,
+        role: 'visitor',
+        verified: verified === 1,
       }
 
       await db
         .prepare(
-          'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at, signup_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         )
-        .bind(user.id, uid, name, passwordHash, salt, user.role, 1, nowIso())
+        .bind(
+          user.id,
+          uid,
+          name,
+          passwordHash,
+          salt,
+          'visitor',
+          verified,
+          nowIso(),
+          clientIp(request),
+        )
         .run()
 
-      await db
-        .prepare('UPDATE activation_keys SET used_by = ?, used_at = ? WHERE code = ?')
-        .bind(user.id, nowIso(), key)
-        .run()
+      if (keyRow) {
+        await db
+          .prepare('UPDATE activation_keys SET used_by = ?, used_at = ? WHERE code = ?')
+          .bind(user.id, nowIso(), keyRow.code)
+          .run()
+      }
 
       const token = await createSession(db, user.id)
       return ok({ token, user })
@@ -327,7 +417,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       const salt = randomHex(16)
       const passwordHash = await hashPassword(password, salt)
-      const uid = await nextUid(db)
+      const uid = await allocateUid(db, { kind: 'crew', role: 1, season: 9 })
       const user: User = {
         id: randomHex(8),
         uid,
@@ -344,7 +434,14 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         .run()
 
       // 顺手生成第一批密钥，省得注册完还要再点一次
-      const seed = await issueKeys(db, 'member', 6, 365, '初始船员', user.id)
+      const seed = await issueKeys(
+        db,
+        { kind: 'crew', role: 1, season: 9 },
+        6,
+        365,
+        '初始认证密钥',
+        user.id,
+      )
       const token = await createSession(db, user.id)
       return ok({ token, user, keys: seed })
     }
@@ -440,19 +537,30 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       if (!TARGET_TYPES.has(targetType) || !targetId) return fail('参数不对')
       const rows = await db
         .prepare(
-          `SELECT c.id, c.body, c.created_at, c.user_id, u.name AS author
+          `SELECT c.id, c.body, c.created_at, c.user_id, u.name AS author,
+                  u.avatar, u.uid
            FROM comments c JOIN users u ON u.id = c.user_id
            WHERE c.target_type = ? AND c.target_id = ? AND c.status = 'published'
            ORDER BY c.created_at ASC`,
         )
         .bind(targetType, targetId)
-        .all<{ id: string; body: string; created_at: string; user_id: string; author: string }>()
+        .all<{
+          id: string
+          body: string
+          created_at: string
+          user_id: string
+          author: string
+          avatar: string | null
+          uid: number | null
+        }>()
       return ok({
         comments: rows.map((r) => ({
           id: r.id,
           body: r.body,
           createdAt: r.created_at,
           author: r.author,
+          avatar: r.avatar ?? null,
+          uid: formatUid(r.uid),
           mine: me?.id === r.user_id,
         })),
         me: me ?? null,
@@ -602,6 +710,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         keys: rows.map((r) => ({
           code: r.code,
           kind: r.kind,
+          spec: r.spec ?? null,
+          specLabel: specLabelOf(r.spec),
           note: r.note,
           createdAt: r.created_at,
           usedAt: r.used_at,
@@ -614,11 +724,18 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     if (path === '/admin/keys' && method === 'POST') {
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
-      const kind = body.kind === 'visitor' ? 'visitor' : 'member'
+      const spec =
+        normaliseSpec({
+          kind: body.kind,
+          role: body.role,
+          season: body.season,
+          grade: body.grade,
+          klass: body.klass,
+        }) ?? { kind: 'member', grade: 8, klass: 0 }
       const count = Math.min(50, Math.max(1, Number(body.count) || 1))
       const days = Math.min(365, Math.max(1, Number(body.expiresInDays) || 30))
       const note = typeof body.note === 'string' ? body.note.slice(0, 40) : ''
-      const keys = await issueKeys(db, kind, count, days, note, me!.id)
+      const keys = await issueKeys(db, spec, count, days, note, me!.id)
       return ok({ keys })
     }
 
@@ -671,15 +788,18 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     if (path === '/admin/users' && method === 'GET') {
       const rows = await db
         .prepare(
-          'SELECT id, name, role, verified, created_at FROM users ORDER BY created_at ASC',
+          'SELECT id, uid, name, avatar, role, verified, created_at FROM users ORDER BY uid ASC',
         )
         .all<Record<string, unknown>>()
       return ok({
         users: rows.map((r) => ({
           id: r.id,
+          uid: formatUid(r.uid as number | null),
           name: r.name,
+          avatar: (r.avatar as string | null) ?? null,
           role: r.role,
           verified: r.verified === 1,
+          label: describeUid(r.uid as number | null).label,
           createdAt: r.created_at,
         })),
       })
@@ -689,10 +809,38 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     if (patchUser && method === 'POST') {
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
+      const target = await db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .bind(patchUser[1])
+        .first<UserRow>()
+      if (!target) return fail('找不到这个账号', 404)
+
+      if (typeof body.name === 'string') {
+        const name = cleanName(body.name)
+        if (!name) return fail('昵称需要 2–12 个字符')
+        const taken = await db
+          .prepare('SELECT id FROM users WHERE name = ? AND id <> ?')
+          .bind(name, target.id)
+          .first<{ id: string }>()
+        if (taken) return fail('这个昵称已经有人用了', 409)
+        await db.prepare('UPDATE users SET name = ? WHERE id = ?').bind(name, target.id).run()
+      }
+
+      if (typeof body.password === 'string' && body.password.length > 0) {
+        const password = cleanPassword(body.password)
+        if (!password) return fail('新密码至少 6 位')
+        const salt = randomHex(16)
+        const hash = await hashPassword(password, salt)
+        await db
+          .prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?')
+          .bind(hash, salt, target.id)
+          .run()
+      }
+
       if (typeof body.verified === 'boolean') {
         await db
           .prepare('UPDATE users SET verified = ? WHERE id = ?')
-          .bind(body.verified ? 1 : 0, patchUser[1])
+          .bind(body.verified ? 1 : 0, target.id)
           .run()
       }
       return ok()
@@ -723,7 +871,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
 async function issueKeys(
   db: DB,
-  kind: 'member' | 'visitor',
+  spec: IdSpec,
   count: number,
   days: number,
   note: string,
@@ -744,11 +892,22 @@ async function issueKeys(
     }
     await db
       .prepare(
-        'INSERT INTO activation_keys (code, kind, note, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO activation_keys (code, kind, spec, note, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(code, kind, note, createdBy, nowIso(), expires)
+      .bind(code, spec.kind, JSON.stringify(spec), note, createdBy, nowIso(), expires)
       .run()
     codes.push(code)
   }
   return codes
+}
+
+
+/** 把密钥里存的规格 JSON 转成一句说明 */
+function specLabelOf(raw: unknown): string {
+  if (typeof raw !== 'string' || !raw) return '认证密钥'
+  try {
+    return describeSpec(normaliseSpec(JSON.parse(raw)))
+  } catch {
+    return '认证密钥'
+  }
 }

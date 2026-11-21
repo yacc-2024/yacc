@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { api } from '../lib/api'
 import { Icon } from './Icon'
+import { Avatar } from './ui'
 import { useConfirm } from './ui'
-import { formatDate } from '../lib/format'
+import { formatDateTime } from '../lib/format'
 
 interface CommentItem {
   id: string
   body: string
   createdAt: string
   author: string
+  avatar: string | null
+  uid: string
   mine: boolean
 }
 
@@ -173,30 +177,33 @@ export function Comments({
           你的账号还没有通过学校认证，暂时只能看。找负责人要一个认证密钥。
         </p>
       ) : (
-        <div>
-          <textarea
-            className="textarea"
-            style={{ minHeight: 84 }}
-            maxLength={MAX}
-            value={body}
-            placeholder="说点什么…"
-            aria-label="写评论"
-            onChange={(e) => setBody(e.target.value)}
-          />
-          <div className="between" style={{ marginTop: 8 }}>
-            <span className="t-tag faint">
-              {body.length}/{MAX}
-              {moderation === 'on' ? ' · 需审核' : ''}
-            </span>
-            <button
-              type="button"
-              className="btn btn--primary"
-              style={{ minHeight: 40, padding: '0 20px' }}
-              disabled={sending || !body.trim()}
-              onClick={() => void send()}
-            >
-              {sending ? '发送中…' : '发布'}
-            </button>
+        <div className="composer">
+          <Avatar name={account.name} src={account.avatar} size={32} />
+          <div className="grow">
+            <textarea
+              className="composer__input"
+              maxLength={MAX}
+              value={body}
+              placeholder="说点什么…"
+              aria-label="写评论"
+              onChange={(e) => setBody(e.target.value)}
+              rows={2}
+            />
+            <div className="between" style={{ marginTop: 8 }}>
+              <span className="t-tag faint">
+                {body.length}/{MAX}
+                {moderation === 'on' ? ' · 发布后需审核' : ''}
+              </span>
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ minHeight: 38, padding: '0 20px' }}
+                disabled={sending || !body.trim()}
+                onClick={() => void send()}
+              >
+                {sending ? '发送中…' : '发布'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -209,10 +216,15 @@ export function Comments({
         ) : (
           items.map((c) => (
             <div key={c.id} className="comment">
-              <div className="between">
-                <span className="comment__author">{c.author}</span>
-                <span className="t-tag faint t-num">{formatDate(c.createdAt.slice(0, 10))}</span>
-              </div>
+              <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
+                <Avatar name={c.author} src={c.avatar} size={32} />
+                <span className="grow">
+                  <span className="comment__author">{c.author}</span>
+                  <span className="t-tag faint t-num" style={{ display: 'block' }}>
+                    ID {c.uid} · {formatDateTime(c.createdAt)}
+                  </span>
+                </span>
+              </Link>
               <p className="comment__body">{c.body}</p>
               {c.mine ? (
                 <button

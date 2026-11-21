@@ -129,3 +129,20 @@ export function durationToInput(sec: number): string {
   if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   return `${m}:${String(s).padStart(2, '0')}`
 }
+
+
+const CN_DIGITS = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+
+/** 1 → 一，12 → 十二，20 → 二十 */
+export function cnNum(n: number): string {
+  const value = Math.round(n)
+  if (!Number.isFinite(value) || value < 0) return String(n)
+  if (value < 10) return CN_DIGITS[value]
+  if (value < 20) return `十${value % 10 === 0 ? '' : CN_DIGITS[value % 10]}`
+  if (value < 100) {
+    const tens = Math.floor(value / 10)
+    const ones = value % 10
+    return `${CN_DIGITS[tens]}十${ones === 0 ? '' : CN_DIGITS[ones]}`
+  }
+  return String(value)
+}

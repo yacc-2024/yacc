@@ -2,6 +2,7 @@ export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   uid INTEGER,
+  signup_ip TEXT,
   name TEXT NOT NULL COLLATE NOCASE UNIQUE,
   avatar TEXT,
   password_hash TEXT NOT NULL,
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS activation_keys (
   code TEXT PRIMARY KEY,
   kind TEXT NOT NULL,
+  spec TEXT,
   note TEXT NOT NULL DEFAULT '',
   created_by TEXT,
   created_at TEXT NOT NULL,

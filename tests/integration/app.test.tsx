@@ -34,7 +34,7 @@ describe('主页', () => {
   it('推荐位可点进播放页', async () => {
     const user = userEvent.setup()
     renderApp(['/'])
-    const card = await screen.findByRole('link', { name: '第三集 S2 · E3' })
+    const card = await screen.findByRole('link', { name: '第三集 第二季 · 第三集' })
     await user.click(card)
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: '第三集' })).toBeInTheDocument()
@@ -72,13 +72,16 @@ describe('作品', () => {
     const user = userEvent.setup()
     renderApp(['/works'])
     expect(await screen.findByText('反对校园霸凌')).toBeInTheDocument()
-    expect(screen.queryByText('第一集')).toBeNull()
+    // 第一季只有 1 集，第二季的「第二集」不该出现
+    expect(screen.queryByText('第二集')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: '第二季' }))
 
     expect(await screen.findByText('第一集')).toBeInTheDocument()
     expect(screen.getByText('第二集')).toBeInTheDocument()
     expect(screen.getByText('第三集')).toBeInTheDocument()
+    // 标题本身已经是「第X集」时，不再重复一个序号前缀
+    expect(screen.getAllByText('第一集')).toHaveLength(1)
   })
 
   it('花絮 Tab 还没内容时显示空状态', async () => {

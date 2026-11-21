@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
+import { cnNum } from '../lib/format'
 
 /** 图片加载失败时退回暖色占位，不留破图标 */
 export function SafeImage({
@@ -134,7 +135,9 @@ export function EpisodeRow({
       </span>
       <span className="grow">
         <span className="ep__title">
-          {typeof no === 'number' && no > 0 ? <span className="ep__no">E{no}</span> : null}
+          {typeof no === 'number' && no > 0 && !/^第.+集$/.test(title) ? (
+            <span className="ep__no">第{cnNum(no)}集</span>
+          ) : null}
           {title}
         </span>
         <span className="ep__meta" style={{ display: 'block' }}>

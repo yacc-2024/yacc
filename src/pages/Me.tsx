@@ -18,7 +18,7 @@ export function Me() {
               {c.site.name}
             </p>
             <p className="t-caption" style={{ marginTop: 8 }}>
-              用邀请码加入剧组，收藏喜欢的作品。
+              用认证密钥加入，收藏喜欢的作品。
             </p>
             <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
               <Link to="/login" className="btn btn--primary" style={{ flex: 1 }}>
@@ -30,7 +30,7 @@ export function Me() {
             </div>
           </div>
           <p className="t-tag faint" style={{ textAlign: 'center', marginTop: 24 }}>
-            邀请码可以找负责人要
+            认证密钥可以找负责人要
           </p>
         </div>
       ) : (
@@ -41,11 +41,7 @@ export function Me() {
               <p className="t-title3">{account.name}</p>
               <p className="t-caption faint t-num">
                 {account.uid ? `ID ${account.uid} · ` : ''}
-                {account.role === 'admin'
-                  ? '管理员'
-                  : account.role === 'member'
-                    ? '剧组成员'
-                    : '认证访客'}
+                {account.role === 'admin' ? '管理员' : '认证访客'}
               </p>
             </div>
           </div>

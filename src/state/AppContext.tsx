@@ -39,6 +39,7 @@ import {
   isAuthError,
   readCachedUser,
   setToken,
+  setUnauthorizedHandler,
 } from '../lib/api'
 import { isSecureCryptoAvailable } from '../data/accounts'
 
@@ -249,6 +250,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [loadFor])
+
+  /* ---------------- 被其他设备顶掉 ---------------- */
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setToken(null)
+      clearCachedUser()
+      setAccount(null)
+      try {
+        localStorage.setItem('yacc:session-ended', '1')
+      } catch {
+        /* 忽略 */
+      }
+      toast('账号已在别处登录', 'error')
+    })
+    return () => setUnauthorizedHandler(null)
+  }, [toast])
 
   /* ---------------- 网络状态 / 跨标签 ---------------- */
 

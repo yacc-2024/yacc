@@ -106,7 +106,7 @@ export function MembersAdmin() {
                     </span>
                     <span className="list__sub">
                       {m.roles.join(' · ') || '未分工'} ·{' '}
-                      {m.seasons.map((s) => `S${s}`).join(' ') || '未分季'}
+                      {m.seasons.map((s) => `第${s}季`).join(' ') || '未分季'}
                     </span>
                   </span>
                 </button>
