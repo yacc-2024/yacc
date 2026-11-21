@@ -52,7 +52,8 @@ export interface SessionUser {
   uid?: number | null
   name: string
   avatar?: string | null
-  title?: string | null
+  titles?: string[]
+  shownTitles?: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]
@@ -90,7 +91,11 @@ interface AppContextValue {
   signUp: (key: string, name: string, password: string) => Promise<void>
   createAdmin: (name: string, password: string, code: string) => Promise<string[]>
   signOut: () => Promise<void>
-  updateProfile: (patch: { name?: string; avatar?: string | null }) => Promise<void>
+  updateProfile: (patch: {
+    name?: string
+    avatar?: string | null
+    shownTitles?: string[]
+  }) => Promise<void>
   changeMyPassword: (oldPassword: string, newPassword: string) => Promise<void>
   toggleFavorite: (type: FavRef['type'], id: string) => Promise<boolean>
   pushHistory: (type: HistoryRef['type'], id: string) => Promise<void>
@@ -485,10 +490,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateProfile = useCallback(
-    async (patch: { name?: string; avatar?: string | null }) => {
+    async (patch: { name?: string; avatar?: string | null; shownTitles?: string[] }) => {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
-        const res = await api.profile(patch)
+        // 头像和称号分开提交，避免一次改动互相覆盖
+        if (patch.shownTitles) await api.profile({ shownTitles: patch.shownTitles })
+        const res = await api.profile({ name: patch.name, avatar: patch.avatar })
         cacheUser(res.user)
         setAccount(res.user)
         return

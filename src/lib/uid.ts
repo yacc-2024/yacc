@@ -36,3 +36,19 @@ export function uidTitle(
   }
   return '认证访客'
 }
+
+
+/** 主页要展示的称号：优先用自己选的，没有就按编号推导 */
+export function displayTitles(
+  uid: number | null | undefined,
+  role: string | undefined,
+  verified: boolean | undefined,
+  titles?: string[] | null,
+  shownTitles?: string[] | null,
+): string[] {
+  if (shownTitles && shownTitles.length) return shownTitles.slice(0, 3)
+  if (titles && titles.length) return titles.slice(0, 3)
+  if (role === 'admin' || role === 'superadmin') return ['管理员']
+  if (!verified) return ['访客']
+  return [uidTitle(uid, role, verified)]
+}

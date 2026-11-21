@@ -28,8 +28,10 @@ export interface SessionUser {
   uid?: number | null
   name: string
   avatar?: string | null
-  /** 管理员定制的称号 */
-  title?: string | null
+  /** 管理员发过的所有称号 */
+  titles?: string[]
+  /** 自己选择展示的称号（最多 3 个） */
+  shownTitles?: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: AdminPerm[]
@@ -146,7 +148,11 @@ export const api = {
 
   logout: () => call<Record<string, never>>('/auth/logout', { method: 'POST' }),
 
-  profile: (patch: { name?: string; avatar?: string | null }) =>
+  profile: (patch: {
+    name?: string
+    avatar?: string | null
+    shownTitles?: string[]
+  }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
   changePassword: (oldPassword: string, newPassword: string) =>
@@ -171,7 +177,8 @@ export const api = {
         verified: boolean
         memberSince: string
         label: string
-        title: string | null
+        titles: string[]
+        shownTitles: string[]
         commentCount: number
       }
     }>(`/users/${uid}`),
@@ -283,7 +290,7 @@ export const api = {
           role: string
           verified: boolean
           label: string
-          title: string | null
+          titles: string[]
           keyCode: string | null
           createdAt: string
         }>
@@ -297,7 +304,12 @@ export const api = {
 
     updateUser: (
       id: string,
-      patch: { name?: string; password?: string; verified?: boolean; title?: string | null },
+      patch: {
+        name?: string
+        password?: string
+        verified?: boolean
+        titles?: string[]
+      },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
 

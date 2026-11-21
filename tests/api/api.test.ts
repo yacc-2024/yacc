@@ -858,35 +858,76 @@ describe('强制编号与定制称号（v1.0.7）', () => {
     expect(res.status).toBe(409)
   })
 
-  it('管理员可以定制称号，公开主页会显示', async () => {
+  it('管理员可以发多个称号，主页默认展示第一个', async () => {
     const token = await bootstrapAdmin()
     const key = await makeKey(token, 'visitor')
     const reg = await registerWithKey(key, '有称号的人')
     const id = reg.body.data.user.id
     const uid = reg.body.data.user.uid
 
-    const res = await call('POST', `/admin/users/${id}`, { title: '特邀摄影' }, token)
+    const res = await call('POST', `/admin/users/${id}`, { titles: ['哦', '为', '位'] }, token)
     expect(res.status).toBe(200)
 
     const page = await call('GET', `/users/${uid}`)
-    expect(page.body.data.user.title).toBe('特邀摄影')
-    expect(page.body.data.user.label).toBe('特邀摄影')
+    expect(page.body.data.user.titles).toEqual(['哦', '为', '位'])
+    expect(page.body.data.user.shownTitles).toEqual(['哦'])
   })
 
-  it('称号清空后回到自动推导', async () => {
+  it('访客可以从自己的称号里挑最多三个展示', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '挑称号的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+    const userToken = reg.body.data.token
+
+    await call('POST', `/admin/users/${id}`, { titles: ['甲', '乙', '丙', '丁'] }, token)
+
+    const res = await call('POST', '/auth/profile', { shownTitles: ['乙', '丁'] }, userToken)
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.shownTitles).toEqual(['乙', '丁'])
+    expect(page.body.data.user.label).toBe('乙 · 丁')
+  })
+
+  it('不能展示管理员没给过的称号，也不能超过三个', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '越权的人')
+    const id = reg.body.data.user.id
+    const userToken = reg.body.data.token
+    await call('POST', `/admin/users/${id}`, { titles: ['甲', '乙', '丙', '丁'] }, token)
+
+    const bad = await call('POST', '/auth/profile', { shownTitles: ['没给过'] }, userToken)
+    expect(bad.status).toBe(400)
+
+    const tooMany = await call(
+      'POST',
+      '/auth/profile',
+      { shownTitles: ['甲', '乙', '丙', '丁'] },
+      userToken,
+    )
+    expect(tooMany.status).toBe(200)
+    const me = await call('GET', '/auth/me', undefined, userToken)
+    expect(me.body.data.user.shownTitles).toHaveLength(3)
+  })
+
+  it('称号清空后回到按编号推导', async () => {
     const token = await bootstrapAdmin()
     const key = await makeKey(token, 'visitor')
     const reg = await registerWithKey(key, '清称号的人')
     const id = reg.body.data.user.id
     const uid = reg.body.data.user.uid
 
-    await call('POST', `/admin/users/${id}`, { title: '临时称号' }, token)
-    await call('POST', `/admin/users/${id}`, { title: null }, token)
+    await call('POST', `/admin/users/${id}`, { titles: ['临时称号'] }, token)
+    await call('POST', `/admin/users/${id}`, { titles: [] }, token)
 
     const page = await call('GET', `/users/${uid}`)
-    expect(page.body.data.user.title).toBeNull()
+    expect(page.body.data.user.titles).toEqual([])
     expect(page.body.data.user.label).toContain('认证成员')
   })
+
 })
 
 describe('成员与账号绑定（v1.0.8）', () => {

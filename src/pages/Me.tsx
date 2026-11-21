@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow } from '../components/ui'
 import { Icon } from '../components/Icon'
-import { formatUid, uidTitle } from '../lib/uid'
+import { formatUid, displayTitles } from '../lib/uid'
 
 export function Me() {
   const { content, account } = useApp()
@@ -50,8 +50,18 @@ export function Me() {
                 <span className="t-caption faint t-num" style={{ display: 'block', marginTop: 2 }}>
                   ID {formatUid(account.uid)}
                 </span>
-                <span className="title-chip">
-                  {uidTitle(account.uid, account.role, account.verified, account.title)}
+                <span className="title-row">
+                  {displayTitles(
+                    account.uid,
+                    account.role,
+                    account.verified,
+                    account.titles,
+                    account.shownTitles,
+                  ).map((t) => (
+                    <span key={t} className="title-chip">
+                      {t}
+                    </span>
+                  ))}
                 </span>
               </span>
             </Link>

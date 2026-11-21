@@ -2038,3 +2038,15 @@ select.input {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* 多个称号并排 */
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.title-row .title-chip {
+  margin-top: 0;
+}

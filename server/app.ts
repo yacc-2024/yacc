@@ -31,8 +31,10 @@ export interface User {
   uid: number | null
   name: string
   avatar: string | null
-  /** 管理员定制的称号；为空时按编号自动推导 */
-  title: string | null
+  /** 管理员发过的所有称号 */
+  titles: string[]
+  /** 自己选择展示的称号（最多 3 个） */
+  shownTitles: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -45,6 +47,8 @@ interface UserRow {
   name: string
   avatar: string | null
   title: string | null
+  titles: string | null
+  shown_titles: string | null
   perms: string | null
   password_hash: string
   salt: string
@@ -109,6 +113,8 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE activation_keys ADD COLUMN spec TEXT',
         'ALTER TABLE users ADD COLUMN perms TEXT',
         'ALTER TABLE users ADD COLUMN title TEXT',
+        'ALTER TABLE users ADD COLUMN titles TEXT',
+        'ALTER TABLE users ADD COLUMN shown_titles TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
       ]) {
         try {
@@ -151,7 +157,8 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
-    title: row.title ?? null,
+    titles: parseTitles(row.titles, row.title),
+    shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -164,6 +171,45 @@ function toUser(row: UserRow): User {
 }
 
 const ALL_PERMS: AdminPerm[] = ['content', 'users', 'keys', 'comments']
+
+const MAX_TITLES = 10
+const MAX_SHOWN = 3
+
+/** 解析称号列表；兼容只有一个称号的老数据 */
+function parseTitles(raw: string | null | undefined, legacy: string | null): string[] {
+  if (raw) {
+    try {
+      const list = JSON.parse(raw)
+      if (Array.isArray(list)) {
+        return list.filter((x): x is string => typeof x === 'string').slice(0, MAX_TITLES)
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }
+  return legacy ? [legacy] : []
+}
+
+function parseShown(
+  raw: string | null | undefined,
+  titlesRaw: string | null | undefined,
+  legacy: string | null,
+): string[] {
+  const all = parseTitles(titlesRaw, legacy)
+  if (raw) {
+    try {
+      const list = JSON.parse(raw)
+      if (Array.isArray(list)) {
+        const picked = list.filter((x): x is string => typeof x === 'string')
+        const valid = picked.filter((t) => all.includes(t)).slice(0, MAX_SHOWN)
+        if (valid.length > 0) return valid
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }
+  return all.slice(0, 1)
+}
 
 function parsePerms(raw: string | null | undefined): AdminPerm[] {
   if (!raw) return []
@@ -400,8 +446,12 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           role: toUser(row).role,
           verified: row.verified === 1,
           memberSince: row.created_at,
-          label: row.title || summary.label,
-          title: row.title ?? null,
+          label: (() => {
+            const shown = parseShown(row.shown_titles, row.titles, row.title)
+            return shown.length ? shown.join(' · ') : summary.label
+          })(),
+          titles: parseTitles(row.titles, row.title),
+          shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           commentCount: Number(commentCount?.n ?? 0),
         },
       })
@@ -495,7 +545,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         uid,
         name,
         avatar: null,
-        title: null,
+        titles: [],
+        shownTitles: [],
         role,
         verified: verified === 1,
         perms: isAdminSignup ? adminPerms : [],
@@ -571,7 +622,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         uid,
         name,
         avatar: null,
-        title: null,
+        titles: [],
+        shownTitles: [],
         role: 'superadmin',
         verified: true,
         perms: ALL_PERMS,
@@ -621,6 +673,19 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           .first<{ id: string }>()
         if (taken) return fail('这个昵称已经有人用了', 409)
         nextName = name
+      }
+
+      if (Array.isArray(body.shownTitles)) {
+        const owned = me.titles ?? []
+        const picked = (body.shownTitles as unknown[])
+          .filter((t): t is string => typeof t === 'string')
+          .filter((t) => owned.includes(t))
+          .slice(0, MAX_SHOWN)
+        if (picked.length === 0) return fail('至少要选一个称号')
+        await db
+          .prepare('UPDATE users SET shown_titles = ? WHERE id = ?')
+          .bind(JSON.stringify(picked), me.id)
+          .run()
       }
 
       let nextAvatar = me.avatar
@@ -1044,17 +1109,30 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           .run()
       }
 
-      if (body.title !== undefined) {
-        if (body.title === null || body.title === '') {
-          await db.prepare('UPDATE users SET title = NULL WHERE id = ?').bind(target.id).run()
-        } else if (typeof body.title === 'string' && body.title.trim().length <= 20) {
-          await db
-            .prepare('UPDATE users SET title = ? WHERE id = ?')
-            .bind(body.title.trim(), target.id)
-            .run()
-        } else {
-          return fail('称号最多 20 个字')
+      if (Array.isArray(body.titles)) {
+        const list = (body.titles as unknown[])
+          .map((t) => (typeof t === 'string' ? t.trim() : ''))
+          .filter((t) => t.length > 0 && t.length <= 20)
+          .slice(0, MAX_TITLES)
+        const current = parseTitles(target.titles, target.title)
+        // 展示列表里被删掉的称号要跟着清理
+        const shownRaw = target.shown_titles
+        let shown: string[] = []
+        try {
+          shown = shownRaw ? (JSON.parse(shownRaw) as string[]) : []
+        } catch {
+          shown = []
         }
+        const stillShown = shown.filter((t) => list.includes(t))
+        await db
+          .prepare('UPDATE users SET titles = ?, shown_titles = ?, title = NULL WHERE id = ?')
+          .bind(
+            JSON.stringify(list),
+            JSON.stringify(stillShown.length ? stillShown : list.slice(0, 1)),
+            target.id,
+          )
+          .run()
+        void current
       }
 
       if (Array.isArray(body.perms)) {

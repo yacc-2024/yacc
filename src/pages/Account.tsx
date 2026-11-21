@@ -4,7 +4,7 @@ import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui'
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
-import { formatUid, uidTitle } from '../lib/uid'
+import { formatUid, displayTitles } from '../lib/uid'
 import { useRef } from 'react'
 import { AvatarCropper } from '../components/AvatarCropper'
 import {
@@ -67,8 +67,18 @@ function SettingsHome() {
             <p className="t-caption faint t-num" style={{ marginTop: 2 }}>
               ID {formatUid(account.uid)}
             </p>
-            <span className="title-chip">
-              {uidTitle(account.uid, account.role, account.verified, account.title)}
+            <span className="title-row">
+              {displayTitles(
+                account.uid,
+                account.role,
+                account.verified,
+                account.titles,
+                account.shownTitles,
+              ).map((t) => (
+                <span key={t} className="title-chip">
+                  {t}
+                </span>
+              ))}
             </span>
           </div>
         </div>
@@ -118,6 +128,7 @@ function ProfileSettingsInner() {
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
+  const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   if (!account) return null
@@ -127,9 +138,15 @@ function ProfileSettingsInner() {
   const save = async () => {
     setBusy(true)
     try {
+      const shownChanged =
+        shown.length > 0 &&
+        (shown.length !== (account.shownTitles ?? []).length ||
+          shown.some((t) => !(account.shownTitles ?? []).includes(t)))
+
       await updateProfile({
         name: name.trim(),
         avatar: avatar.trim() ? avatar.trim() : null,
+        ...(shownChanged ? { shownTitles: shown } : {}),
       })
       toast('已保存')
     } catch (err) {
@@ -211,6 +228,36 @@ function ProfileSettingsInner() {
             每一位访客唯一的数字 ID，不可更改。
           </p>
         </div>
+
+        {account.titles && account.titles.length > 0 ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <p className="t-caption faint">展示哪个称号（最多 3 个）</p>
+            <div className="chips" style={{ marginTop: 10 }}>
+              {account.titles.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className="chip"
+                  aria-pressed={shown.includes(t)}
+                  onClick={() =>
+                    setShown((prev) =>
+                      prev.includes(t)
+                        ? prev.filter((x) => x !== t)
+                        : prev.length >= 3
+                          ? prev
+                          : [...prev, t],
+                    )
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <p className="field__hint" style={{ marginTop: 8 }}>
+              这些是管理员发给你的称号，可以自己决定主页上显示哪几个。
+            </p>
+          </div>
+        ) : null}
 
         <div className="field">
           <label className="field__label" htmlFor="nickname">

@@ -563,7 +563,7 @@ interface AdminUser {
   role: string
   verified: boolean
   label: string
-  title: string | null
+  titles: string[]
   keyCode: string | null
   createdAt: string
 }
@@ -631,9 +631,9 @@ export function UsersPanel() {
                   <span className="list__sub t-num">
                     {u.uid} · {u.label || (u.verified ? '认证访客' : '普通访客')}
                   </span>
-                  {u.title ? (
+                  {u.titles.length > 0 ? (
                     <span className="t-tag" style={{ display: 'block', color: 'var(--accent)' }}>
-                      自定义称号
+                      {u.titles.length} 个称号
                     </span>
                   ) : null}
                   {u.keyCode ? (
@@ -679,7 +679,8 @@ function UserForm({
   const canDelete = !isSelf && user.role !== 'superadmin'
   const [name, setName] = useState(user.name)
   const [uid, setUid] = useState(user.uid)
-  const [title, setTitle] = useState(user.title ?? '')
+  const [titleList, setTitleList] = useState<string[]>(user.titles ?? [])
+  const [titleDraft, setTitleDraft] = useState('')
   const [password, setPassword] = useState('')
   const [verified, setVerified] = useState(user.verified)
   const [busy, setBusy] = useState(false)
@@ -691,12 +692,15 @@ function UserForm({
         name?: string
         password?: string
         verified?: boolean
-        title?: string | null
+        titles?: string[]
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
       if (verified !== user.verified) patch.verified = verified
-      if (title.trim() !== (user.title ?? '')) patch.title = title.trim() || null
+      const sameTitles =
+        titleList.length === (user.titles ?? []).length &&
+        titleList.every((t, i) => t === (user.titles ?? [])[i])
+      if (!sameTitles) patch.titles = titleList
 
       if (uid.trim() && uid.trim() !== user.uid) {
         const numeric = Number(uid.trim())
@@ -707,7 +711,11 @@ function UserForm({
       }
 
       if (Object.keys(patch).length > 0) await api.admin.updateUser(user.id, patch)
-      toast('已保存')
+      toast(
+        patch.titles !== undefined
+          ? `已保存，称号 ${patch.titles.length} 个`
+          : '已保存',
+      )
       onSaved()
     } catch (err) {
       toast(err instanceof Error ? err.message : '保存失败', 'error')
@@ -769,19 +777,55 @@ function UserForm({
       </div>
 
       <div className="field">
-        <label className="field__label" htmlFor="user-title">
-          称号
-        </label>
-        <input
-          id="user-title"
-          className="input"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="留空就按编号自动显示"
-          maxLength={20}
-        />
+        <span className="field__label">称号（可以发多个）</span>
+        <div className="row gap-2">
+          <input
+            id="user-title"
+            className="input grow"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            placeholder="比如「特邀摄影」"
+            maxLength={20}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              const value = titleDraft.trim()
+              if (!value || titleList.includes(value)) return
+              setTitleList((prev) => [...prev, value].slice(0, 10))
+              setTitleDraft('')
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            style={{ minHeight: 44, padding: '0 16px' }}
+            onClick={() => {
+              const value = titleDraft.trim()
+              if (!value || titleList.includes(value)) return
+              setTitleList((prev) => [...prev, value].slice(0, 10))
+              setTitleDraft('')
+            }}
+          >
+            添加
+          </button>
+        </div>
+        {titleList.length > 0 ? (
+          <div className="chips" style={{ marginTop: 10 }}>
+            {titleList.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className="chip"
+                aria-pressed
+                onClick={() => setTitleList((prev) => prev.filter((x) => x !== t))}
+              >
+                {t} ×
+              </button>
+            ))}
+          </div>
+        ) : null}
         <p className="field__hint">
-          可以随便写，比如「特邀摄影」「八七班」。留空则按编号推导。
+          可以发多个，对方自己决定主页上展示哪几个（最多 3 个）。点称号可以删除。
         </p>
       </div>
 
