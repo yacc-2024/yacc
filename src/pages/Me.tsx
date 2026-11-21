@@ -37,18 +37,24 @@ export function Me() {
       ) : (
         <div className="page__body">
           <div className="row gap-3" style={{ marginTop: 8, marginBottom: 20 }}>
-            <Link to="/me/settings/profile" aria-label="编辑个人资料">
+            <Link
+              to="/me/settings/profile"
+              className="me-head"
+              aria-label="编辑个人资料"
+            >
               <Avatar name={account.name} src={account.avatar} size={56} />
-            </Link>
-            <div className="grow">
-              <p className="t-title3">{account.name}</p>
-              <p className="t-caption faint t-num" style={{ marginTop: 2 }}>
-                ID {formatUid(account.uid)}
-              </p>
-              <span className="title-chip">
-                {uidTitle(account.uid, account.role, account.verified, account.title)}
+              <span className="grow">
+                <span className="t-title3" style={{ display: 'block' }}>
+                  {account.name}
+                </span>
+                <span className="t-caption faint t-num" style={{ display: 'block', marginTop: 2 }}>
+                  ID {formatUid(account.uid)}
+                </span>
+                <span className="title-chip">
+                  {uidTitle(account.uid, account.role, account.verified, account.title)}
+                </span>
               </span>
-            </div>
+            </Link>
           </div>
 
           <div className="list">

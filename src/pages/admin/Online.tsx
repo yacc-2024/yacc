@@ -29,16 +29,24 @@ const PERM_LABELS: Array<[AdminPerm, string]> = [
   ['comments', '评论审核'],
 ]
 
+const CREW_ROLE_DIGITS: Record<string, number> = {
+  导演: 1,
+  编剧: 2,
+  剪辑: 3,
+  摄影: 4,
+  演员: 5,
+}
+
 export function KeysPanel() {
-  const { mode, toast, account } = useApp()
+  const { mode, toast, account, content } = useApp()
+  const members = content?.members ?? []
   const isSuper = account?.role === 'superadmin'
   const confirm = useConfirm()
   const [keys, setKeys] = useState<KeyRow[]>([])
   const [loading, setLoading] = useState(true)
   const [kind, setKind] = useState<'crew' | 'member' | 'admin'>('member')
   const [perms, setPerms] = useState<AdminPerm[]>(['content'])
-  const [crewRole, setCrewRole] = useState(1)
-  const [crewSeason, setCrewSeason] = useState(1)
+  const [memberId, setMemberId] = useState('')
   const [grade, setGrade] = useState(8)
   const [klass, setKlass] = useState(7)
   const [count, setCount] = useState(5)
@@ -79,12 +87,41 @@ export function KeysPanel() {
   const generate = async () => {
     setBusy(true)
     try {
-      const spec =
-        kind === 'admin'
-          ? { kind: 'admin' as const, perms }
-          : kind === 'crew'
-            ? { kind: 'crew' as const, role: crewRole, season: crewSeason }
-            : { kind: 'member' as const, grade, klass }
+      let spec:
+        | { kind: 'admin'; perms: AdminPerm[] }
+        | {
+            kind: 'crew'
+            role: number
+            season: number
+            memberId?: string
+            memberName?: string
+          }
+        | { kind: 'member'; grade: number; klass: number }
+      if (kind === 'admin') {
+        spec = { kind: 'admin', perms }
+      } else if (kind === 'crew') {
+        const member = members.find((m) => m.id === memberId)
+        if (!member) {
+          toast('先选一个成员', 'error')
+          return
+        }
+        const roleDigit = CREW_ROLE_DIGITS[member.roles[0] ?? ''] ?? 5
+        const seasonDigit =
+          member.seasons.includes(1) && member.seasons.includes(2)
+            ? 9
+            : member.seasons[0] === 2
+              ? 2
+              : 1
+        spec = {
+          kind: 'crew',
+          role: roleDigit,
+          season: seasonDigit,
+          memberId: member.id,
+          memberName: member.name,
+        }
+      } else {
+        spec = { kind: 'member', grade, klass }
+      }
       const res = await api.admin.createKeys(spec, count, days, note)
       setFresh(res.keys)
       toast(`生成了 ${res.keys.length} 个密钥`)
@@ -171,48 +208,27 @@ export function KeysPanel() {
           ) : kind === 'crew' ? (
             <>
               <p className="field__label" style={{ marginTop: 16 }}>
-                剧组身份（编号第 2 位）
+                绑定哪个成员
               </p>
-              <div className="chips">
-                {[
-                  [1, '导演'],
-                  [2, '编剧'],
-                  [3, '剪辑'],
-                  [4, '摄影'],
-                  [5, '演员'],
-                ].map(([value, label]) => (
+              <p className="field__hint" style={{ marginTop: 2 }}>
+                密钥发给这个成员，他注册后成员页会显示他的主页。
+              </p>
+              <div className="chips" style={{ maxHeight: 190, overflowY: 'auto' }}>
+                {members.map((m) => (
                   <button
-                    key={value}
+                    key={m.id}
                     type="button"
                     className="chip"
-                    aria-pressed={crewRole === value}
-                    onClick={() => setCrewRole(value as number)}
+                    aria-pressed={memberId === m.id}
+                    onClick={() => setMemberId(m.id)}
                   >
-                    {label}
+                    {m.name}
                   </button>
                 ))}
               </div>
-
-              <p className="field__label" style={{ marginTop: 14 }}>
-                参与季（编号第 3 位）
-              </p>
-              <div className="chips">
-                {[
-                  [1, '第一季'],
-                  [2, '第二季'],
-                  [9, '两季都参与'],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className="chip"
-                    aria-pressed={crewSeason === value}
-                    onClick={() => setCrewSeason(value as number)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {members.length === 0 ? (
+                <p className="field__hint">还没有成员，先去「成员管理」加人。</p>
+              ) : null}
             </>
           ) : (
             <div className="row gap-3" style={{ marginTop: 16 }}>
@@ -246,9 +262,7 @@ export function KeysPanel() {
           <p className="field__hint" style={{ marginTop: 14 }}>
             编号会按这个规则发：{' '}
             <span className="t-num">
-              {kind === 'crew'
-                ? `1${crewRole}${crewSeason}xx`
-                : `2${grade}${klass}xx`}
+              {kind === 'crew' ? '1abcc' : `2${grade}${klass}xx`}
             </span>
             （后两位是顺序）
           </p>

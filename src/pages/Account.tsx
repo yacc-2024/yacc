@@ -5,8 +5,8 @@ import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { formatUid, uidTitle } from '../lib/uid'
-import { fileToAvatar } from '../lib/image'
 import { useRef } from 'react'
+import { AvatarCropper } from '../components/AvatarCropper'
 import {
   DEFAULT_BLUR,
   MAX_BLUR,
@@ -117,7 +117,7 @@ function ProfileSettingsInner() {
   const [name, setName] = useState(account?.name ?? '')
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [busy, setBusy] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [cropFile, setCropFile] = useState<File | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   if (!account) return null
@@ -139,19 +139,6 @@ function ProfileSettingsInner() {
     }
   }
 
-  const onPickFile = async (file: File | undefined) => {
-    if (!file) return
-    setUploading(true)
-    try {
-      const data = await fileToAvatar(file)
-      setAvatar(data)
-    } catch (err) {
-      toast(err instanceof Error ? err.message : '上传失败', 'error')
-    } finally {
-      setUploading(false)
-    }
-  }
-
   const copyUid = async () => {
     if (!account.uid) return
     try {
@@ -166,17 +153,17 @@ function ProfileSettingsInner() {
     <>
       <NavBar title="个人资料" back />
       <div className="page__body">
-        <div style={{ textAlign: 'center', paddingTop: 12 }}>
+        <div className="avatar-card">
           <Avatar name={name || account.name} src={avatar || null} size={88} />
-          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center', gap: 8 }}>
+          <div className="avatar-card__actions">
             <button
               type="button"
               className="btn btn--ghost"
               style={{ minHeight: 40, padding: '0 18px' }}
-              disabled={mode === 'local' || uploading}
+              disabled={mode === 'local'}
               onClick={() => fileRef.current?.click()}
             >
-              {uploading ? '处理中…' : avatar ? '换一张' : '上传头像'}
+              {avatar ? '换一张' : '上传头像'}
             </button>
             {avatar ? (
               <button
@@ -189,6 +176,9 @@ function ProfileSettingsInner() {
               </button>
             ) : null}
           </div>
+          <p className="t-caption faint" style={{ marginTop: 10 }}>
+            {mode === 'local' ? '离线模式暂时不能上传头像。' : '上传后可以拖动调整位置'}
+          </p>
           <input
             ref={fileRef}
             type="file"
@@ -196,23 +186,19 @@ function ProfileSettingsInner() {
             hidden
             aria-label="选择头像图片"
             onChange={(e) => {
-              void onPickFile(e.target.files?.[0])
+              const file = e.target.files?.[0]
+              if (file) setCropFile(file)
               e.target.value = ''
             }}
           />
-          <p className="t-caption faint" style={{ marginTop: 8 }}>
-            {mode === 'local'
-              ? '离线模式暂时不能上传头像。'
-              : '会自动裁成方形并压缩，不用自己修图。'}
-          </p>
         </div>
 
-        <div className="card" style={{ marginTop: 20 }}>
+        <div className="card" style={{ marginTop: 16 }}>
           <div className="between">
             <div>
               <p className="t-caption faint">数字账号 ID</p>
               <p className="t-title3 t-num" style={{ marginTop: 2 }}>
-                {account.uid ?? '—'}
+                {formatUid(account.uid)}
               </p>
             </div>
             {account.uid ? (
@@ -222,7 +208,7 @@ function ProfileSettingsInner() {
             ) : null}
           </div>
           <p className="field__hint" style={{ marginTop: 10 }}>
-            这个号码注册后就不会变了，像学号一样。昵称可以改，ID 不行。
+            每一位访客唯一的数字 ID，不可更改。
           </p>
         </div>
 
@@ -267,6 +253,17 @@ function ProfileSettingsInner() {
         >
           {busy ? '保存中…' : dirty ? '保存' : '已保存'}
         </button>
+
+        {cropFile ? (
+          <AvatarCropper
+            file={cropFile}
+            onCancel={() => setCropFile(null)}
+            onConfirm={(data) => {
+              setAvatar(data)
+              setCropFile(null)
+            }}
+          />
+        ) : null}
       </div>
     </>
   )

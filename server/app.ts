@@ -59,6 +59,25 @@ const MAX_FILE = 2 * 1024 * 1024
 
 /* ---------------- 响应 ---------------- */
 
+/**
+ * 极简内存限流：同一个键在窗口期内最多 N 次。
+ * Worker 的每个实例独立计数，够挡住手动连点，不追求精确。
+ */
+const buckets = new Map<string, number[]>()
+
+function tooFast(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now()
+  const hits = (buckets.get(key) ?? []).filter((t) => now - t < windowMs)
+  if (hits.length >= limit) {
+    buckets.set(key, hits)
+    return true
+  }
+  hits.push(now)
+  buckets.set(key, hits)
+  if (buckets.size > 5000) buckets.clear()
+  return false
+}
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -90,6 +109,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE activation_keys ADD COLUMN spec TEXT',
         'ALTER TABLE users ADD COLUMN perms TEXT',
         'ALTER TABLE users ADD COLUMN title TEXT',
+        'ALTER TABLE users ADD COLUMN member_id TEXT',
       ]) {
         try {
           await db.prepare(sql).run()
@@ -337,6 +357,25 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       })
     }
 
+    /* ---------- 公开：成员页与账号的对应关系 ---------- */
+
+    if (path === '/members/links' && method === 'GET') {
+      const rows = await db
+        .prepare(
+          `SELECT member_id, uid, name, avatar FROM users
+           WHERE member_id IS NOT NULL ORDER BY uid ASC`,
+        )
+        .all<{ member_id: string; uid: number | null; name: string; avatar: string | null }>()
+      return ok({
+        links: rows.map((r) => ({
+          memberId: r.member_id,
+          uid: formatUid(r.uid),
+          name: r.name,
+          avatar: r.avatar ?? null,
+        })),
+      })
+    }
+
     /* ---------- 公开：用户主页 ---------- */
 
     const userPage = /^\/users\/(\d{1,6})$/.exec(path)
@@ -464,7 +503,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       await db
         .prepare(
-          'INSERT INTO users (id, uid, name, password_hash, salt, role, perms, verified, created_at, signup_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO users (id, uid, name, password_hash, salt, role, perms, verified, created_at, signup_ip, member_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         )
         .bind(
           user.id,
@@ -477,6 +516,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           verified,
           nowIso(),
           clientIp(request),
+          spec.kind === 'crew' && spec.memberId ? spec.memberId : null,
         )
         .run()
 
@@ -681,6 +721,9 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/comments' && method === 'POST') {
+      if (me && tooFast(`comment:${me.id}`, 5, 60_000)) {
+        return fail('请勿频繁点击', 429)
+      }
       if (!me) return fail('登录后才能评论', 401)
       if (!me.verified) return fail('需要学校认证才能评论', 403)
       const body = await readJson(request)
@@ -747,6 +790,9 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
     if (path === '/reactions/toggle' && method === 'POST') {
       if (!me) return fail('登录后才能点赞', 401)
+      if (tooFast(`like:${me.id}`, 12, 20_000)) {
+        return fail('请勿频繁点击', 429)
+      }
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
       const targetType = String(body.targetType ?? '')
@@ -868,6 +914,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
             season: body.season,
             grade: body.grade,
             klass: body.klass,
+            memberId: body.memberId,
+            memberName: body.memberName,
           }) ?? { kind: 'member', grade: 0, klass: 0 }
         kind = spec.kind
         specJson = JSON.stringify(spec)

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL COLLATE NOCASE UNIQUE,
   avatar TEXT,
   title TEXT,
+  member_id TEXT,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'visitor',

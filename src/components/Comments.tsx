@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { api } from '../lib/api'
@@ -30,6 +30,7 @@ export function LikeButton({
   const [count, setCount] = useState(0)
   const [mine, setMine] = useState(false)
   const [pop, setPop] = useState(false)
+  const lastClick = useRef(0)
 
   useEffect(() => {
     if (mode !== 'online') return
@@ -50,6 +51,12 @@ export function LikeButton({
   if (mode !== 'online') return null
 
   const onToggle = async () => {
+    const now = Date.now()
+    if (now - lastClick.current < 700) {
+      toast('请勿频繁点击', 'error')
+      return
+    }
+    lastClick.current = now
     if (!account) {
       toast('登录后才能点赞', 'error')
       return
@@ -124,6 +131,10 @@ export function Comments({
   const send = async () => {
     const text = body.trim()
     if (!text) return
+    if (sending) {
+      toast('请勿频繁点击', 'error')
+      return
+    }
     if (text.length > MAX) {
       toast(`最多 ${MAX} 个字`, 'error')
       return

@@ -1,9 +1,42 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useApp } from '../state/AppContext'
 import { NavBar, Chip, EmptyState, Avatar } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { rolesOf, seasonsSorted } from '../lib/selectors'
 import type { Member } from '../data/schema'
+import { api } from '../lib/api'
+
+interface MemberLink {
+  memberId: string
+  uid: string
+  name: string
+  avatar: string | null
+}
+
+/** 成员 → 账号 的映射；没有账号的成员显示成灰色 */
+function useMemberLinks(online: boolean) {
+  const [links, setLinks] = useState<Record<string, MemberLink>>({})
+  useEffect(() => {
+    if (!online) return
+    let alive = true
+    void api
+      .memberLinks()
+      .then((res) => {
+        if (!alive) return
+        const map: Record<string, MemberLink> = {}
+        for (const item of res.links) map[item.memberId] = item
+        setLinks(map)
+      })
+      .catch(() => {
+        /* 离线或没有账号时静默 */
+      })
+    return () => {
+      alive = false
+    }
+  }, [online])
+  return links
+}
 
 export function LoginGate({
   title = '成员名单仅剧组内部可见',
@@ -41,10 +74,11 @@ export function LoginGate({
   )
 }
 
-function MemberCard({ m }: { m: Member }) {
+function MemberCard({ m, link }: { m: Member; link?: MemberLink }) {
   return (
-    <Link to={`/members/${m.id}`} className="member">
-      <Avatar name={m.name} src={m.avatar} size={88} />
+    <Link to={link ? `/u/${link.uid}` : `/members/${m.id}`} className="member">
+      <Avatar name={m.name} src={link?.avatar ?? m.avatar} size={88} />
+      {link ? <span className="member__badge">已注册</span> : null}
       <span className="member__name clamp-1">{m.name}</span>
       <span className="member__role">
         {m.roles.join(' · ')}
@@ -56,9 +90,10 @@ function MemberCard({ m }: { m: Member }) {
 }
 
 export function Members() {
-  const { content, account } = useApp()
+  const { content, account, mode } = useApp()
   const c = content!
   const [params, setParams] = useSearchParams()
+  const links = useMemberLinks(mode === 'online' && !!account)
 
   const role = params.get('role')
   const season = params.get('season')
@@ -183,7 +218,7 @@ export function Members() {
               ) : null}
               <div className="grid-2">
                 {g.list.map((m) => (
-                  <MemberCard key={`${g.key}-${m.id}`} m={m} />
+                  <MemberCard key={`${g.key}-${m.id}`} m={m} link={links[m.id]} />
                 ))}
               </div>
             </section>

@@ -1962,3 +1962,79 @@ select.input {
     height: 56px;
   }
 }
+
+/* ---------- 我的页头部（整块可点） ---------- */
+
+.me-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 6px 6px 6px 0;
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.me-head:active {
+  background: var(--control-bg);
+}
+
+/* ---------- 头像编辑卡 ---------- */
+
+.avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--s-5) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+}
+
+.avatar-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* 裁剪器 */
+.cropper {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #111;
+  touch-action: none;
+  cursor: grab;
+}
+
+.cropper:active {
+  cursor: grabbing;
+}
+
+.cropper__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+/* 成员卡：已注册标记 */
+.member {
+  position: relative;
+}
+
+.member__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-weak);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}

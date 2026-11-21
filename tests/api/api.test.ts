@@ -888,3 +888,69 @@ describe('强制编号与定制称号（v1.0.7）', () => {
     expect(page.body.data.user.label).toContain('认证成员')
   })
 })
+
+describe('成员与账号绑定（v1.0.8）', () => {
+  it('剧组成员密钥绑定成员，注册后能查到这个对应关系', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      {
+        kind: 'crew',
+        role: 2,
+        season: 2,
+        memberId: 'm-zhang',
+        memberName: '张睿轩',
+        count: 1,
+        expiresInDays: 30,
+      },
+      token,
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.data.keys).toHaveLength(1)
+
+    const reg = await registerWithKey(res.body.data.keys[0], '张睿轩')
+    expect(reg.status).toBe(200)
+    expect(reg.body.data.user.uid).toBe(12201)
+
+    const links = await call('GET', '/members/links')
+    expect(links.status).toBe(200)
+    expect(links.body.data.links).toEqual([
+      { memberId: 'm-zhang', uid: '12201', name: '张睿轩', avatar: null },
+    ])
+  })
+
+  it('密钥列表里能看到绑定的成员名', async () => {
+    const token = await bootstrapAdmin()
+    await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'crew', role: 1, season: 1, memberId: 'm-1', memberName: '李同学', count: 1, expiresInDays: 10 },
+      token,
+    )
+    const list = await call('GET', '/admin/keys', undefined, token)
+    const labels = (list.body.data.keys as Array<{ specLabel: string }>).map((k) => k.specLabel)
+    expect(labels.some((l) => l.includes('李同学'))).toBe(true)
+  })
+})
+
+describe('防连点（v1.0.8）', () => {
+  it('连续点赞会被拦下并提示', async () => {
+    const token = await bootstrapAdmin()
+    let last = 200
+    for (let i = 0; i < 14; i += 1) {
+      const res = await call(
+        'POST',
+        '/reactions/toggle',
+        { targetType: 'episode', targetId: 'ep-1-1' },
+        token,
+      )
+      last = res.status
+      if (last === 429) {
+        expect(res.body.error).toBe('请勿频繁点击')
+        break
+      }
+    }
+    expect(last).toBe(429)
+  })
+})

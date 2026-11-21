@@ -26,6 +26,7 @@ export function Watch() {
   const [pop, setPop] = useState(false)
   const [prompt, setPrompt] = useState(false)
   const [frameFailed, setFrameFailed] = useState(false)
+  const lastFav = useRef(0)
   const timerRef = useRef<number | null>(null)
 
   const episode = id ? findEpisode(c, id) : undefined
@@ -78,6 +79,12 @@ export function Watch() {
   const relatedEp = extra?.relatedEpisodeId ? findEpisode(c, extra.relatedEpisodeId) : undefined
 
   const onFav = async () => {
+    const now = Date.now()
+    if (now - lastFav.current < 700) {
+      toast('请勿频繁点击', 'error')
+      return
+    }
+    lastFav.current = now
     if (!account) {
       setPrompt(true)
       return

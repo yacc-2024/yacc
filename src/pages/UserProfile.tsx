@@ -96,7 +96,7 @@ export function UserProfile() {
             </div>
 
             <p className="t-tag faint" style={{ marginTop: 20, textAlign: 'center' }}>
-              这是公开主页，只展示昵称、头像和评论数。
+              每一位访客唯一的数字 ID，不可更改。
             </p>
           </>
         ) : (

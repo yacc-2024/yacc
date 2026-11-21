@@ -155,6 +155,11 @@ export const api = {
       body: { oldPassword, newPassword },
     }),
 
+  memberLinks: () =>
+    call<{
+      links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
+    }>('/members/links'),
+
   userProfile: (uid: string) =>
     call<{
       user: {
@@ -233,6 +238,8 @@ export const api = {
         season?: number
         grade?: number
         klass?: number
+        memberId?: string
+        memberName?: string
         perms?: AdminPerm[]
       },
       count: number,

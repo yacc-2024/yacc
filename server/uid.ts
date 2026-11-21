@@ -12,7 +12,14 @@ import type { DB } from './db'
 
 export type IdSpec =
   | { kind: 'guest' }
-  | { kind: 'crew'; role: 1 | 2 | 3 | 4 | 5; season: 1 | 2 | 9 }
+  | {
+      kind: 'crew'
+      role: 1 | 2 | 3 | 4 | 5
+      season: 1 | 2 | 9
+      /** 绑定的成员页成员 id */
+      memberId?: string
+      memberName?: string
+    }
   | { kind: 'member'; grade: number; klass: number }
 
 export const CREW_ROLES: Record<number, string> = {
@@ -47,7 +54,9 @@ export function normaliseSpec(raw: unknown): IdSpec | null {
     const role = clamp(Number(obj.role), 1, 5) as 1 | 2 | 3 | 4 | 5
     const seasonRaw = Number(obj.season)
     const season = (seasonRaw === 2 ? 2 : seasonRaw === 9 ? 9 : 1) as 1 | 2 | 9
-    return { kind: 'crew', role, season }
+    const memberId = typeof obj.memberId === 'string' ? obj.memberId : undefined
+    const memberName = typeof obj.memberName === 'string' ? obj.memberName : undefined
+    return { kind: 'crew', role, season, memberId, memberName }
   }
   if (obj.kind === 'member') {
     return {
@@ -122,6 +131,7 @@ export function describeSpec(spec: IdSpec | null | undefined): string {
   if (!spec) return '认证密钥'
   if (spec.kind === 'guest') return '普通访客'
   if (spec.kind === 'crew') {
+    if (spec.memberName) return `剧组成员 · ${spec.memberName}`
     return ['剧组成员', CREW_ROLES[spec.role], SEASON_DIGIT[spec.season]]
       .filter(Boolean)
       .join(' · ')
