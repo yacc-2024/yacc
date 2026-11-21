@@ -652,7 +652,11 @@ function UserForm({
   onClose: () => void
   onSaved: () => void
 }) {
-  const { toast } = useApp()
+  const { toast, account } = useApp()
+  const confirm = useConfirm()
+  const [deleting, setDeleting] = useState(false)
+  const isSelf = account?.id === user.id
+  const canDelete = !isSelf && user.role !== 'superadmin'
   const [name, setName] = useState(user.name)
   const [uid, setUid] = useState(user.uid)
   const [password, setPassword] = useState('')
@@ -682,6 +686,26 @@ function UserForm({
       toast(err instanceof Error ? err.message : '保存失败', 'error')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const remove = async () => {
+    const ok = await confirm({
+      title: `删除「${user.name}」？`,
+      message: '这个账号的评论和点赞会一起删除，无法恢复。',
+      confirmText: '删除账号',
+      danger: true,
+    })
+    if (!ok) return
+    setDeleting(true)
+    try {
+      await api.admin.deleteUser(user.id)
+      toast('账号已删除')
+      onSaved()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '删除失败', 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -750,6 +774,22 @@ function UserForm({
         />
         <span className="t-body">认证访客（可以评论、点赞）</span>
       </label>
+
+      {canDelete ? (
+        <button
+          type="button"
+          className="btn btn--ghost btn--block"
+          style={{ marginTop: 20, color: 'var(--danger)' }}
+          disabled={deleting}
+          onClick={() => void remove()}
+        >
+          {deleting ? '删除中…' : '删除这个账号'}
+        </button>
+      ) : (
+        <p className="field__hint" style={{ marginTop: 16 }}>
+          {isSelf ? '不能删除自己的账号。' : '总管理员账号不能删除。'}
+        </p>
+      )}
     </Sheet>
   )
 }

@@ -723,3 +723,79 @@ describe('总管理员迁移（v1.0.4）', () => {
     expect((await call('GET', '/admin/keys', undefined, subToken)).status).toBe(403)
   })
 })
+
+describe('删除账号（v1.0.5）', () => {
+  async function setup() {
+    const adminToken = await bootstrapAdmin()
+    const key = await makeKey(adminToken, 'visitor')
+    const reg = await registerWithKey(key, '要删的人')
+    return { adminToken, key, visitorToken: reg.body.data.token as string }
+  }
+
+  it('删除后账号、会话、评论一起消失', async () => {
+    const { adminToken, visitorToken } = await setup()
+
+    const me = await call('GET', '/auth/me', undefined, visitorToken)
+    const userId = me.body.data.user.id
+
+    // 先让他发一条评论（需审核关闭）
+    await call('POST', '/admin/settings', { moderation: 'off' }, adminToken)
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '待删除' },
+      visitorToken,
+    )
+
+    const res = await call('DELETE', `/admin/users/${userId}`, undefined, adminToken)
+    expect(res.status).toBe(200)
+
+    // 账号没了
+    expect((await call('GET', '/auth/me', undefined, visitorToken)).status).toBe(401)
+    // 评论也没了
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    expect(list.body.data.comments).toHaveLength(0)
+  })
+
+  it('不能删除自己', async () => {
+    const adminToken = await bootstrapAdmin()
+    const me = await call('GET', '/auth/me', undefined, adminToken)
+    const res = await call('DELETE', `/admin/users/${me.body.data.user.id}`, undefined, adminToken)
+    expect(res.status).toBe(400)
+  })
+
+  it('分管理员不能删除管理员，总管理员可以', async () => {
+    const superToken = await bootstrapAdmin()
+    const keyRes = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['users'], count: 1, expiresInDays: 30 },
+      superToken,
+    )
+    const subKey = keyRes.body.data.keys[0]
+    const sub = await registerWithKey(subKey, '分管理员')
+    const subToken = sub.body.data.token
+
+    // 用分管理员去删总管理员 → 拒绝
+    const superMe = await call('GET', '/auth/me', undefined, superToken)
+    expect(
+      (await call('DELETE', `/admin/users/${superMe.body.data.user.id}`, undefined, subToken)).status,
+    ).toBe(403)
+
+    // 总管理员删分管理员 → 成功
+    const subMe = await call('GET', '/auth/me', undefined, subToken)
+    expect(
+      (await call('DELETE', `/admin/users/${subMe.body.data.user.id}`, undefined, superToken))
+        .status,
+    ).toBe(200)
+  })
+
+  it('删除后激活密钥可以重新发放', async () => {
+    const { adminToken, key, visitorToken } = await setup()
+    const me = await call('GET', '/auth/me', undefined, visitorToken)
+    await call('DELETE', `/admin/users/${me.body.data.user.id}`, undefined, adminToken)
+
+    const again = await registerWithKey(key, '换个人用')
+    expect(again.status).toBe(200)
+  })
+})

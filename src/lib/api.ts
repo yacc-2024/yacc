@@ -287,6 +287,9 @@ export const api = {
     updateUser: (id: string, patch: { name?: string; password?: string; verified?: boolean }) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
 
+    deleteUser: (id: string) =>
+      call<{ deleted: string }>(`/admin/users/${id}`, { method: 'DELETE' }),
+
     setUid: (id: string, uid: number) =>
       call<{ uid: string }>(`/admin/users/${id}/uid`, { method: 'POST', body: { uid } }),
 

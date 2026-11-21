@@ -998,6 +998,41 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       return ok()
     }
 
+    const deleteUser = /^\/admin\/users\/([a-z0-9]+)$/.exec(path)
+    if (deleteUser && method === 'DELETE') {
+      const denied = need('users')
+      if (denied) return denied
+
+      const target = await db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .bind(deleteUser[1])
+        .first<UserRow>()
+      if (!target) return fail('找不到这个账号', 404)
+      if (target.id === me!.id) return fail('不能删除自己的账号', 400)
+      if (target.role === 'superadmin') return fail('不能删除总管理员', 403)
+      if (target.role === 'admin' && me!.role !== 'superadmin') {
+        return fail('只有总管理员能删除管理员', 403)
+      }
+
+      // 不能把最后一个总管理员删掉（这里 target 已排除 superadmin，双保险）
+      const supers = await db
+        .prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'superadmin'")
+        .first<{ n: number }>()
+      if (Number(supers?.n ?? 0) === 0) return fail('系统里至少要有一个总管理员', 400)
+
+      // 连带清理：会话、评论、点赞；激活密钥释放出来
+      await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(target.id).run()
+      await db.prepare('DELETE FROM comments WHERE user_id = ?').bind(target.id).run()
+      await db.prepare('DELETE FROM reactions WHERE user_id = ?').bind(target.id).run()
+      await db
+        .prepare('UPDATE activation_keys SET used_by = NULL, used_at = NULL WHERE used_by = ?')
+        .bind(target.id)
+        .run()
+      await db.prepare('DELETE FROM users WHERE id = ?').bind(target.id).run()
+
+      return ok({ deleted: target.id })
+    }
+
     const changeUid = /^\/admin\/users\/([a-z0-9]+)\/uid$/.exec(path)
     if (changeUid && method === 'POST') {
       if (me!.role !== 'superadmin') return fail('只有总管理员能改编号', 403)
