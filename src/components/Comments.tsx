@@ -1,21 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { api } from '../lib/api'
+import { api, type CommentItem } from '../lib/api'
 import { Icon } from './Icon'
 import { Avatar } from './ui'
 import { useConfirm } from './ui'
 import { formatDateTime } from '../lib/format'
-
-interface CommentItem {
-  id: string
-  body: string
-  createdAt: string
-  author: string
-  avatar: string | null
-  uid: string
-  mine: boolean
-}
 
 const MAX = 200
 
@@ -97,12 +87,16 @@ export function Comments({
 }) {
   const { mode, account, toast } = useApp()
   const confirm = useConfirm()
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin'
 
   const [items, setItems] = useState<CommentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [moderation, setModeration] = useState<'on' | 'off'>('on')
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [busy, setBusy] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     if (mode !== 'online') {
@@ -128,7 +122,15 @@ export function Comments({
 
   if (mode !== 'online') return null
 
-  const send = async () => {
+  const markBusy = (id: string, on: boolean) =>
+    setBusy((prev) => {
+      const next = new Set(prev)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+
+  const send = async (parentId?: string) => {
     const text = body.trim()
     if (!text) return
     if (sending) {
@@ -141,52 +143,148 @@ export function Comments({
     }
     setSending(true)
     try {
-      const res = await api.postComment(targetType, targetId, text)
+      const res = parentId
+        ? await api.replyComment({ targetType, targetId, body: text, parentId })
+        : await api.postComment(targetType, targetId, text)
       setBody('')
+      setReplyTo(null)
       if (res.status === 'pending') {
         toast('已提交，审核通过后显示')
       } else {
-        toast('评论已发布')
+        toast(parentId ? '回复已发布' : '评论已发布')
         await load()
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '发送失败'
-      toast(message, 'error')
+      toast(err instanceof Error ? err.message : '发送失败', 'error')
     } finally {
       setSending(false)
+    }
+  }
+
+  const like = async (c: CommentItem) => {
+    if (!account) {
+      toast('登录后才能点赞', 'error')
+      return
+    }
+    if (busy.has(c.id)) return
+    markBusy(c.id, true)
+    // 先动界面，失败再回滚
+    const patch = (list: CommentItem[]) =>
+      list.map((x) =>
+        x.id === c.id ? { ...x, liked: !x.liked, likes: x.likes + (x.liked ? -1 : 1) } : x,
+      )
+    setItems((prev) => patch(prev).map((x) => ({ ...x, replies: x.replies ? patch(x.replies) : x.replies })))
+    try {
+      await api.likeComment(c.id)
+    } catch (err) {
+      setItems((prev) => patch(prev).map((x) => ({ ...x, replies: x.replies ? patch(x.replies) : x.replies })))
+      toast(err instanceof Error ? err.message : '点赞失败', 'error')
+    } finally {
+      markBusy(c.id, false)
+    }
+  }
+
+  const pin = async (c: CommentItem) => {
+    markBusy(c.id, true)
+    try {
+      await api.pinComment(c.id, !c.pinned)
+      toast(c.pinned ? '已取消置顶' : '已置顶')
+      await load()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '操作失败', 'error')
+    } finally {
+      markBusy(c.id, false)
     }
   }
 
   const remove = async (id: string) => {
     const ok = await confirm({
       title: '删除这条评论？',
-      message: '删除后不可恢复。',
+      message: '楼内回复也会一起删除，不可恢复。',
       confirmText: '删除',
       danger: true,
     })
     if (!ok) return
     try {
       await api.deleteComment(id)
-      setItems((prev) => prev.filter((c) => c.id !== id))
       toast('已删除')
+      await load()
     } catch (err) {
       toast(err instanceof Error ? err.message : '删除失败', 'error')
     }
   }
 
+  const total = items.reduce((n, c) => n + 1 + (c.replies?.length ?? 0), 0)
+
+  const renderReply = (c: CommentItem) => (
+    <div key={c.id} className="reply">
+      <Link to={`/u/${c.uid}`} className="comment__who reply__who">
+        <Avatar name={c.author} src={c.avatar} size={32} />
+        <span className="grow">
+          <span className="comment__author">{c.author}</span>
+          {c.replyToName ? (
+            <span className="reply__to"> 回复 @{c.replyToName}</span>
+          ) : null}
+        </span>
+      </Link>
+      <p className="reply__body">{c.body}</p>
+      <div className="comment__actions">
+        <button
+          type="button"
+          className={`act${c.liked ? ' act--on' : ''}`}
+          aria-label={c.liked ? '取消点赞' : '点赞'}
+          onClick={() => void like(c)}
+        >
+          <Icon name="heart" size={13} filled={c.liked} />
+          {c.likes > 0 ? c.likes : ''}
+        </button>
+        <button type="button" className="act" onClick={() => setReplyTo({ id: c.id, name: c.author })}>
+          回复
+        </button>
+        {c.mine || isAdmin ? (
+          <button type="button" className="act faint" onClick={() => void remove(c.id)}>
+            删除
+          </button>
+        ) : null}
+      </div>
+      {replyTo?.id === c.id ? (
+        <div className="reply__composer">
+          <input
+            className="composer__input"
+            maxLength={MAX}
+            value={body}
+            placeholder={`回复 @${c.author}`}
+            aria-label="写回复"
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void send(c.id)
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{ minHeight: 36, padding: '0 16px' }}
+            disabled={sending || !body.trim()}
+            onClick={() => void send(c.id)}
+          >
+            发送
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+
   return (
     <section className="comments">
       <div className="section__head" style={{ marginBottom: 10 }}>
         <h2 className="section__title">评论</h2>
-        <span className="count">{items.length} 条</span>
+        <span className="count">{total} 条</span>
       </div>
 
       {!account ? (
-        <p className="t-caption faint">登录并通过学校认证后才能评论。</p>
+        <p className="t-caption faint">登录并通过认证后才能评论。</p>
       ) : !account.verified ? (
-        <p className="t-caption faint">
-          你的账号还没有通过认证，暂时只能浏览。
-        </p>
+        <p className="t-caption faint">你的账号还没有通过认证，暂时只能浏览。</p>
       ) : (
         <div className="composer">
           <Avatar name={account.name} src={account.avatar} size={32} />
@@ -225,30 +323,106 @@ export function Comments({
         ) : items.length === 0 ? (
           <p className="t-caption faint">还没有人评论。</p>
         ) : (
-          items.map((c) => (
-            <div key={c.id} className="comment">
-              <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
-                <Avatar name={c.author} src={c.avatar} size={32} />
-                <span className="grow">
-                  <span className="comment__author">{c.author}</span>
-                  <span className="t-tag faint t-num" style={{ display: 'block' }}>
-                    ID {c.uid} · {formatDateTime(c.createdAt)}
+          items.map((c) => {
+            const replies = c.replies ?? []
+            const isOpen = expanded.has(c.id)
+            const shown = isOpen ? replies : replies.slice(0, 2)
+            const rest = replies.length - shown.length
+
+            return (
+              <div key={c.id} className={`comment${c.pinned ? ' comment--pinned' : ''}`}>
+                {c.pinned ? <span className="pin-badge">置顶</span> : null}
+
+                <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
+                  <Avatar name={c.author} src={c.avatar} size={32} />
+                  <span className="grow">
+                    <span className="comment__author">{c.author}</span>
+                    <span className="t-tag faint t-num" style={{ display: 'block' }}>
+                      ID {c.uid} · {formatDateTime(c.createdAt)}
+                    </span>
                   </span>
-                </span>
-              </Link>
-              <p className="comment__body">{c.body}</p>
-              {c.mine ? (
-                <button
-                  type="button"
-                  className="linklike"
-                  style={{ minHeight: 32, color: 'var(--text-3)' }}
-                  onClick={() => void remove(c.id)}
-                >
-                  删除
-                </button>
-              ) : null}
-            </div>
-          ))
+                </Link>
+
+                <p className="comment__body">{c.body}</p>
+
+                <div className="comment__actions">
+                  <button
+                    type="button"
+                    className={`act${c.liked ? ' act--on' : ''}`}
+                    aria-label={c.liked ? '取消点赞' : '点赞'}
+                    onClick={() => void like(c)}
+                  >
+                    <Icon name="heart" size={14} filled={c.liked} />
+                    {c.likes > 0 ? c.likes : ''}
+                  </button>
+                  <button
+                    type="button"
+                    className="act"
+                    onClick={() => setReplyTo({ id: c.id, name: c.author })}
+                  >
+                    回复
+                  </button>
+                  {isAdmin ? (
+                    <button type="button" className="act faint" onClick={() => void pin(c)}>
+                      {c.pinned ? '取消置顶' : '置顶'}
+                    </button>
+                  ) : null}
+                  {c.mine || isAdmin ? (
+                    <button type="button" className="act faint" onClick={() => void remove(c.id)}>
+                      删除
+                    </button>
+                  ) : null}
+                </div>
+
+                {replies.length > 0 ? (
+                  <div className="replies">
+                    {shown.map(renderReply)}
+                    {rest > 0 || isOpen ? (
+                      <button
+                        type="button"
+                        className="replies__more"
+                        onClick={() =>
+                          setExpanded((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(c.id)) next.delete(c.id)
+                            else next.add(c.id)
+                            return next
+                          })
+                        }
+                      >
+                        {isOpen ? '收起回复' : `展开其余 ${rest} 条回复`}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {replyTo?.id === c.id ? (
+                  <div className="reply__composer">
+                    <input
+                      className="composer__input"
+                      maxLength={MAX}
+                      value={body}
+                      placeholder={`回复 @${c.author}`}
+                      aria-label="写回复"
+                      onChange={(e) => setBody(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') void send(c.id)
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      style={{ minHeight: 36, padding: '0 16px' }}
+                      disabled={sending || !body.trim()}
+                      onClick={() => void send(c.id)}
+                    >
+                      发送
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
         )}
       </div>
     </section>

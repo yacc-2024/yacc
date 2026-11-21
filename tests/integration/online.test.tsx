@@ -137,7 +137,7 @@ describe('在线模式：认证密钥与评论', () => {
     renderApp(['/watch/ep-1-1'])
     await screen.findByRole('heading', { level: 1, name: '反对校园霸凌' })
     expect(screen.queryByLabelText('写评论')).toBeNull()
-    expect(screen.getByText('登录并通过学校认证后才能评论。')).toBeInTheDocument()
+    expect(screen.getByText('登录并通过认证后才能评论。')).toBeInTheDocument()
   })
 })
 

@@ -22,6 +22,7 @@ import { MemberDetail } from './pages/MemberDetail'
 import { Works } from './pages/Works'
 import { Watch } from './pages/Watch'
 import { UserProfile } from './pages/UserProfile'
+import { Notifications } from './pages/Notifications'
 import { Me } from './pages/Me'
 import { Login } from './pages/Login'
 import { Favorites, History } from './pages/Library'
@@ -161,6 +162,7 @@ export function App() {
         <Route path="watch/:id" element={<Watch />} />
         <Route path="login" element={<Login />} />
         <Route path="u/:uid" element={<UserProfile />} />
+        <Route path="me/notifications" element={<Notifications />} />
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
         <Route path="me/settings" element={<Settings />} />

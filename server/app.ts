@@ -117,6 +117,9 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN titles TEXT',
         'ALTER TABLE users ADD COLUMN shown_titles TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
+        'ALTER TABLE comments ADD COLUMN parent_id TEXT',
+        'ALTER TABLE comments ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE comments ADD COLUMN reply_to_name TEXT',
       ]) {
         try {
           await db.prepare(sql).run()
@@ -772,10 +775,11 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       const targetType = url.searchParams.get('targetType') ?? ''
       const targetId = url.searchParams.get('targetId') ?? ''
       if (!TARGET_TYPES.has(targetType) || !targetId) return fail('参数不对')
+
       const rows = await db
         .prepare(
-          `SELECT c.id, c.body, c.created_at, c.user_id, u.name AS author,
-                  u.avatar, u.uid
+          `SELECT c.id, c.body, c.created_at, c.user_id, c.parent_id, c.pinned,
+                  c.reply_to_name, u.name AS author, u.avatar, u.uid
            FROM comments c JOIN users u ON u.id = c.user_id
            WHERE c.target_type = ? AND c.target_id = ? AND c.status = 'published'
            ORDER BY c.created_at ASC`,
@@ -786,22 +790,70 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           body: string
           created_at: string
           user_id: string
+          parent_id: string | null
+          pinned: number
+          reply_to_name: string | null
           author: string
           avatar: string | null
           uid: number | null
         }>()
-      return ok({
-        comments: rows.map((r) => ({
-          id: r.id,
-          body: r.body,
-          createdAt: r.created_at,
-          author: r.author,
-          avatar: r.avatar ?? null,
-          uid: formatUid(r.uid),
-          mine: me?.id === r.user_id,
-        })),
-        me: me ?? null,
+
+      const likes = await db
+        .prepare(
+          `SELECT r.target_id, COUNT(*) AS n
+           FROM reactions r JOIN comments c ON c.id = r.target_id
+           WHERE r.target_type = 'comment' AND c.target_type = ? AND c.target_id = ?
+           GROUP BY r.target_id`,
+        )
+        .bind(targetType, targetId)
+        .all<{ target_id: string; n: number }>()
+      const likeMap = new Map(likes.map((l) => [l.target_id, Number(l.n)]))
+
+      const mineLikes = me
+        ? await db
+            .prepare(
+              `SELECT r.target_id FROM reactions r JOIN comments c ON c.id = r.target_id
+               WHERE r.target_type = 'comment' AND r.user_id = ?
+                 AND c.target_type = ? AND c.target_id = ?`,
+            )
+            .bind(me.id, targetType, targetId)
+            .all<{ target_id: string }>()
+        : []
+      const likedSet = new Set(mineLikes.map((r) => r.target_id))
+
+      const shape = (r: (typeof rows)[number]) => ({
+        id: r.id,
+        body: r.body,
+        createdAt: r.created_at,
+        author: r.author,
+        avatar: r.avatar ?? null,
+        uid: formatUid(r.uid),
+        mine: me?.id === r.user_id,
+        pinned: r.pinned === 1,
+        likes: likeMap.get(r.id) ?? 0,
+        liked: likedSet.has(r.id),
+        parentId: r.parent_id ?? null,
+        replyToName: r.reply_to_name ?? null,
       })
+
+      // 楼中楼：顶层评论带 replies
+      const tops = rows.filter((r) => !r.parent_id)
+      const repliesByParent = new Map<string, ReturnType<typeof shape>[]>()
+      for (const r of rows) {
+        if (!r.parent_id) continue
+        const list = repliesByParent.get(r.parent_id) ?? []
+        list.push(shape(r))
+        repliesByParent.set(r.parent_id, list)
+      }
+
+      const comments = tops
+        .map((r) => ({ ...shape(r), replies: repliesByParent.get(r.id) ?? [] }))
+        .sort((a, b) => {
+          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+          return b.createdAt.localeCompare(a.createdAt)
+        })
+
+      return ok({ comments, me: me ?? null })
     }
 
     if (path === '/comments' && method === 'POST') {
@@ -821,13 +873,62 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       const moderation = await getSetting(db, 'comment_moderation', 'on')
       const status = moderation === 'on' ? 'pending' : 'published'
+      const parentId = typeof body.parentId === 'string' ? body.parentId.trim() : ''
+      let rootId: string | null = null
+      let replyTo: { user_id: string; name: string } | null = null
+
+      if (parentId) {
+        const parent = await db
+          .prepare(
+            `SELECT c.id, c.parent_id, c.user_id, c.target_type, c.target_id, u.name
+             FROM comments c JOIN users u ON u.id = c.user_id
+             WHERE c.id = ?`,
+          )
+          .bind(parentId)
+          .first<{
+            id: string
+            parent_id: string | null
+            user_id: string
+            target_type: string
+            target_id: string
+            name: string
+          }>()
+        if (!parent) return fail('要回复的评论不在了', 404)
+        if (parent.target_type !== targetType || parent.target_id !== targetId) {
+          return fail('参数不对')
+        }
+        rootId = parent.parent_id ?? parent.id
+        replyTo = { user_id: parent.user_id, name: parent.name }
+      }
+
       const id = randomHex(8)
       await db
         .prepare(
-          'INSERT INTO comments (id, target_type, target_id, user_id, body, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO comments (id, target_type, target_id, user_id, body, status, parent_id, reply_to_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         )
-        .bind(id, targetType, targetId, me.id, text, status, nowIso())
+        .bind(id, targetType, targetId, me.id, text, status, rootId, replyTo?.name ?? null, nowIso())
         .run()
+
+      // 回复通知：通知被回复的人（不通知自己）
+      if (replyTo && replyTo.user_id !== me.id) {
+        await db
+          .prepare(
+            `INSERT INTO notifications (id, user_id, type, comment_id, target_type, target_id, actor_name, body, created_at)
+             VALUES (?, ?, 'reply', ?, ?, ?, ?, ?, ?)`,
+          )
+          .bind(
+            randomHex(8),
+            replyTo.user_id,
+            id,
+            targetType,
+            targetId,
+            me.name,
+            text.slice(0, 60),
+            nowIso(),
+          )
+          .run()
+      }
+
       return ok({ id, status })
     }
 
@@ -840,10 +941,116 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         .bind(id)
         .first<{ user_id: string }>()
       if (!row) return fail('找不到这条评论', 404)
-      if (row.user_id !== me.id && me.role !== 'admin') {
+      if (row.user_id !== me.id && me.role !== 'admin' && me.role !== 'superadmin') {
         return fail('只能删自己的评论', 403)
       }
+      await db.prepare('DELETE FROM comments WHERE parent_id = ?').bind(id).run()
       await db.prepare('DELETE FROM comments WHERE id = ?').bind(id).run()
+      await db.prepare('DELETE FROM notifications WHERE comment_id = ?').bind(id).run()
+      await db
+        .prepare("DELETE FROM reactions WHERE target_type = 'comment' AND target_id = ?")
+        .bind(id)
+        .run()
+      return ok()
+    }
+
+    const pinComment = /^\/comments\/([a-z0-9]+)\/pin$/.exec(path)
+    if (pinComment && method === 'POST') {
+      if (!me) return fail('未登录', 401)
+      if (me.role !== 'admin' && me.role !== 'superadmin') {
+        return fail('只有管理员能置顶', 403)
+      }
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const pinned = body.pinned ? 1 : 0
+      await db.prepare('UPDATE comments SET pinned = ? WHERE id = ?').bind(pinned, pinComment[1]).run()
+      return ok()
+    }
+
+    const likeComment = /^\/comments\/([a-z0-9]+)\/like$/.exec(path)
+    if (likeComment && method === 'POST') {
+      if (!me) return fail('登录后才能点赞', 401)
+      if (tooFast(`clike:${me.id}`, 20, 20_000)) return fail('请勿频繁点击', 429)
+      const id = likeComment[1]
+      const exists = await db
+        .prepare('SELECT 1 AS x FROM comments WHERE id = ?')
+        .bind(id)
+        .first<{ x: number }>()
+      if (!exists) return fail('找不到这条评论', 404)
+
+      const liked = await db
+        .prepare(
+          "SELECT 1 AS x FROM reactions WHERE user_id = ? AND target_type = 'comment' AND target_id = ?",
+        )
+        .bind(me.id, id)
+        .first<{ x: number }>()
+
+      if (liked) {
+        await db
+          .prepare(
+            "DELETE FROM reactions WHERE user_id = ? AND target_type = 'comment' AND target_id = ?",
+          )
+          .bind(me.id, id)
+          .run()
+      } else {
+        await db
+          .prepare(
+            "INSERT INTO reactions (user_id, target_type, target_id, created_at) VALUES (?, 'comment', ?, ?)",
+          )
+          .bind(me.id, id, nowIso())
+          .run()
+      }
+
+      const count = await db
+        .prepare("SELECT COUNT(*) AS n FROM reactions WHERE target_type = 'comment' AND target_id = ?")
+        .bind(id)
+        .first<{ n: number }>()
+      return ok({ liked: !liked, likes: Number(count?.n ?? 0) })
+    }
+
+    /* ---------- 回复通知 ---------- */
+
+    if (path === '/notifications' && method === 'GET') {
+      if (!me) return fail('未登录', 401)
+      const rows = await db
+        .prepare(
+          `SELECT id, type, comment_id, target_type, target_id, actor_name, body, created_at, read_at
+           FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
+        )
+        .bind(me.id)
+        .all<{
+          id: string
+          type: string
+          comment_id: string | null
+          target_type: string | null
+          target_id: string | null
+          actor_name: string | null
+          body: string | null
+          created_at: string
+          read_at: string | null
+        }>()
+      return ok({
+        notifications: rows.map((r) => ({
+          id: r.id,
+          type: r.type,
+          commentId: r.comment_id,
+          targetType: r.target_type,
+          targetId: r.target_id,
+          actorName: r.actor_name ?? '',
+          body: r.body ?? '',
+          createdAt: r.created_at,
+          read: Boolean(r.read_at),
+        })),
+        unread: rows.filter((r) => !r.read_at).length,
+      })
+    }
+
+    if (path === '/notifications/read' && method === 'POST') {
+      if (!me) return fail('未登录', 401)
+      await db
+        .prepare('UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL')
+        .bind(nowIso(), me.id)
+        .run()
       return ok()
     }
 

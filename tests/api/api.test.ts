@@ -1089,3 +1089,117 @@ describe('手动绑定成员页（v1.2.1）', () => {
     expect(links.body.data.links[0].name).toBe('乙同学')
   })
 })
+
+describe('楼中楼与评论点赞（v1.3.0）', () => {
+  it('回复挂在顶层评论下，被回复的人收到通知', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/settings', { moderation: 'off' }, token)
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '楼主同学')
+    const b = await registerWithKey(k2, '回复同学')
+
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '我是楼主' },
+      a.body.data.token,
+    )
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    const rootId = list.body.data.comments[0].id
+
+    const reply = await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '我回复你', parentId: rootId },
+      b.body.data.token,
+    )
+    expect(reply.status).toBe(200)
+
+    const after = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    expect(after.body.data.comments).toHaveLength(1)
+    expect(after.body.data.comments[0].replies).toHaveLength(1)
+    expect(after.body.data.comments[0].replies[0].body).toBe('我回复你')
+    expect(after.body.data.comments[0].replies[0].replyToName).toBe('楼主同学')
+
+    const inbox = await call('GET', '/notifications', undefined, a.body.data.token)
+    expect(inbox.body.data.unread).toBe(1)
+    expect(inbox.body.data.notifications[0].actorName).toBe('回复同学')
+  })
+
+  it('回复自己的评论不会给自己发通知', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/settings', { moderation: 'off' }, token)
+    const key = await makeKey(token, 'visitor')
+    const me = await registerWithKey(key, '自言自语')
+
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '自己说一句' },
+      me.body.data.token,
+    )
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '再回自己', parentId: list.body.data.comments[0].id },
+      me.body.data.token,
+    )
+
+    const inbox = await call('GET', '/notifications', undefined, me.body.data.token)
+    expect(inbox.body.data.unread).toBe(0)
+  })
+
+  it('评论可以点赞、取消点赞', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/settings', { moderation: 'off' }, token)
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '被赞的人')
+    const b = await registerWithKey(k2, '点赞的人')
+
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '给我点赞' },
+      a.body.data.token,
+    )
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    const id = list.body.data.comments[0].id
+
+    const like1 = await call('POST', `/comments/${id}/like`, {}, b.body.data.token)
+    expect(like1.body.data).toEqual({ liked: true, likes: 1 })
+
+    const list2 = await call('GET', '/comments?targetType=episode&targetId=ep-1-1', undefined, b.body.data.token)
+    expect(list2.body.data.comments[0].liked).toBe(true)
+    expect(list2.body.data.comments[0].likes).toBe(1)
+
+    const like2 = await call('POST', `/comments/${id}/like`, {}, b.body.data.token)
+    expect(like2.body.data).toEqual({ liked: false, likes: 0 })
+  })
+
+  it('只有管理员能置顶评论，置顶排在最前', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/settings', { moderation: 'off' }, token)
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '早来的')
+    const b = await registerWithKey(k2, '晚来的')
+
+    await call('POST', '/comments', { targetType: 'episode', targetId: 'ep-1-1', body: '第一条' }, a.body.data.token)
+    await call('POST', '/comments', { targetType: 'episode', targetId: 'ep-1-1', body: '第二条' }, b.body.data.token)
+
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    const firstId = list.body.data.comments.find((c: { body: string }) => c.body === '第一条').id
+
+    // 普通用户不能置顶
+    expect((await call('POST', `/comments/${firstId}/pin`, { pinned: true }, a.body.data.token)).status).toBe(403)
+
+    // 管理员可以
+    expect((await call('POST', `/comments/${firstId}/pin`, { pinned: true }, token)).status).toBe(200)
+    const after = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    expect(after.body.data.comments[0].body).toBe('第一条')
+    expect(after.body.data.comments[0].pinned).toBe(true)
+  })
+})

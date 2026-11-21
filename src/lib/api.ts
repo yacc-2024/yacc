@@ -20,6 +20,22 @@ export class ApiError extends Error {
   }
 }
 
+export interface CommentItem {
+  id: string
+  body: string
+  createdAt: string
+  author: string
+  avatar: string | null
+  uid: string
+  mine: boolean
+  pinned: boolean
+  likes: number
+  liked: boolean
+  parentId: string | null
+  replyToName: string | null
+  replies?: CommentItem[]
+}
+
 export type AdminPerm = 'content' | 'users' | 'keys' | 'comments'
 
 export interface SessionUser {
@@ -186,17 +202,41 @@ export const api = {
 
   comments: (targetType: string, targetId: string) =>
     call<{
-      comments: Array<{
-        id: string
-        body: string
-        createdAt: string
-        author: string
-        avatar: string | null
-        uid: string
-        mine: boolean
-      }>
+      comments: CommentItem[]
       me: SessionUser | null
     }>(`/comments?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(targetId)}`),
+
+  replyComment: (input: {
+    targetType: string
+    targetId: string
+    body: string
+    parentId: string
+  }) => call<{ id: string; status: string }>('/comments', { method: 'POST', body: input }),
+
+  pinComment: (id: string, pinned: boolean) =>
+    call<Record<string, never>>(`/comments/${id}/pin`, { method: 'POST', body: { pinned } }),
+
+  likeComment: (id: string) =>
+    call<{ liked: boolean; likes: number }>(`/comments/${id}/like`, { method: 'POST' }),
+
+  notifications: () =>
+    call<{
+      notifications: Array<{
+        id: string
+        type: string
+        commentId: string | null
+        targetType: string | null
+        targetId: string | null
+        actorName: string
+        body: string
+        createdAt: string
+        read: boolean
+      }>
+      unread: number
+    }>('/notifications'),
+
+  readNotifications: () =>
+    call<Record<string, never>>('/notifications/read', { method: 'POST' }),
 
   postComment: (targetType: string, targetId: string, body: string) =>
     call<{ id: string; status: string }>('/comments', {

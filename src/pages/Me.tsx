@@ -2,9 +2,27 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow } from '../components/ui'
 import { Icon } from '../components/Icon'
+import { api } from '../lib/api'
+import { useEffect, useState } from 'react'
 import { formatUid, displayTitles } from '../lib/uid'
 
 export function Me() {
+  const [unread, setUnread] = useState(0)
+  const { mode, account: me } = useApp()
+
+  useEffect(() => {
+    if (mode !== 'online' || !me) return
+    let alive = true
+    void api
+      .notifications()
+      .then((res) => {
+        if (alive) setUnread(res.unread)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [mode, me])
   const { content, account } = useApp()
   const c = content!
 
@@ -68,6 +86,12 @@ export function Me() {
           </div>
 
           <div className="list">
+            <ListRow
+              icon="bell"
+              title="消息"
+              sub={unread > 0 ? `${unread} 条未读` : '有人回复你时会出现在这里'}
+              to="/me/notifications"
+            />
             <ListRow icon="bookmark" title="我的收藏" to="/me/favorites" />
             <ListRow icon="clock" title="观看历史" to="/me/history" />
             <ListRow icon="gear" title="账号设置" to="/me/settings" />

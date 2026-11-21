@@ -50,8 +50,27 @@ CREATE TABLE IF NOT EXISTS comments (
   user_id TEXT NOT NULL,
   body TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
+  parent_id TEXT,
+  reply_to_name TEXT,
+  pinned INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  comment_id TEXT,
+  target_type TEXT,
+  target_id TEXT,
+  actor_name TEXT,
+  body TEXT,
+  created_at TEXT NOT NULL,
+  read_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user
+  ON notifications (user_id, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_comments_target
   ON comments (target_type, target_id, status, created_at);
