@@ -31,12 +31,12 @@ describe('登录状态保持', () => {
 
     // 模拟关掉再打开：组件卸载后重新挂载，本机存储保留
     const view = renderApp(['/me'])
-    expect(await screen.findByText('管理员')).toBeInTheDocument()
+    expect(await screen.findByText(/管理员/)).toBeInTheDocument()
     expect(screen.getByText('管理中心')).toBeInTheDocument()
     view.unmount()
 
     renderApp(['/me'])
-    expect(await screen.findByText('管理员')).toBeInTheDocument()
+    expect(await screen.findByText(/管理员/)).toBeInTheDocument()
     expect(localStorage.getItem('yacc:token')).toBe(token)
   })
 
@@ -44,7 +44,7 @@ describe('登录状态保持', () => {
     await activateAdmin()
     const token = localStorage.getItem('yacc:token')
     const view = renderApp(['/me'])
-    await screen.findByText('管理员')
+    await screen.findByText(/管理员/)
     view.unmount()
 
     // 让 /auth/me 返回 500
@@ -62,14 +62,14 @@ describe('登录状态保持', () => {
 
     renderApp(['/me'])
     // 用缓存的身份继续显示已登录
-    expect(await screen.findByText('管理员')).toBeInTheDocument()
+    expect(await screen.findByText(/管理员/)).toBeInTheDocument()
     expect(localStorage.getItem('yacc:token')).toBe(token)
   })
 
   it('只有服务端明确说未登录（401）才清掉本地登录态', async () => {
     await activateAdmin()
     const view = renderApp(['/me'])
-    await screen.findByText('管理员')
+    await screen.findByText(/管理员/)
     view.unmount()
 
     const realFetch = globalThis.fetch
@@ -93,7 +93,7 @@ describe('登录状态保持', () => {
   it('退出登录会清掉本地登录态', async () => {
     await activateAdmin()
     const view = renderApp(['/me'])
-    await screen.findByText('管理员')
+    await screen.findByText(/管理员/)
     view.unmount()
 
     const user = userEvent.setup()

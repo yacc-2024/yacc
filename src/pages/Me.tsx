@@ -36,11 +36,16 @@ export function Me() {
       ) : (
         <div className="page__body">
           <div className="row gap-3" style={{ marginTop: 8, marginBottom: 20 }}>
-            <Avatar name={account.name} size={56} />
+            <Avatar name={account.name} src={account.avatar} size={56} />
             <div className="grow">
               <p className="t-title3">{account.name}</p>
-              <p className="t-caption">
-                {account.role === 'admin' ? '管理员' : '剧组成员'}
+              <p className="t-caption faint t-num">
+                {account.uid ? `ID ${account.uid} · ` : ''}
+                {account.role === 'admin'
+                  ? '管理员'
+                  : account.role === 'member'
+                    ? '剧组成员'
+                    : '认证访客'}
               </p>
             </div>
           </div>

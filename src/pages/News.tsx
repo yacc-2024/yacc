@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../state/AppContext'
 import { NavBar, EmptyState } from '../components/ui'
 import { AnnouncementSheet, EventSheet } from '../components/detailSheets'
@@ -11,6 +11,7 @@ import {
   formatDateBlock,
 } from '../lib/format'
 import { Icon } from '../components/Icon'
+import { markNewsSeen } from '../lib/news'
 import type { Announcement, CrewEvent } from '../data/schema'
 
 export function NewsList() {
@@ -18,6 +19,10 @@ export function NewsList() {
   const c = content!
   const [current, setCurrent] = useState<Announcement | null>(null)
   const list = sortAnnouncements(c.announcements)
+
+  useEffect(() => {
+    markNewsSeen(list[0]?.date ?? '')
+  }, [list])
 
   return (
     <>

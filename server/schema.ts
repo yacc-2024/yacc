@@ -1,7 +1,9 @@
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
+  uid INTEGER,
   name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  avatar TEXT,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'visitor',

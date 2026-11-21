@@ -15,7 +15,10 @@ export class ApiError extends Error {
 
 export interface SessionUser {
   id: string
+  /** 固定的数字账号 ID，注册后不再变化 */
+  uid?: number | null
   name: string
+  avatar?: string | null
   role: 'admin' | 'member' | 'visitor'
   verified: boolean
 }
@@ -127,8 +130,8 @@ export const api = {
 
   logout: () => call<Record<string, never>>('/auth/logout', { method: 'POST' }),
 
-  rename: (name: string) =>
-    call<{ user: SessionUser }>('/auth/rename', { method: 'POST', body: { name } }),
+  profile: (patch: { name?: string; avatar?: string | null }) =>
+    call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
   changePassword: (oldPassword: string, newPassword: string) =>
     call<Record<string, never>>('/auth/password', {

@@ -173,6 +173,9 @@ describe('持久化：关掉再开，改动还在', () => {
 
     renderApp(['/'])
     expect(await screen.findByText('让沉默被看见')).toBeInTheDocument()
+
+    const news = renderApp(['/news'])
     expect(await screen.findByText('拍摄日志已更新')).toBeInTheDocument()
+    news.unmount()
   })
 })

@@ -34,7 +34,7 @@ describe('主页', () => {
   it('推荐位可点进播放页', async () => {
     const user = userEvent.setup()
     renderApp(['/'])
-    const card = await screen.findByRole('link', { name: /第三集/ })
+    const card = await screen.findByRole('link', { name: '第三集 S2 · E3' })
     await user.click(card)
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: '第三集' })).toBeInTheDocument()

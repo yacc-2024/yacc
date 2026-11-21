@@ -427,3 +427,62 @@ describe('账号自助修改', () => {
     expect(res.body.data.service).toBe('yacc')
   })
 })
+
+describe('账号资料（v1.0.1）', () => {
+  it('注册就发一个固定的数字账号 ID', async () => {
+    const token = await bootstrapAdmin()
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '访客甲')
+    const b = await registerWithKey(k2, '访客乙')
+
+    const uidA = a.body.data.user.uid
+    const uidB = b.body.data.user.uid
+    expect(typeof uidA).toBe('number')
+    expect(uidA).toBeGreaterThanOrEqual(100001)
+    expect(uidB).toBeGreaterThan(uidA)
+  })
+
+  it('管理员也有自己的数字 ID', async () => {
+    const token = await bootstrapAdmin('导演')
+    const me = await call('GET', '/auth/me', undefined, token)
+    expect(me.body.data.user.uid).toEqual(expect.any(Number))
+  })
+
+  it('改名后数字 ID 不变', async () => {
+    const token = await bootstrapAdmin()
+    const before = await call('GET', '/auth/me', undefined, token)
+    await call('POST', '/auth/profile', { name: '新名字' }, token)
+    const after = await call('GET', '/auth/me', undefined, token)
+    expect(after.body.data.user.name).toBe('新名字')
+    expect(after.body.data.user.uid).toBe(before.body.data.user.uid)
+  })
+
+  it('可以设置和清除头像', async () => {
+    const token = await bootstrapAdmin()
+    const set = await call(
+      'POST',
+      '/auth/profile',
+      { avatar: 'https://example.com/a.jpg' },
+      token,
+    )
+    expect(set.body.data.user.avatar).toBe('https://example.com/a.jpg')
+
+    const cleared = await call('POST', '/auth/profile', { avatar: null }, token)
+    expect(cleared.body.data.user.avatar).toBeNull()
+  })
+
+  it('头像地址不合法会被拒', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call('POST', '/auth/profile', { avatar: 'javascript:alert(1)' }, token)
+    expect(res.status).toBe(400)
+  })
+
+  it('昵称重复仍然被拒', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    await registerWithKey(key, '占名字的人')
+    const res = await call('POST', '/auth/profile', { name: '占名字的人' }, token)
+    expect(res.status).toBe(409)
+  })
+})

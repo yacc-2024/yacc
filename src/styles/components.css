@@ -1519,3 +1519,186 @@ select.input {
   font-size: var(--fs-body);
   letter-spacing: 0.4px;
 }
+
+/* ---------- 账号头部 ---------- */
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) 0 var(--s-5);
+}
+
+.profile-head + .list {
+  margin-top: 0;
+}
+
+/* ---------- 主页公告卡 ---------- */
+
+.notice {
+  position: relative;
+  display: block;
+  margin-top: var(--s-4);
+  padding: var(--s-4) var(--s-4) var(--s-4) 20px;
+  border-radius: var(--r-md);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur);
+}
+
+.notice::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.notice:active {
+  transform: scale(0.984);
+}
+
+.notice__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.notice__tag {
+  font-size: var(--fs-tag);
+  font-weight: 650;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+
+.notice__title {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.notice__sub {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--fs-caption);
+  color: var(--text-2);
+}
+
+/* 未读红点 */
+.nav__action {
+  position: relative;
+}
+
+.dot-badge {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 0 2px var(--bg);
+  animation: dot-in 260ms var(--ease-spring);
+}
+
+@keyframes dot-in {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   手感打磨：按压反馈 / 分段切换 / 分区入场
+   ============================================================ */
+
+.btn {
+  will-change: transform;
+}
+
+.btn--primary:active {
+  filter: brightness(0.92);
+}
+
+.btn--ghost:active,
+.btn--danger:active {
+  filter: brightness(0.96);
+}
+
+.seg__item {
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.seg__item:active {
+  transform: scale(0.97);
+}
+
+/* 分段切换时内容轻微淡入 */
+.panel-enter {
+  animation: panel-in 260ms var(--ease);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 首屏分区依次浮现，最多 5 个，避免长页面拖沓 */
+.page__body > .section,
+.page__body > .notice {
+  animation: section-in 420ms var(--ease) both;
+}
+
+.page__body > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.page__body > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.page__body > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.page__body > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+@keyframes section-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 焦点环更柔和 */
+:focus-visible {
+  outline-offset: 3px;
+}
+
+/* 滚动条隐藏但可滚动（横向） */
+.hscroll,
+.chips {
+  -webkit-overflow-scrolling: touch;
+}

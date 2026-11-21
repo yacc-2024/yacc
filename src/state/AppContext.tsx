@@ -48,7 +48,9 @@ export type AppMode = 'checking' | 'online' | 'local'
 
 export interface SessionUser {
   id: string
+  uid?: number | null
   name: string
+  avatar?: string | null
   role: 'admin' | 'member' | 'visitor'
   verified: boolean
 }
@@ -83,7 +85,7 @@ interface AppContextValue {
   signUp: (key: string, name: string, password: string) => Promise<void>
   createAdmin: (name: string, password: string, code: string) => Promise<string[]>
   signOut: () => Promise<void>
-  renameMe: (name: string) => Promise<void>
+  updateProfile: (patch: { name?: string; avatar?: string | null }) => Promise<void>
   changeMyPassword: (oldPassword: string, newPassword: string) => Promise<void>
   toggleFavorite: (type: FavRef['type'], id: string) => Promise<boolean>
   pushHistory: (type: HistoryRef['type'], id: string) => Promise<void>
@@ -409,17 +411,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAccount(null)
   }, [])
 
-  const renameMe = useCallback(
-    async (name: string) => {
+  const updateProfile = useCallback(
+    async (patch: { name?: string; avatar?: string | null }) => {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
-        const res = await api.rename(name)
+        const res = await api.profile(patch)
         cacheUser(res.user)
         setAccount(res.user)
         return
       }
-      const acc = await localRename(account.id, name)
-      setAccount({ id: acc.id, name: acc.name, role: acc.role, verified: true })
+      // 离线模式只支持改昵称
+      if (patch.name !== undefined) {
+        const acc = await localRename(account.id, patch.name)
+        setAccount({ ...account, name: acc.name })
+      }
     },
     [account],
   )
@@ -483,7 +488,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signUp,
       createAdmin,
       signOut,
-      renameMe,
+      updateProfile,
       changeMyPassword,
       toggleFavorite,
       pushHistory,
@@ -515,7 +520,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signUp,
       createAdmin,
       signOut,
-      renameMe,
+      updateProfile,
       changeMyPassword,
       toggleFavorite,
       pushHistory,

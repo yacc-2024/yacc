@@ -8,8 +8,10 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/components.css'
 import { initGlassBlur } from './lib/glass'
+import { initAppearance } from './lib/appearance'
 
 initGlassBlur()
+initAppearance()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

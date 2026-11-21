@@ -45,7 +45,7 @@ export function Works() {
         />
 
         {tab === 'main' ? (
-          <>
+          <div key="main" className="panel-enter">
             {seasons.length > 0 ? (
               <div className="chips" style={{ marginTop: 16 }} role="group" aria-label="选择季度">
                 {seasons.map((s) => (
@@ -82,9 +82,9 @@ export function Works() {
                 {current.synopsis}
               </p>
             ) : null}
-          </>
+          </div>
         ) : (
-          <div style={{ marginTop: 16 }}>
+          <div key="extra" className="panel-enter" style={{ marginTop: 16 }}>
             {c.extras.length === 0 ? (
               <EmptyState icon="film" title="花絮还在剪" desc="拍摄时的碎片会放在这里。" />
             ) : (

@@ -12,7 +12,7 @@ beforeEach(() => {
 describe('外观设置', () => {
   it('拖模糊度滑杆会立刻改全局 CSS 变量', async () => {
     await seedAdmin()
-    renderApp(['/me/settings'])
+    renderApp(['/me/settings/appearance'])
 
     const slider = await screen.findByLabelText('毛玻璃模糊度')
     fireEvent.change(slider, { target: { value: '36' } })
@@ -25,7 +25,7 @@ describe('外观设置', () => {
 
   it('调到 0 也能生效（等于关掉模糊）', async () => {
     await seedAdmin()
-    renderApp(['/me/settings'])
+    renderApp(['/me/settings/appearance'])
     const slider = await screen.findByLabelText('毛玻璃模糊度')
     fireEvent.change(slider, { target: { value: '0' } })
     expect(document.documentElement.style.getPropertyValue('--glass-blur')).toBe('0px')

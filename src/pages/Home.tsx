@@ -5,7 +5,7 @@ import { NavBar, SectionHead } from '../components/ui'
 import { PosterCard } from '../components/media'
 import { Icon } from '../components/Icon'
 import { DirtyBanner } from '../components/DirtyBanner'
-import { AnnouncementSheet, EventSheet } from '../components/detailSheets'
+import { EventSheet } from '../components/detailSheets'
 import {
   formatDateBlock,
   formatShortDate,
@@ -15,16 +15,18 @@ import {
   eventStatus,
 } from '../lib/format'
 import { featuredItems } from '../lib/selectors'
-import type { Announcement, CrewEvent } from '../data/schema'
+import { hasUnreadNews } from '../lib/news'
+import type { CrewEvent } from '../data/schema'
 
 export function Home() {
   const { content, account } = useApp()
   const c = content!
-  const [ann, setAnn] = useState<Announcement | null>(null)
   const [evt, setEvt] = useState<CrewEvent | null>(null)
 
   const featured = featuredItems(c)
-  const announcements = sortAnnouncements(c.announcements).slice(0, 3)
+  const sortedNews = sortAnnouncements(c.announcements)
+  const headline = sortedNews[0] ?? null
+  const unread = hasUnreadNews(sortedNews[0]?.date ?? '')
   const events = sortEvents(c.events).slice(0, 2)
 
   return (
@@ -33,8 +35,9 @@ export function Home() {
         title={c.site.name}
         large
         action={
-          <Link to="/news" className="nav__action" aria-label="公告">
+          <Link to="/news" className="nav__action" aria-label={unread ? '公告（有新的）' : '公告'}>
             <Icon name="bell" size={22} />
+            {unread ? <span className="dot-badge" aria-hidden="true" /> : null}
           </Link>
         }
       />
@@ -60,6 +63,17 @@ export function Home() {
           ))}
         </Link>
 
+        {headline ? (
+          <Link to="/news" className="notice" aria-label={`公告：${headline.title}`}>
+            <span className="notice__head">
+              <span className="notice__tag">{headline.pinned ? '置顶公告' : '最新公告'}</span>
+              <span className="t-tag faint t-num">{formatShortDate(headline.date)}</span>
+            </span>
+            <span className="notice__title clamp-1">{headline.title}</span>
+            <span className="notice__sub clamp-1">{headline.body}</span>
+          </Link>
+        ) : null}
+
         {featured.length > 0 ? (
           <section className="section">
             <SectionHead title="最新推荐" />
@@ -77,38 +91,6 @@ export function Home() {
           </section>
         ) : null}
 
-        {announcements.length > 0 ? (
-          <section className="section">
-            <SectionHead title="公告" moreTo="/news" />
-            <div className="list">
-              {announcements.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="list__row list__row--plain"
-                  onClick={() => setAnn(a)}
-                >
-                  {/* 始终占位，保证有置顶和没置顶的标题左边缘对齐 */}
-                  <span
-                    aria-label={a.pinned ? '置顶' : undefined}
-                    aria-hidden={a.pinned ? undefined : true}
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      flex: 'none',
-                      background: a.pinned ? 'var(--accent)' : 'transparent',
-                    }}
-                  />
-                  <span className="grow list__title clamp-1" style={{ textAlign: 'left' }}>
-                    {a.title}
-                  </span>
-                  <span className="t-caption faint t-num">{formatShortDate(a.date)}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         {events.length > 0 ? (
           <section className="section">
@@ -184,7 +166,6 @@ export function Home() {
         </footer>
       </div>
 
-      <AnnouncementSheet item={ann} onClose={() => setAnn(null)} />
       <EventSheet item={evt} onClose={() => setEvt(null)} />
     </>
   )

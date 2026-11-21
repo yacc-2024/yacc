@@ -31,8 +31,8 @@ describe('在线模式：接通后端', () => {
     expect(await screen.findByText('反对校园霸凌，人人有责')).toBeInTheDocument()
 
     const view = renderApp(['/me'])
-    expect(await screen.findByText('管理员')).toBeInTheDocument()
-    expect(screen.getByText('管理中心')).toBeInTheDocument()
+    expect(await screen.findByText('管理中心')).toBeInTheDocument()
+    expect((await screen.findAllByText(/管理员/)).length).toBeGreaterThan(0)
     view.unmount()
   })
 

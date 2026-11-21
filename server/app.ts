@@ -17,14 +17,19 @@ export interface Env {
 
 export interface User {
   id: string
+  /** 固定的数字账号 ID，注册后不再变化 */
+  uid: number | null
   name: string
+  avatar: string | null
   role: 'admin' | 'member' | 'visitor'
   verified: boolean
 }
 
 interface UserRow {
   id: string
+  uid: number | null
   name: string
+  avatar: string | null
   password_hash: string
   salt: string
   role: string
@@ -61,6 +66,18 @@ function ensureSchema(db: DB): Promise<void> {
       for (const sql of statements) {
         await db.prepare(sql).run()
       }
+      // 老库补列：新库这两条会报「duplicate column」，忽略
+      for (const sql of [
+        'ALTER TABLE users ADD COLUMN uid INTEGER',
+        'ALTER TABLE users ADD COLUMN avatar TEXT',
+      ]) {
+        try {
+          await db.prepare(sql).run()
+        } catch {
+          /* 列已存在 */
+        }
+      }
+      await assignMissingUids(db)
     })().catch((err) => {
       schemas.delete(db)
       throw err
@@ -90,10 +107,37 @@ const nowIso = () => new Date().toISOString()
 function toUser(row: UserRow): User {
   return {
     id: row.id,
+    uid: row.uid ?? null,
     name: row.name,
+    avatar: row.avatar ?? null,
     role: row.role === 'admin' ? 'admin' : row.role === 'member' ? 'member' : 'visitor',
     verified: row.verified === 1,
   }
+}
+
+const UID_START = 100000
+
+/** 给还没编号的用户补上固定的数字 ID */
+async function assignMissingUids(db: DB): Promise<void> {
+  const rows = await db
+    .prepare('SELECT id FROM users WHERE uid IS NULL ORDER BY created_at ASC')
+    .all<{ id: string }>()
+  if (rows.length === 0) return
+  const maxRow = await db
+    .prepare(`SELECT COALESCE(MAX(uid), ${UID_START}) AS m FROM users`)
+    .first<{ m: number }>()
+  let next = Number(maxRow?.m ?? UID_START) + 1
+  for (const row of rows) {
+    await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(next, row.id).run()
+    next += 1
+  }
+}
+
+async function nextUid(db: DB): Promise<number> {
+  const maxRow = await db
+    .prepare(`SELECT COALESCE(MAX(uid), ${UID_START}) AS m FROM users`)
+    .first<{ m: number }>()
+  return Number(maxRow?.m ?? UID_START) + 1
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
@@ -223,18 +267,21 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       const salt = randomHex(16)
       const passwordHash = await hashPassword(password, salt)
+      const uid = await nextUid(db)
       const user: User = {
         id: randomHex(8),
+        uid,
         name,
+        avatar: null,
         role: keyRow.kind === 'member' ? 'member' : 'visitor',
         verified: true,
       }
 
       await db
         .prepare(
-          'INSERT INTO users (id, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         )
-        .bind(user.id, name, passwordHash, salt, user.role, 1, nowIso())
+        .bind(user.id, uid, name, passwordHash, salt, user.role, 1, nowIso())
         .run()
 
       await db
@@ -280,12 +327,20 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
       const salt = randomHex(16)
       const passwordHash = await hashPassword(password, salt)
-      const user: User = { id: randomHex(8), name, role: 'admin', verified: true }
+      const uid = await nextUid(db)
+      const user: User = {
+        id: randomHex(8),
+        uid,
+        name,
+        avatar: null,
+        role: 'admin',
+        verified: true,
+      }
       await db
         .prepare(
-          'INSERT INTO users (id, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         )
-        .bind(user.id, name, passwordHash, salt, 'admin', 1, nowIso())
+        .bind(user.id, uid, name, passwordHash, salt, 'admin', 1, nowIso())
         .run()
 
       // 顺手生成第一批密钥，省得注册完还要再点一次
@@ -303,19 +358,43 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       return ok({ user: me })
     }
 
-    if (path === '/auth/rename' && method === 'POST') {
+    if ((path === '/auth/profile' || path === '/auth/rename') && method === 'POST') {
       if (!me) return fail('未登录', 401)
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
-      const name = cleanName(body.name)
-      if (!name) return fail('昵称需要 2–12 个字符')
-      const taken = await db
-        .prepare('SELECT id FROM users WHERE name = ? AND id <> ?')
-        .bind(name, me.id)
-        .first<{ id: string }>()
-      if (taken) return fail('这个昵称已经有人用了', 409)
-      await db.prepare('UPDATE users SET name = ? WHERE id = ?').bind(name, me.id).run()
-      return ok({ user: { ...me, name } })
+
+      let nextName = me.name
+      if (body.name !== undefined) {
+        const name = cleanName(body.name)
+        if (!name) return fail('昵称需要 2–12 个字符')
+        const taken = await db
+          .prepare('SELECT id FROM users WHERE name = ? AND id <> ?')
+          .bind(name, me.id)
+          .first<{ id: string }>()
+        if (taken) return fail('这个昵称已经有人用了', 409)
+        nextName = name
+      }
+
+      let nextAvatar = me.avatar
+      if (body.avatar !== undefined) {
+        if (body.avatar === null || body.avatar === '') {
+          nextAvatar = null
+        } else if (typeof body.avatar === 'string' && body.avatar.length <= 500) {
+          const value = body.avatar.trim()
+          if (!/^(https?:\/\/|\/)/.test(value)) {
+            return fail('头像要填图片地址（http 开头）')
+          }
+          nextAvatar = value
+        } else {
+          return fail('头像地址太长')
+        }
+      }
+
+      await db
+        .prepare('UPDATE users SET name = ?, avatar = ? WHERE id = ?')
+        .bind(nextName, nextAvatar, me.id)
+        .run()
+      return ok({ user: { ...me, name: nextName, avatar: nextAvatar } })
     }
 
     if (path === '/auth/password' && method === 'POST') {

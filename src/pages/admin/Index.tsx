@@ -46,6 +46,12 @@ export function AdminIndex() {
             to="/admin/works"
           />
           <ListRow
+            icon="info"
+            title="更新日志"
+            sub={`${c.changelog.length} 个版本`}
+            to="/admin/changelog"
+          />
+          <ListRow
             icon="download"
             title="数据管理"
             sub={mode === 'online' ? '发布到线上、备份、导入' : '导出、导入、发布'}

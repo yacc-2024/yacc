@@ -20,13 +20,20 @@ import { Watch } from './pages/Watch'
 import { Me } from './pages/Me'
 import { Login } from './pages/Login'
 import { Favorites, History } from './pages/Library'
-import { Settings, Version } from './pages/Account'
+import {
+  Settings,
+  ProfileSettings,
+  PasswordSettings,
+  AppearanceSettings,
+  Version,
+} from './pages/Account'
 import { AdminIndex } from './pages/admin/Index'
 import { HomeEdit, AboutEdit } from './pages/admin/ContentEdit'
 import { MembersAdmin } from './pages/admin/MembersAdmin'
 import { WorksAdmin } from './pages/admin/WorksAdmin'
 import { DataAdmin } from './pages/admin/DataAdmin'
 import { KeysAdmin, CommentsAdmin } from './pages/admin/Online'
+import { ChangelogAdmin } from './pages/admin/Changelog'
 
 /** 记住每个历史记录项的滚动位置，返回时还原 */
 function ScrollMemory() {
@@ -144,6 +151,9 @@ export function App() {
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
         <Route path="me/settings" element={<Settings />} />
+        <Route path="me/settings/profile" element={<ProfileSettings />} />
+        <Route path="me/settings/password" element={<PasswordSettings />} />
+        <Route path="me/settings/appearance" element={<AppearanceSettings />} />
         <Route path="me/version" element={<Version />} />
 
         <Route path="admin" element={<RequireAdmin><AdminIndex /></RequireAdmin>} />
@@ -155,6 +165,10 @@ export function App() {
         />
         <Route path="admin/works" element={<RequireAdmin><WorksAdmin /></RequireAdmin>} />
         <Route path="admin/data" element={<RequireAdmin><DataAdmin /></RequireAdmin>} />
+        <Route
+          path="admin/changelog"
+          element={<RequireAdmin><ChangelogAdmin /></RequireAdmin>}
+        />
         <Route path="admin/keys" element={<RequireAdmin><KeysAdmin /></RequireAdmin>} />
         <Route
           path="admin/comments"
