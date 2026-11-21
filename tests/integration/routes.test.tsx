@@ -15,7 +15,6 @@ const PUBLIC_ROUTES: Array<[string, RegExp]> = [
   ['/events', /活动/],
   ['/works', /第一季/],
   ['/watch/ep-1-1', /反对校园霸凌/],
-  ['/watch/ex-1', /花絮：开机第一天/],
   ['/me', /yacc/],
   ['/me/version', /版本与更新日志/],
   ['/login', /yacc/],

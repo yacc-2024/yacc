@@ -99,7 +99,21 @@ describe('validateContent', () => {
 
   it('花絮关联到不存在的集', () => {
     const result = validateContent(
-      mutate((c) => (c.extras[0].relatedEpisodeId = 'ep-404')),
+      mutate((c) => {
+        // 种子数据里现在没有花絮，先造一条再把它指向不存在的集
+        c.extras = [
+          {
+            id: 'ex-test',
+            title: '花絮',
+            platform: 'bilibili',
+            videoId: 'BV1xx411c7mD',
+            relatedEpisodeId: 'ep-404',
+            cover: null,
+            durationSec: 30,
+            publishedAt: '2026-11-01',
+          },
+        ]
+      }),
     )
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.errors.join(' ')).toContain('ep-404')

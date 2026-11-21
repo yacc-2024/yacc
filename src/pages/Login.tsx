@@ -59,7 +59,15 @@ export function Login() {
       }
       await finish()
     } catch (err) {
-      setError(err instanceof Error ? err.message : '出错了，再试一次')
+      const message = err instanceof Error ? err.message : '出错了，再试一次'
+      if (mode === 'admin' && message.includes('已经存在管理员')) {
+        setMode('login')
+        setName(name)
+        setPassword('')
+        setError('管理员已经建好了，请用账号密码登录')
+        return
+      }
+      setError(message)
     } finally {
       setBusy(false)
     }
@@ -102,12 +110,25 @@ export function Login() {
           </button>
         </div>
       ) : (
-        <p
-          className="t-caption"
-          style={{ marginTop: 22, color: 'var(--accent)', fontWeight: 600 }}
-        >
-          管理员激活
-        </p>
+        <>
+          <p
+            className="t-caption"
+            style={{ marginTop: 22, color: 'var(--accent)', fontWeight: 600 }}
+          >
+            管理员激活
+          </p>
+          <p className="t-caption faint" style={{ marginTop: 6, lineHeight: 1.6 }}>
+            这一页只用于第一次激活。如果管理员已经建好了，
+            <button
+              type="button"
+              className="linklike"
+              style={{ marginLeft: 4 }}
+              onClick={() => switchMode('login')}
+            >
+              直接用账号密码登录
+            </button>
+          </p>
+        </>
       )}
 
       <form className="auth__form" onSubmit={(e) => void submit(e)}>

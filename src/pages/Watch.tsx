@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon'
 import { EpisodeRow } from '../components/media'
 import { Comments, LikeButton } from '../components/Comments'
 import { formatDate, formatDuration } from '../lib/format'
-import { embedUrl, watchUrl } from '../lib/video'
+import { embedUrl, isPlaceholderVideo, watchUrl } from '../lib/video'
 import {
   episodeBadge,
   extraBadge,
@@ -70,6 +70,7 @@ export function Watch() {
 
   const platform = item.platform
   const ref = { platform, videoId: item.videoId }
+  const pendingVideo = isPlaceholderVideo(ref)
   const title = episode ? episode.title : extra!.title
   const badge = episode ? episodeBadge(c, episode) : extraBadge(c, extra!)
   const next = episode ? nextInSeries(c, episode) : undefined
@@ -120,7 +121,42 @@ export function Watch() {
       />
 
       <div className="watch__media">
-        {!online || frameFailed ? (
+        {pendingVideo ? (
+          <div className="watch__fallback">
+            {item.cover ? (
+              <>
+                <img
+                  src={item.cover}
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0.5,
+                  }}
+                />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                      'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.78))',
+                  }}
+                />
+              </>
+            ) : null}
+            <Icon name="film" size={26} style={{ position: 'relative', opacity: 0.7 }} />
+            <p className="t-body" style={{ position: 'relative', fontWeight: 600 }}>
+              视频即将上线
+            </p>
+            <p className="t-caption" style={{ opacity: 0.85, position: 'relative' }}>
+              这一集还在上传，稍后就能看了
+            </p>
+          </div>
+        ) : !online || frameFailed ? (
           <div className="watch__fallback">
             <p className="t-body">视频没能加载出来</p>
             <p className="t-caption" style={{ opacity: 0.7 }}>
@@ -197,15 +233,17 @@ export function Watch() {
           </p>
         ) : null}
 
-        <a
-          className="linklike"
-          style={{ marginTop: 16, display: 'inline-flex' }}
-          href={watchUrl(ref)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          打不开？在 B 站观看
-        </a>
+        {pendingVideo ? null : (
+          <a
+            className="linklike"
+            style={{ marginTop: 16, display: 'inline-flex' }}
+            href={watchUrl(ref)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            打不开？在 B 站观看
+          </a>
+        )}
       </div>
 
       <div className="page__body">

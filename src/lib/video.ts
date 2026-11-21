@@ -59,6 +59,13 @@ export function parseVideoInput(input: string): VideoRef | null {
   return null
 }
 
+/** 还没换成真实链接的占位视频 */
+const PLACEHOLDER_IDS = new Set(['BV1xx411c7mD'])
+
+export function isPlaceholderVideo(ref: VideoRef): boolean {
+  return PLACEHOLDER_IDS.has(ref.videoId)
+}
+
 export function embedUrl(ref: VideoRef): string {
   if (ref.platform === 'bilibili') {
     const params = new URLSearchParams({

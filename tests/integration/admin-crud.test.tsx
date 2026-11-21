@@ -105,11 +105,11 @@ describe('管理员：最新推荐位', () => {
     const view = renderApp(['/admin/home'])
 
     const removeButtons = await screen.findAllByRole('button', { name: '移除' })
-    expect(removeButtons.length).toBe(3)
+    expect(removeButtons.length).toBe(2)
     await user.click(removeButtons[0])
 
     await waitFor(async () => {
-      expect((await screen.findAllByRole('button', { name: '移除' })).length).toBe(2)
+      expect((await screen.findAllByRole('button', { name: '移除' })).length).toBe(1)
     })
 
     view.unmount()
@@ -129,7 +129,7 @@ describe('管理员：最新推荐位', () => {
 
     await user.click(await screen.findByText('反对校园霸凌'))
     await waitFor(async () => {
-      expect((await screen.findAllByRole('button', { name: '移除' })).length).toBe(3)
+      expect((await screen.findAllByRole('button', { name: '移除' })).length).toBe(2)
     })
   })
 })

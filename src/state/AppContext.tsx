@@ -31,7 +31,15 @@ import {
 import { listFavorites, toggleFavorite as toggleFavStorage } from '../data/favorites'
 import { listHistory, recordHistory } from '../data/history'
 import { commitPendingRestore } from '../data/restore'
-import { api, getToken, setToken } from '../lib/api'
+import {
+  api,
+  cacheUser,
+  clearCachedUser,
+  getToken,
+  isAuthError,
+  readCachedUser,
+  setToken,
+} from '../lib/api'
 import { isSecureCryptoAvailable } from '../data/accounts'
 
 const CONTENT_CACHE_KEY = 'yacc:content-cache'
@@ -193,14 +201,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       modeRef.current = next
       setMode(next)
 
-      // 会话
+      // 会话：先用缓存立刻显示「已登录」，再向后端确认
       if (next === 'online') {
         if (getToken()) {
+          const cached = readCachedUser()
+          if (cached && !cancelled) setAccount(cached)
           try {
             const { user } = await api.me()
-            if (!cancelled) setAccount(user)
-          } catch {
-            setToken(null)
+            if (!cancelled) {
+              setAccount(user)
+              cacheUser(user)
+            }
+          } catch (err) {
+            // 只有明确 401 才登出；网络抖动不能把人踢出去
+            if (isAuthError(err)) {
+              setToken(null)
+              clearCachedUser()
+              if (!cancelled) setAccount(null)
+            }
           }
         }
       } else {
@@ -319,6 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (modeRef.current === 'online') {
       const res = await api.login(name, password)
       setToken(res.token)
+      cacheUser(res.user)
       setAccount(res.user)
       return
     }
@@ -331,6 +350,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (modeRef.current === 'online') {
       const res = await api.register(name, password, key)
       setToken(res.token)
+      cacheUser(res.user)
       setAccount(res.user)
       return
     }
@@ -349,6 +369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (modeRef.current === 'online') {
       const res = await api.activateAdmin(name, password, code)
       setToken(res.token)
+      cacheUser(res.user)
       setAccount(res.user)
       if (res.keys?.length) {
         await storageSet('yacc:first-keys', res.keys)
@@ -381,6 +402,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         /* 忽略 */
       }
       setToken(null)
+      clearCachedUser()
     } else {
       await localClearSession()
     }
@@ -392,6 +414,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
         const res = await api.rename(name)
+        cacheUser(res.user)
         setAccount(res.user)
         return
       }

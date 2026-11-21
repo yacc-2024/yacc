@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-20T20:00:00+08:00",
+  "updatedAt": "2026-11-21T16:50:00+08:00",
   "site": {
     "name": "yacc",
     "fullName": "YACC 创作组",
@@ -12,22 +12,45 @@
     "claim": "反对校园霸凌，人人有责",
     "intro": "YACC 创作组，北师大天津静海实验学校出品。我们拍短片，是为了让沉默被看见。",
     "stats": [
-      { "value": "2", "label": "季" },
-      { "value": "4", "label": "集" },
-      { "value": "11", "label": "人" }
+      {
+        "value": "2",
+        "label": "季"
+      },
+      {
+        "value": "4",
+        "label": "集"
+      },
+      {
+        "value": "11",
+        "label": "人"
+      }
     ],
     "featured": [
-      { "type": "episode", "id": "ep-2-3" },
-      { "type": "episode", "id": "ep-2-1" },
-      { "type": "extra", "id": "ex-1" }
+      {
+        "type": "episode",
+        "id": "ep-2-3"
+      },
+      {
+        "type": "episode",
+        "id": "ep-2-1"
+      }
     ]
   },
   "about": {
     "lead": "校园霸凌远比想象中普遍。每 8 名学生里就有 1 人经历过；网络霸凌的比例还在上升；而大多数事件，因为沉默，从未被正式记录。霸凌不止于肢体冲突——孤立、言语冷暴力和网络攻击同样伤人。沉默不是答案，看见就是改变的开始。",
     "figures": [
-      { "value": "12.8%", "label": "中小学生欺凌事件年发生率" },
-      { "value": "41%", "label": "网络霸凌占比" },
-      { "value": "78.5%", "label": "因沉默未被记录" }
+      {
+        "value": "12.8%",
+        "label": "中小学生欺凌事件年发生率"
+      },
+      {
+        "value": "41%",
+        "label": "网络霸凌占比"
+      },
+      {
+        "value": "78.5%",
+        "label": "因沉默未被记录"
+      }
     ],
     "source": {
       "text": "教育部 · 中国政法大学《2025 年全国校园安全状况白皮书》",
@@ -51,13 +74,23 @@
       }
     ]
   },
-  "roles": ["导演", "摄影", "剪辑", "演员"],
+  "roles": [
+    "导演",
+    "摄影",
+    "剪辑",
+    "演员"
+  ],
   "members": [
     {
       "id": "m-01",
       "name": "张睿轩",
-      "roles": ["导演"],
-      "seasons": [1, 2],
+      "roles": [
+        "导演"
+      ],
+      "seasons": [
+        1,
+        2
+      ],
       "bio": "负责整体拍摄与现场调度。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -66,8 +99,13 @@
     {
       "id": "m-02",
       "name": "李政为",
-      "roles": ["摄影"],
-      "seasons": [1, 2],
+      "roles": [
+        "摄影"
+      ],
+      "seasons": [
+        1,
+        2
+      ],
       "bio": "掌机，也管灯光。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -76,8 +114,13 @@
     {
       "id": "m-03",
       "name": "楚世瀛",
-      "roles": ["剪辑"],
-      "seasons": [1, 2],
+      "roles": [
+        "剪辑"
+      ],
+      "seasons": [
+        1,
+        2
+      ],
       "bio": "后期剪辑与调色。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -86,8 +129,13 @@
     {
       "id": "m-04",
       "name": "李金灿",
-      "roles": ["演员"],
-      "seasons": [1, 2],
+      "roles": [
+        "演员"
+      ],
+      "seasons": [
+        1,
+        2
+      ],
       "bio": "第一季主演。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -96,8 +144,13 @@
     {
       "id": "m-05",
       "name": "宋禹成",
-      "roles": ["演员"],
-      "seasons": [1, 2],
+      "roles": [
+        "演员"
+      ],
+      "seasons": [
+        1,
+        2
+      ],
       "bio": "第一季主演。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -106,8 +159,12 @@
     {
       "id": "m-06",
       "name": "宫研博",
-      "roles": ["摄影"],
-      "seasons": [1],
+      "roles": [
+        "摄影"
+      ],
+      "seasons": [
+        1
+      ],
       "bio": "第一季摄影。",
       "avatar": null,
       "joinedAt": "2026-03",
@@ -116,8 +173,12 @@
     {
       "id": "m-07",
       "name": "待补充 01",
-      "roles": ["演员"],
-      "seasons": [2],
+      "roles": [
+        "演员"
+      ],
+      "seasons": [
+        2
+      ],
       "bio": "第二季新增成员，资料待补充。",
       "avatar": null,
       "joinedAt": "2026-09",
@@ -126,8 +187,12 @@
     {
       "id": "m-08",
       "name": "待补充 02",
-      "roles": ["演员"],
-      "seasons": [2],
+      "roles": [
+        "演员"
+      ],
+      "seasons": [
+        2
+      ],
       "bio": "第二季新增成员，资料待补充。",
       "avatar": null,
       "joinedAt": "2026-09",
@@ -136,8 +201,12 @@
     {
       "id": "m-09",
       "name": "待补充 03",
-      "roles": ["摄影"],
-      "seasons": [2],
+      "roles": [
+        "摄影"
+      ],
+      "seasons": [
+        2
+      ],
       "bio": "第二季新增成员，资料待补充。",
       "avatar": null,
       "joinedAt": "2026-09",
@@ -146,8 +215,12 @@
     {
       "id": "m-10",
       "name": "待补充 04",
-      "roles": ["剪辑"],
-      "seasons": [2],
+      "roles": [
+        "剪辑"
+      ],
+      "seasons": [
+        2
+      ],
       "bio": "第二季新增成员，资料待补充。",
       "avatar": null,
       "joinedAt": "2026-09",
@@ -156,8 +229,12 @@
     {
       "id": "m-11",
       "name": "待补充 05",
-      "roles": ["导演"],
-      "seasons": [2],
+      "roles": [
+        "导演"
+      ],
+      "seasons": [
+        2
+      ],
       "bio": "第二季新增成员，资料待补充。",
       "avatar": null,
       "joinedAt": "2026-09",
@@ -186,72 +263,51 @@
       "seasonId": "s-1",
       "no": 1,
       "title": "反对校园霸凌",
-      "durationSec": 480,
+      "durationSec": 201,
       "publishedAt": "2026-09-20",
       "platform": "bilibili",
       "videoId": "BV1xx411c7mD",
-      "cover": null,
-      "description": "第一季正片。反对校园霸凌，人人有责。\n（视频链接为占位，请管理员替换成正式地址。）"
+      "cover": "/covers/s1e1.jpg",
+      "description": "第一季正片。反对校园霸凌，人人有责。"
     },
     {
       "id": "ep-2-1",
       "seasonId": "s-2",
       "no": 1,
       "title": "第一集",
-      "durationSec": 540,
+      "durationSec": 76,
       "publishedAt": "2026-10-24",
       "platform": "bilibili",
       "videoId": "BV1xx411c7mD",
-      "cover": null,
-      "description": "第二季第一集。（占位内容，待替换）"
+      "cover": "/covers/s2e1.jpg",
+      "description": "第二季第一集。"
     },
     {
       "id": "ep-2-2",
       "seasonId": "s-2",
       "no": 2,
       "title": "第二集",
-      "durationSec": 600,
+      "durationSec": 67,
       "publishedAt": "2026-11-07",
       "platform": "bilibili",
       "videoId": "BV1xx411c7mD",
-      "cover": null,
-      "description": "第二季第二集。（占位内容，待替换）"
+      "cover": "/covers/s2e2.jpg",
+      "description": "第二季第二集。"
     },
     {
       "id": "ep-2-3",
       "seasonId": "s-2",
       "no": 3,
       "title": "第三集",
-      "durationSec": 754,
+      "durationSec": 83,
       "publishedAt": "2026-11-18",
       "platform": "bilibili",
       "videoId": "BV1xx411c7mD",
-      "cover": null,
-      "description": "第二季第三集。（占位内容，待替换）"
+      "cover": "/covers/s2e3.jpg",
+      "description": "第二季第三集。"
     }
   ],
-  "extras": [
-    {
-      "id": "ex-1",
-      "title": "花絮：开机第一天",
-      "platform": "bilibili",
-      "videoId": "BV1xx411c7mD",
-      "relatedEpisodeId": "ep-2-1",
-      "cover": null,
-      "durationSec": 132,
-      "publishedAt": "2026-10-26"
-    },
-    {
-      "id": "ex-2",
-      "title": "花絮：镜头之外",
-      "platform": "bilibili",
-      "videoId": "BV1xx411c7mD",
-      "relatedEpisodeId": "ep-2-3",
-      "cover": null,
-      "durationSec": 98,
-      "publishedAt": "2026-11-19"
-    }
-  ],
+  "extras": [],
   "announcements": [
     {
       "id": "a-1",

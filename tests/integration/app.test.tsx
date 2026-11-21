@@ -81,12 +81,20 @@ describe('作品', () => {
     expect(screen.getByText('第三集')).toBeInTheDocument()
   })
 
-  it('花絮 Tab 显示花絮', async () => {
+  it('花絮 Tab 还没内容时显示空状态', async () => {
     const user = userEvent.setup()
     renderApp(['/works'])
     await screen.findByText('反对校园霸凌')
     await user.click(screen.getByRole('tab', { name: '花絮' }))
-    expect(await screen.findByText('花絮：开机第一天')).toBeInTheDocument()
+    expect(await screen.findByText('花絮还在剪')).toBeInTheDocument()
+  })
+
+  it('剧集显示真实时长与封面', async () => {
+    renderApp(['/works'])
+    // 第一季那一集是 3 分 21 秒
+    expect(await screen.findByText(/03:21/)).toBeInTheDocument()
+    const cover = document.querySelector('img[alt="反对校园霸凌"]')
+    expect(cover?.getAttribute('src')).toBe('/covers/s1e1.jpg')
   })
 
   it('空季显示「这一季还在剪」', async () => {
@@ -101,15 +109,30 @@ describe('作品', () => {
 })
 
 describe('播放页', () => {
-  it('渲染嵌入播放器与标题', async () => {
+  it('真实链接没填时显示「即将上线」，不放别人的视频', async () => {
     renderApp(['/watch/ep-2-3'])
     expect(
       await screen.findByRole('heading', { level: 1, name: '第三集' }),
     ).toBeInTheDocument()
-    const frame = screen.getByTitle('第三集')
-    expect(frame.tagName).toBe('IFRAME')
-    expect(frame.getAttribute('src')).toContain('bilibili')
+    expect(screen.getByText('视频即将上线')).toBeInTheDocument()
+    expect(screen.queryByTitle('第三集')).toBeNull()
     expect(screen.getByText('已是最新一集')).toBeInTheDocument()
+  })
+
+  it('换成真实 BV 号后渲染嵌入播放器', async () => {
+    const seed = JSON.parse(JSON.stringify(seedJson))
+    seed.episodes = seed.episodes.map((e: any) =>
+      e.id === 'ep-2-3' ? { ...e, videoId: 'BV1GJ411x7h7' } : e,
+    )
+    resetAll()
+    mockContentFetch(seed)
+    renderApp(['/watch/ep-2-3'])
+
+    expect(await screen.findByRole('heading', { level: 1, name: '第三集' })).toBeInTheDocument()
+    const frame = await screen.findByTitle('第三集')
+    expect(frame.tagName).toBe('IFRAME')
+    expect(frame.getAttribute('src')).toContain('BV1GJ411x7h7')
+    expect(screen.queryByText('视频即将上线')).toBeNull()
   })
 
   it('未登录点收藏会提示登录', async () => {

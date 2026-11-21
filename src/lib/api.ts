@@ -85,12 +85,16 @@ async function call<T>(
 export const api = {
   /** 探测后端是否存在；不存在就退回本地模式 */
   async health(): Promise<boolean> {
-    try {
-      const res = await request<Envelope<{ service: string }>>('/health')
-      return res.ok === true && res.data?.service === 'yacc'
-    } catch {
-      return false
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const res = await request<Envelope<{ service: string }>>('/health')
+        if (res.ok === true && res.data?.service === 'yacc') return true
+      } catch {
+        /* 冷启动可能第一次超时，重试一次 */
+      }
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 800))
     }
+    return false
   },
 
   /** 内容不是信封结构，单独处理 */
@@ -233,4 +237,41 @@ export const api = {
 function authHeader(): Record<string, string> {
   const token = getToken()
   return token ? { authorization: `Bearer ${token}` } : {}
+}
+
+/* ---------------- 登录态缓存 ---------------- */
+
+const USER_KEY = 'yacc:user'
+
+/** 把用户信息缓存一份，网络不好时也能显示成已登录 */
+export function cacheUser(user: SessionUser): void {
+  try {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  } catch {
+    /* 忽略 */
+  }
+}
+
+export function readCachedUser(): SessionUser | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as SessionUser
+    return parsed?.id && parsed?.name ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function clearCachedUser(): void {
+  try {
+    localStorage.removeItem(USER_KEY)
+  } catch {
+    /* 忽略 */
+  }
+}
+
+/** 只有确认是「未登录/过期」才清 token */
+export function isAuthError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401
 }
