@@ -62,7 +62,7 @@ export function KeysPanel() {
     }
     try {
       const res = await api.admin.keys()
-      setKeys(res.keys)
+      setKeys(Array.isArray(res.keys) ? res.keys : [])
     } catch (err) {
       toast(err instanceof Error ? err.message : '加载失败', 'error')
     } finally {
@@ -581,7 +581,7 @@ export function UsersPanel() {
     }
     try {
       const res = await api.admin.users()
-      setUsers(res.users as AdminUser[])
+      setUsers(Array.isArray(res.users) ? (res.users as AdminUser[]) : [])
     } catch (err) {
       toast(err instanceof Error ? err.message : '加载失败', 'error')
     } finally {
@@ -631,9 +631,9 @@ export function UsersPanel() {
                   <span className="list__sub t-num">
                     {u.uid} · {u.label || (u.verified ? '认证访客' : '普通访客')}
                   </span>
-                  {u.titles.length > 0 ? (
+                  {(u.titles ?? []).length > 0 ? (
                     <span className="t-tag" style={{ display: 'block', color: 'var(--accent)' }}>
-                      {u.titles.length} 个称号
+                      {(u.titles ?? []).length} 个称号
                     </span>
                   ) : null}
                   {u.keyCode ? (

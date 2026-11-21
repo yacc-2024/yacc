@@ -1047,7 +1047,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       if (denied) return denied
       const rows = await db
         .prepare(
-          `SELECT u.id, u.uid, u.name, u.avatar, u.title, u.role, u.verified, u.created_at,
+          `SELECT u.id, u.uid, u.name, u.avatar, u.title, u.titles, u.shown_titles, u.role, u.verified, u.created_at,
                   k.code AS key_code
            FROM users u
            LEFT JOIN activation_keys k ON k.used_by = u.id
@@ -1064,6 +1064,12 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           verified: r.verified === 1,
           label: (r.title as string | null) || describeUid(r.uid as number | null).label,
           title: (r.title as string | null) ?? null,
+          titles: parseTitles(r.titles as string | null, r.title as string | null),
+          shownTitles: parseShown(
+            r.shown_titles as string | null,
+            r.titles as string | null,
+            r.title as string | null,
+          ),
           keyCode: (r.key_code as string | null) ?? null,
           createdAt: r.created_at,
         })),

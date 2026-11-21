@@ -11,6 +11,7 @@ import {
 import { useApp } from './state/AppContext'
 import { TabBar, PageSkeleton, Sheet } from './components/ui'
 import { SideNav } from './components/SideNav'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { useIsDesktop } from './hooks/useMediaQuery'
 import { RequireAdmin } from './components/guards'
 import { Home } from './pages/Home'
@@ -143,6 +144,7 @@ export function App() {
 
   return (
     <>
+      <ErrorBoundary>
       <Routes>
       <Route element={<TabLayout />}>
         <Route index element={<Home />} />
@@ -194,6 +196,7 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       </Routes>
+      </ErrorBoundary>
 
       <Sheet
         open={kicked}
