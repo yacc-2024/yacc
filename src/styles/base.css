@@ -1,0 +1,312 @@
+/* ============================================================
+   base：重置、排版、页面骨架
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.53;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* ---------- 页面骨架 ---------- */
+
+.app {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  isolation: isolate;
+}
+
+/* 背景光斑：让毛玻璃有东西可以透，极低饱和度，不刺眼 */
+.app::before {
+  content: "";
+  position: fixed;
+  inset: -10% -10% 40% -10%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      42% 34% at 18% 6%,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0%,
+      transparent 100%
+    ),
+    radial-gradient(
+      38% 30% at 92% 22%,
+      color-mix(in srgb, var(--warm) 55%, transparent) 0%,
+      transparent 100%
+    );
+  opacity: 0.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app::before {
+    opacity: 0.42;
+  }
+}
+
+:root[data-theme="dark"] .app::before {
+  opacity: 0.42;
+}
+
+.page {
+  min-height: 100vh;
+  background: transparent;
+  padding-bottom: calc(
+    var(--tabbar-h) + var(--tabbar-gap) + env(safe-area-inset-bottom) + 28px
+  );
+}
+
+.page--no-tabs {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 32px);
+}
+
+.page__body {
+  padding: 8px var(--gutter) var(--s-6);
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 520px;
+  }
+}
+
+/* ---------- 排版 ---------- */
+
+.t-hero {
+  font-size: var(--fs-hero);
+  line-height: 1.31;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.t-title1 {
+  font-size: var(--fs-title1);
+  line-height: 1.14;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.t-title2 {
+  font-size: var(--fs-title2);
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.3px;
+}
+
+.t-title3 {
+  font-size: var(--fs-title3);
+  line-height: 1.29;
+  font-weight: 600;
+}
+
+.t-body {
+  font-size: var(--fs-body);
+  line-height: 1.53;
+}
+
+.t-caption {
+  font-size: var(--fs-caption);
+  line-height: 1.38;
+  color: var(--text-2);
+}
+
+.t-tag {
+  font-size: var(--fs-tag);
+  line-height: 1.27;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.t-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.muted {
+  color: var(--text-2);
+}
+
+.faint {
+  color: var(--text-3);
+}
+
+.clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- 工具 ---------- */
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gap-1 {
+  gap: var(--s-1);
+}
+
+.gap-2 {
+  gap: var(--s-2);
+}
+
+.gap-3 {
+  gap: var(--s-3);
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.stack > * + * {
+  margin-top: var(--s-3);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- 页面切换动效 ---------- */
+
+.route-enter {
+  /* 注意：这里不能用 fill-mode: both —— 残留的 transform 会让子元素的
+     backdrop-filter 失去背景基准，导航栏毛玻璃会失效。 */
+  animation: route-in 320ms var(--ease);
+}
+
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,133 @@
+/* ============================================================
+   yacc design tokens · v2
+   iOS 26 语言：大圆角 + 毛玻璃 + 胶囊
+   ============================================================ */
+
+:root {
+  /* ---- 颜色 · 浅色 ---- */
+  --bg: #ffffff;
+  --bg-group: #f2f2f7;
+  --card: #ffffff;
+  --card-ink: #16161a;
+  --text: #16161a;
+  --text-2: #6b6b70;
+  --text-3: #a1a1a6;
+  --line: #e9e9ec;
+  --accent: #6e8f88;
+  --accent-weak: rgba(110, 143, 136, 0.14);
+  --warm: #e3d5c3;
+  --danger: #c0392b;
+  --mask: rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.06), 0 16px 40px rgba(0, 0, 0, 0.12);
+  --skeleton: #eeeef1;
+
+  /* ---- 玻璃 ---- */
+  --glass-blur: 22px; /* 设置里可调 */
+  --glass-saturate: 180%;
+  --glass-surface: rgba(255, 255, 255, 0.52);
+  --glass-nav: rgba(255, 255, 255, 0.46);
+  --glass-tabbar: rgba(255, 255, 255, 0.48);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-edge: rgba(0, 0, 0, 0.06);
+  --glass-solid: rgba(255, 255, 255, 0.98);
+  --control-bg: rgba(120, 120, 128, 0.12);
+  --control-border: rgba(0, 0, 0, 0.05);
+
+  /* ---- 字号 ---- */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC",
+    "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  --fs-hero: 1.625rem;
+  --fs-title1: 2.125rem; /* 34 · 大标题现在更大 */
+  --fs-title1-min: 1.25rem; /* 20 · 收缩后的字号 */
+  --fs-title2: 1.25rem;
+  --fs-title3: 1.0625rem;
+  --fs-body: 0.9375rem;
+  --fs-caption: 0.8125rem;
+  --fs-tag: 0.6875rem;
+
+  /* ---- 间距 ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --gutter: 18px;
+
+  /* ---- 圆角：整体放大 ---- */
+  --r-xl: 34px;
+  --r-lg: 28px;
+  --r-md: 24px;
+  --r-sm: 18px;
+  --r-xs: 13px;
+  --r-pill: 999px;
+
+  /* ---- 动效 ---- */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --dur: 240ms;
+  --dur-fast: 140ms;
+
+  /* 悬浮 Tab 占位高度 */
+  --tabbar-h: 60px;
+  --tabbar-gap: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --bg-group: #0a0a0a;
+    --card: #1c1c1e;
+    --card-ink: #f5f5f7;
+    --text: #f5f5f7;
+    --text-2: #a1a1a6;
+    --text-3: #6b6b70;
+    --line: #2c2c2e;
+    --accent: #7fa39b;
+    --accent-weak: rgba(127, 163, 155, 0.18);
+    --warm: #3a342c;
+    --danger: #e05a4a;
+    --mask: rgba(0, 0, 0, 0.55);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.6);
+    --skeleton: #232326;
+    --glass-surface: rgba(32, 32, 36, 0.5);
+    --glass-nav: rgba(16, 16, 18, 0.46);
+    --glass-tabbar: rgba(32, 32, 36, 0.48);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-edge: rgba(255, 255, 255, 0.08);
+    --glass-solid: rgba(20, 20, 23, 0.98);
+    --control-bg: rgba(120, 120, 128, 0.22);
+    --control-border: rgba(255, 255, 255, 0.06);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --bg-group: #0a0a0a;
+  --card: #1c1c1e;
+  --card-ink: #f5f5f7;
+  --text: #f5f5f7;
+  --text-2: #a1a1a6;
+  --text-3: #6b6b70;
+  --line: #2c2c2e;
+  --accent: #7fa39b;
+  --accent-weak: rgba(127, 163, 155, 0.18);
+  --warm: #3a342c;
+  --danger: #e05a4a;
+  --mask: rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.6);
+  --skeleton: #232326;
+  --glass-surface: rgba(32, 32, 36, 0.5);
+  --glass-nav: rgba(16, 16, 18, 0.46);
+  --glass-tabbar: rgba(32, 32, 36, 0.48);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-solid: rgba(20, 20, 23, 0.98);
+  --control-bg: rgba(120, 120, 128, 0.22);
+  --control-border: rgba(255, 255, 255, 0.06);
+}

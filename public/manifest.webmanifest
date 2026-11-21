@@ -1,0 +1,22 @@
+{
+  "name": "yacc · YACC 创作组",
+  "short_name": "yacc",
+  "description": "YACC 创作组 · 反对校园霸凌公益短片",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "zh-CN",
+  "background_color": "#ffffff",
+  "theme_color": "#16161a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

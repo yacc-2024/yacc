@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yacc",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-11-21",
+
+  // D1 绑定：函数内通过 env.DB 访问
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "yacc",
+      "database_id": "76d60c87-3d56-4272-b1e4-ba2c4200e691"
+    }
+  ]
+
+  // ADMIN_CODE 不写在这里，已作为 Pages Secret 配置：
+  //   npx wrangler pages secret put ADMIN_CODE --project-name yacc
+}
