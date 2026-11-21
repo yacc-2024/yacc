@@ -119,7 +119,7 @@ jobs:
           git config user.name "yacc bot"
           git config user.email "bot@yacc.local"
           git add public/apk/yacc-android.apk
-          git commit -m "更新安卓安装包 [skip ci]" || echo "没有变化"
+          git commit -m "发布安卓安装包（自动）" || echo "没有变化"
           git pull --rebase origin main || true
           git push origin HEAD:main
 
