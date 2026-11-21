@@ -826,3 +826,65 @@ describe('头像上传（data URL）', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('强制编号与定制称号（v1.0.7）', () => {
+  it('可以把编号改成不符合规则的任意值', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '改名的人')
+    const id = reg.body.data.user.id
+
+    // 99999 不符合任何身份规则，也允许
+    const res = await call('POST', `/admin/users/${id}/uid`, { uid: 99999 }, token)
+    expect(res.status).toBe(200)
+
+    const me = await call('GET', '/auth/me', undefined, reg.body.data.token)
+    expect(me.body.data.user.uid).toBe(99999)
+  })
+
+  it('编号被占用时会拒绝', async () => {
+    const token = await bootstrapAdmin()
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '甲甲')
+    const b = await registerWithKey(k2, '乙乙')
+
+    const res = await call(
+      'POST',
+      `/admin/users/${a.body.data.user.id}/uid`,
+      { uid: b.body.data.user.uid },
+      token,
+    )
+    expect(res.status).toBe(409)
+  })
+
+  it('管理员可以定制称号，公开主页会显示', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '有称号的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+
+    const res = await call('POST', `/admin/users/${id}`, { title: '特邀摄影' }, token)
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.title).toBe('特邀摄影')
+    expect(page.body.data.user.label).toBe('特邀摄影')
+  })
+
+  it('称号清空后回到自动推导', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '清称号的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+
+    await call('POST', `/admin/users/${id}`, { title: '临时称号' }, token)
+    await call('POST', `/admin/users/${id}`, { title: null }, token)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.title).toBeNull()
+    expect(page.body.data.user.label).toContain('认证成员')
+  })
+})

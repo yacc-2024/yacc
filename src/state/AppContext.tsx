@@ -52,6 +52,7 @@ export interface SessionUser {
   uid?: number | null
   name: string
   avatar?: string | null
+  title?: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]

@@ -28,6 +28,8 @@ export interface SessionUser {
   uid?: number | null
   name: string
   avatar?: string | null
+  /** 管理员定制的称号 */
+  title?: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: AdminPerm[]
@@ -164,6 +166,7 @@ export const api = {
         verified: boolean
         memberSince: string
         label: string
+        title: string | null
         commentCount: number
       }
     }>(`/users/${uid}`),
@@ -273,6 +276,7 @@ export const api = {
           role: string
           verified: boolean
           label: string
+          title: string | null
           keyCode: string | null
           createdAt: string
         }>
@@ -284,7 +288,10 @@ export const api = {
         body: { verified },
       }),
 
-    updateUser: (id: string, patch: { name?: string; password?: string; verified?: boolean }) =>
+    updateUser: (
+      id: string,
+      patch: { name?: string; password?: string; verified?: boolean; title?: string | null },
+    ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
 
     deleteUser: (id: string) =>

@@ -549,6 +549,7 @@ interface AdminUser {
   role: string
   verified: boolean
   label: string
+  title: string | null
   keyCode: string | null
   createdAt: string
 }
@@ -616,6 +617,11 @@ export function UsersPanel() {
                   <span className="list__sub t-num">
                     {u.uid} · {u.label || (u.verified ? '认证访客' : '普通访客')}
                   </span>
+                  {u.title ? (
+                    <span className="t-tag" style={{ display: 'block', color: 'var(--accent)' }}>
+                      自定义称号
+                    </span>
+                  ) : null}
                   {u.keyCode ? (
                     <span className="t-tag faint" style={{ display: 'block' }}>
                       密钥 {u.keyCode}
@@ -659,6 +665,7 @@ function UserForm({
   const canDelete = !isSelf && user.role !== 'superadmin'
   const [name, setName] = useState(user.name)
   const [uid, setUid] = useState(user.uid)
+  const [title, setTitle] = useState(user.title ?? '')
   const [password, setPassword] = useState('')
   const [verified, setVerified] = useState(user.verified)
   const [busy, setBusy] = useState(false)
@@ -666,10 +673,16 @@ function UserForm({
   const save = async () => {
     setBusy(true)
     try {
-      const patch: { name?: string; password?: string; verified?: boolean } = {}
+      const patch: {
+        name?: string
+        password?: string
+        verified?: boolean
+        title?: string | null
+      } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
       if (verified !== user.verified) patch.verified = verified
+      if (title.trim() !== (user.title ?? '')) patch.title = title.trim() || null
 
       if (uid.trim() && uid.trim() !== user.uid) {
         const numeric = Number(uid.trim())
@@ -736,7 +749,26 @@ function UserForm({
           onChange={(e) => setUid(e.target.value)}
           inputMode="numeric"
         />
-        <p className="field__hint">五位编号，改动会影响身份称号。</p>
+        <p className="field__hint">
+          可以强制改成任意编号（1–99999），不要求符合身份规则；称号可以单独定制。
+        </p>
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="user-title">
+          称号
+        </label>
+        <input
+          id="user-title"
+          className="input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="留空就按编号自动显示"
+          maxLength={20}
+        />
+        <p className="field__hint">
+          可以随便写，比如「特邀摄影」「八七班」。留空则按编号推导。
+        </p>
       </div>
 
       <div className="field">

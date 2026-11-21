@@ -17,7 +17,9 @@ export function uidTitle(
   uid: number | null | undefined,
   role: string | undefined,
   verified: boolean | undefined,
+  customTitle?: string | null,
 ): string {
+  if (customTitle && customTitle.trim()) return customTitle.trim()
   if (role === 'admin' || role === 'superadmin') return '管理员'
   if (!verified) return '访客'
   if (uid === null || uid === undefined) return '认证访客'

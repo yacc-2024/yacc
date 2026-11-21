@@ -68,7 +68,7 @@ function SettingsHome() {
               ID {formatUid(account.uid)}
             </p>
             <span className="title-chip">
-              {uidTitle(account.uid, account.role, account.verified)}
+              {uidTitle(account.uid, account.role, account.verified, account.title)}
             </span>
           </div>
         </div>
