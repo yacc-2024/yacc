@@ -142,7 +142,7 @@ export const api = {
 
   /** 内容不是信封结构，单独处理 */
   async getContent(): Promise<{ content: unknown; publishedAt: string | null } | null> {
-    const res = await fetch('/api/content', { headers: authHeader() })
+    const res = await fetch(`${API_BASE}/api/content`, { headers: authHeader() })
     if (res.status === 404) return null
     if (!res.ok) throw new ApiError('内容加载失败', res.status)
     return { content: await res.json(), publishedAt: res.headers.get('x-published-at') }
