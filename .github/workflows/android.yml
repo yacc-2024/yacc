@@ -14,7 +14,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -33,7 +33,7 @@ jobs:
           ls "${ANDROID_HOME:-/usr/local/lib/android/sdk}" | head
 
       - name: 安装依赖
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --reporter=append-only
 
       - name: 构建网页（接口指向线上）
         run: pnpm build:app
