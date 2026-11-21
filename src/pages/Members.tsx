@@ -7,7 +7,7 @@ import { rolesOf, seasonsSorted } from '../lib/selectors'
 import type { Member } from '../data/schema'
 import { api } from '../lib/api'
 
-interface MemberLink {
+export interface MemberLink {
   memberId: string
   uid: string
   name: string
@@ -15,7 +15,7 @@ interface MemberLink {
 }
 
 /** 成员 → 账号 的映射；没有账号的成员显示成灰色 */
-function useMemberLinks(online: boolean) {
+export function useMemberLinks(online: boolean) {
   const [links, setLinks] = useState<Record<string, MemberLink>>({})
   useEffect(() => {
     if (!online) return

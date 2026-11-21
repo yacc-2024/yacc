@@ -2114,3 +2114,16 @@ select.input {
     min-width: 360px;
   }
 }
+
+/* 成员详情：对应账号卡片 */
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.account-card:active {
+  background: var(--control-bg);
+}

@@ -1057,3 +1057,35 @@ describe('批量删除评论（v1.2.0）', () => {
     expect(list.body.data.comments).toHaveLength(0)
   })
 })
+
+describe('手动绑定成员页（v1.2.1）', () => {
+  it('管理员可以把已有账号绑到成员上', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '张睿轩')
+    const id = reg.body.data.user.id
+
+    const res = await call('POST', `/admin/users/${id}`, { memberId: 'm-zhang' }, token)
+    expect(res.status).toBe(200)
+
+    const links = await call('GET', '/members/links')
+    expect(links.body.data.links).toEqual([
+      { memberId: 'm-zhang', uid: reg.body.data.user.uid ? String(reg.body.data.user.uid).padStart(5, '0') : '', name: '张睿轩', avatar: null },
+    ])
+  })
+
+  it('一个成员只能绑一个账号，绑新的会解绑旧的', async () => {
+    const token = await bootstrapAdmin()
+    const k1 = await makeKey(token, 'visitor')
+    const k2 = await makeKey(token, 'visitor')
+    const a = await registerWithKey(k1, '甲同学')
+    const b = await registerWithKey(k2, '乙同学')
+
+    await call('POST', `/admin/users/${a.body.data.user.id}`, { memberId: 'm-1' }, token)
+    await call('POST', `/admin/users/${b.body.data.user.id}`, { memberId: 'm-1' }, token)
+
+    const links = await call('GET', '/members/links')
+    expect(links.body.data.links).toHaveLength(1)
+    expect(links.body.data.links[0].name).toBe('乙同学')
+  })
+})

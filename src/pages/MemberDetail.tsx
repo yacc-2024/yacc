@@ -5,10 +5,11 @@ import { Icon } from '../components/Icon'
 import { EpisodeRow } from '../components/media'
 import { formatDuration, formatDate } from '../lib/format'
 import { episodesOfSeason, findMember, findSeason } from '../lib/selectors'
-import { LoginGate } from './Members'
+import { LoginGate, useMemberLinks } from './Members'
 
 export function MemberDetail() {
-  const { content, account } = useApp()
+  const { content, account, mode } = useApp()
+  const links = useMemberLinks(mode === 'online' && !!account)
   const { id } = useParams()
   const navigate = useNavigate()
   const c = content!
@@ -23,6 +24,7 @@ export function MemberDetail() {
   }
 
   const member = id ? findMember(c, id) : undefined
+  const link = member ? links[member.id] : undefined
   if (!member) {
     return (
       <>
@@ -59,6 +61,24 @@ export function MemberDetail() {
         }
       />
       <div className="page__body">
+        {link ? (
+          <Link to={`/u/${link.uid}`} className="card account-card" style={{ marginTop: 12 }}>
+            <Avatar name={link.name} src={link.avatar ?? member.avatar} size={56} />
+            <span className="grow" style={{ minWidth: 0, textAlign: 'left' }}>
+              <span className="list__title clamp-1" style={{ display: 'block' }}>
+                {link.name}
+              </span>
+              <span className="t-tag faint t-num" style={{ display: 'block' }}>
+                ID {link.uid}
+              </span>
+            </span>
+            <span className="t-tag" style={{ color: 'var(--accent)' }}>
+              看主页
+              <Icon name="chevron-right" size={14} />
+            </span>
+          </Link>
+        ) : null}
+
         <div style={{ textAlign: 'center', paddingTop: 12 }}>
           <Avatar name={member.name} src={member.avatar} size={88} />
           <h2 className="t-title2" style={{ marginTop: 12 }}>

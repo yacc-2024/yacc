@@ -643,6 +643,7 @@ interface AdminUser {
   verified: boolean
   label: string
   titles: string[]
+  memberId: string | null
   keyCode: string | null
   createdAt: string
 }
@@ -817,13 +818,15 @@ function UserForm({
   onClose: () => void
   onSaved: () => void
 }) {
-  const { toast, account } = useApp()
+  const { toast, account, content } = useApp()
+  const members = content?.members ?? []
   const confirm = useConfirm()
   const [deleting, setDeleting] = useState(false)
   const isSelf = account?.id === user.id
   const canDelete = !isSelf && user.role !== 'superadmin'
   const [name, setName] = useState(user.name)
   const [uid, setUid] = useState(user.uid)
+  const [memberId, setMemberId] = useState(user.memberId ?? '')
   const [titleList, setTitleList] = useState<string[]>(user.titles ?? [])
   const [titleDraft, setTitleDraft] = useState('')
   const [password, setPassword] = useState('')
@@ -838,6 +841,7 @@ function UserForm({
         password?: string
         verified?: boolean
         titles?: string[]
+        memberId?: string | null
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
@@ -846,6 +850,7 @@ function UserForm({
         titleList.length === (user.titles ?? []).length &&
         titleList.every((t, i) => t === (user.titles ?? [])[i])
       if (!sameTitles) patch.titles = titleList
+      if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
 
       if (uid.trim() && uid.trim() !== user.uid) {
         const numeric = Number(uid.trim())
@@ -918,6 +923,29 @@ function UserForm({
         />
         <p className="field__hint">
           可以强制改成任意编号（1–99999），不要求符合身份规则；称号可以单独定制。
+        </p>
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="user-member">
+          绑定成员页
+        </label>
+        <select
+          id="user-member"
+          className="input"
+          value={memberId}
+          onChange={(e) => setMemberId(e.target.value)}
+        >
+          <option value="">不绑定</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+              {m.roles.length ? ` · ${m.roles.join('/')}` : ''}
+            </option>
+          ))}
+        </select>
+        <p className="field__hint">
+          绑定后，成员页里这个人点进去就是他的账号主页。
         </p>
       </div>
 

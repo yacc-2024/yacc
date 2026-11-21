@@ -1091,6 +1091,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
             r.titles as string | null,
             r.title as string | null,
           ),
+          memberId: (r.member_id as string | null) ?? null,
           keyCode: (r.key_code as string | null) ?? null,
           createdAt: r.created_at,
         })),
@@ -1160,6 +1161,27 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           )
           .run()
         void current
+      }
+
+      if (body.memberId !== undefined) {
+        if (me!.role !== 'superadmin' && !can(me, 'users')) {
+          return fail('没有权限绑定成员', 403)
+        }
+        const next =
+          body.memberId === null || body.memberId === ''
+            ? null
+            : String(body.memberId).slice(0, 64)
+        if (next) {
+          // 一个成员只允许绑一个账号
+          await db
+            .prepare('UPDATE users SET member_id = NULL WHERE member_id = ? AND id <> ?')
+            .bind(next, target.id)
+            .run()
+        }
+        await db
+          .prepare('UPDATE users SET member_id = ? WHERE id = ?')
+          .bind(next, target.id)
+          .run()
       }
 
       if (Array.isArray(body.perms)) {
