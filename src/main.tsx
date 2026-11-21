@@ -9,11 +9,13 @@ import './styles/base.css'
 import './styles/components.css'
 import { initGlassBlur } from './lib/glass'
 import { initAppearance } from './lib/appearance'
+import { hideSplash } from './lib/splash'
 
 initGlassBlur()
 initAppearance()
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const root = ReactDOM.createRoot(document.getElementById('root')!)
+root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AppProvider>
@@ -24,6 +26,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 )
+
+// 首屏画完再淡出开屏，避免看到半成品
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => hideSplash())
+})
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

@@ -60,6 +60,18 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
 
+      - name: 换掉原生启动图
+        run: |
+          for f in resources/android-splash/*.png; do
+            name=$(basename "$f" .png)
+            if [ "$name" = "drawable" ]; then
+              cp "$f" android/app/src/main/res/drawable/splash.png
+            else
+              cp "$f" "android/app/src/main/res/$name/splash.png"
+            fi
+          done
+          echo "启动图已替换"
+
       - name: 支持侧滑/返回键返回上一页
         run: |
           FILE=$(find android/app/src/main/java -name MainActivity.java | head -1)
