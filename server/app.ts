@@ -233,7 +233,7 @@ function can(me: User | null, perm: AdminPerm): boolean {
  * 老版本用的是 6 位流水号，这里统一重排成新的五位规则。
  * 老账号先按「剧组成员 · 导演 · 两季都参与」占位，之后可以在后台改。
  */
-async function normaliseLegacyUids(db: DB): Promise<void> {
+export async function normaliseLegacyUids(db: DB): Promise<void> {
   // 1) 老版本的 6 位流水号 → 剧组成员
   const rows = await db
     .prepare('SELECT id FROM users WHERE uid IS NULL OR uid >= 100000 ORDER BY created_at ASC')
@@ -244,12 +244,27 @@ async function normaliseLegacyUids(db: DB): Promise<void> {
   }
 
   // 2) 普通访客从 0xxxx 改成 3xxxx
-  const guests = await db
-    .prepare('SELECT id FROM users WHERE uid < 10000 ORDER BY uid ASC')
-    .all<{ id: string }>()
-  for (const row of guests) {
-    const uid = await allocateUid(db, { kind: 'guest' })
-    await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
+  //    这一步只做一次：否则管理员手动设的 00001 会被反复改掉
+  const migrated = await db
+    .prepare('SELECT value FROM settings WHERE key = ?')
+    .bind(GUEST_MIGRATION_KEY)
+    .first<{ value: string }>()
+  if (!migrated) {
+    const guests = await db
+      .prepare(
+        "SELECT id FROM users WHERE uid < 10000 AND role = 'visitor' AND verified = 0 ORDER BY uid ASC",
+      )
+      .all<{ id: string }>()
+    for (const row of guests) {
+      const uid = await allocateUid(db, { kind: 'guest' })
+      await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
+    }
+    await db
+      .prepare(
+        'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      )
+      .bind(GUEST_MIGRATION_KEY, '1')
+      .run()
   }
 }
 
@@ -259,6 +274,8 @@ async function normaliseLegacyUids(db: DB): Promise<void> {
  * 这里把它们中的第一个提升为总管理员。
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
+const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
+
 export async function ensureSuperadmin(db: DB): Promise<void> {
   const existing = await db
     .prepare("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1")

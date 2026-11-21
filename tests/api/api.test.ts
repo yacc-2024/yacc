@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createRequire } from 'node:module'
 import { createNodeDb, type DB } from '../../server/db'
-import { ensureSuperadmin, handleApi, type Env } from '../../server/app'
+import { ensureSuperadmin, handleApi, normaliseLegacyUids, type Env } from '../../server/app'
 import { validContent } from '../fixtures'
 
 // 用 createRequire 加载，避免打包器把 node:sqlite 当普通依赖去解析
@@ -993,5 +993,44 @@ describe('防连点（v1.0.8）', () => {
       }
     }
     expect(last).toBe(429)
+  })
+})
+
+describe('编号迁移不会反复覆盖（v1.1.1）', () => {
+  it('管理员把自己改成 00001 后，重启也不会被改成 300xx', async () => {
+    const token = await bootstrapAdmin()
+    const me = await call('GET', '/auth/me', undefined, token)
+
+    // 先跑一次旧访客迁移，标记位写进去
+    await normaliseLegacyUids(env.db)
+
+    const res = await call('POST', `/admin/users/${me.body.data.user.id}/uid`, { uid: 1 }, token)
+    expect(res.status).toBe(200)
+
+    // 模拟服务重启，再跑一次迁移
+    await normaliseLegacyUids(env.db)
+
+    const after = await call('GET', '/auth/me', undefined, token)
+    expect(after.body.data.user.uid).toBe(1)
+  })
+
+  it('真正没迁移过的老访客仍然会被改成 3 开头', async () => {
+    await call('GET', '/health')
+    await env.db
+      .prepare(
+        `INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at)
+         VALUES ('u-guest', 5, '老访客', 'x', 'y', 'visitor', 0, ?)`,
+      )
+      .bind(new Date().toISOString())
+      .run()
+
+    // 模拟还没做过迁移的老库：清掉标记位
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:guest-uid-v3'").run()
+    await normaliseLegacyUids(env.db)
+
+    const row = await env.db
+      .prepare("SELECT uid FROM users WHERE id = 'u-guest'")
+      .first<{ uid: number }>()
+    expect(row?.uid).toBeGreaterThanOrEqual(30000)
   })
 })
