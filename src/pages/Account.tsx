@@ -143,7 +143,16 @@ function SettingsHome() {
           </p>
         ) : null}
 
-        <div className="list" style={{ marginTop: 24 }}>
+        <a
+          href="/apk/yacc-android.apk"
+          className="btn btn--ghost btn--block"
+          style={{ marginTop: 20 }}
+          download
+        >
+          下载安卓版 App
+        </a>
+
+        <div className="list" style={{ marginTop: 20 }}>
           <button type="button" className="list__row list__danger" onClick={() => void onSignOut()}>
             退出登录
           </button>
@@ -597,7 +606,16 @@ export function Version() {
           </p>
         </div>
 
-        <div className="list" style={{ marginTop: 24 }}>
+        <a
+          href="/apk/yacc-android.apk"
+          className="btn btn--ghost btn--block"
+          style={{ marginTop: 20 }}
+          download
+        >
+          下载安卓版 App
+        </a>
+
+        <div className="list" style={{ marginTop: 20 }}>
           {list.map((cl) => (
             <div key={cl.version} className="list__row list__row--plain" style={{ display: 'block', paddingBlock: 14 }}>
               <p className="t-title3">

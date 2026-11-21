@@ -111,6 +111,18 @@ jobs:
       - name: 重命名安装包
         run: cp android/app/build/outputs/apk/debug/app-debug.apk yacc-android.apk
 
+      # 同时放到网站里，从 yacc2026.pages.dev 也能下载（国内更快）
+      - name: 发布到网站
+        run: |
+          mkdir -p public/apk
+          cp yacc-android.apk public/apk/yacc-android.apk
+          git config user.name "yacc bot"
+          git config user.email "bot@yacc.local"
+          git add public/apk/yacc-android.apk
+          git commit -m "更新安卓安装包 [skip ci]" || echo "没有变化"
+          git pull --rebase origin main || true
+          git push origin HEAD:main
+
       # 挂到 Release 上，给一个可以直接点开的下载直链
       - name: 发布到 Release
         uses: softprops/action-gh-release@v2
