@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   signup_ip TEXT,
   name TEXT NOT NULL COLLATE NOCASE UNIQUE,
   avatar TEXT,
+  title TEXT,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'visitor',

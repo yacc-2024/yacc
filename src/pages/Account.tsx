@@ -5,6 +5,8 @@ import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { formatUid, uidTitle } from '../lib/uid'
+import { fileToAvatar } from '../lib/image'
+import { useRef } from 'react'
 import {
   DEFAULT_BLUR,
   MAX_BLUR,
@@ -115,6 +117,8 @@ function ProfileSettingsInner() {
   const [name, setName] = useState(account?.name ?? '')
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   if (!account) return null
 
@@ -135,6 +139,19 @@ function ProfileSettingsInner() {
     }
   }
 
+  const onPickFile = async (file: File | undefined) => {
+    if (!file) return
+    setUploading(true)
+    try {
+      const data = await fileToAvatar(file)
+      setAvatar(data)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '上传失败', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const copyUid = async () => {
     if (!account.uid) return
     try {
@@ -150,9 +167,43 @@ function ProfileSettingsInner() {
       <NavBar title="个人资料" back />
       <div className="page__body">
         <div style={{ textAlign: 'center', paddingTop: 12 }}>
-          <Avatar name={account.name} src={account.avatar} size={88} />
+          <Avatar name={name || account.name} src={avatar || null} size={88} />
+          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              style={{ minHeight: 40, padding: '0 18px' }}
+              disabled={mode === 'local' || uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              {uploading ? '处理中…' : avatar ? '换一张' : '上传头像'}
+            </button>
+            {avatar ? (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                style={{ minHeight: 40, padding: '0 18px' }}
+                onClick={() => setAvatar('')}
+              >
+                移除
+              </button>
+            ) : null}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            aria-label="选择头像图片"
+            onChange={(e) => {
+              void onPickFile(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
           <p className="t-caption faint" style={{ marginTop: 8 }}>
-            {account.avatar ? '当前头像' : '还没设置头像'}
+            {mode === 'local'
+              ? '离线模式暂时不能上传头像。'
+              : '会自动裁成方形并压缩，不用自己修图。'}
           </p>
         </div>
 
@@ -190,20 +241,20 @@ function ProfileSettingsInner() {
 
         <div className="field">
           <label className="field__label" htmlFor="avatar">
-            头像图片地址
+            或者填图片地址
           </label>
           <input
             id="avatar"
             className="input"
-            value={avatar}
+            value={avatar.startsWith('data:') ? '' : avatar}
             onChange={(e) => setAvatar(e.target.value)}
-            placeholder="https://…"
+            placeholder="https://…（不想上传时用）"
             disabled={mode === 'local'}
           />
           <p className="field__hint">
-            {mode === 'local'
-              ? '离线模式暂时不能设置头像。'
-              : '填一个图片链接（http 开头）。留空就恢复成姓氏首字母。'}
+            {avatar.startsWith('data:')
+              ? '当前用的是上传的图片，在上面点「移除」可以恢复首字母。'
+              : '留空就显示姓氏首字母。'}
           </p>
         </div>
 

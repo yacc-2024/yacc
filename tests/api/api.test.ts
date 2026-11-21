@@ -799,3 +799,30 @@ describe('删除账号（v1.0.5）', () => {
     expect(again.status).toBe(200)
   })
 })
+
+describe('头像上传（data URL）', () => {
+  const tinyJpeg =
+    'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=='
+
+  it('可以保存上传的图片', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call('POST', '/auth/profile', { avatar: tinyJpeg }, token)
+    expect(res.status).toBe(200)
+    expect(res.body.data.user.avatar).toBe(tinyJpeg)
+  })
+
+  it('超大的图片会被拒', async () => {
+    const token = await bootstrapAdmin()
+    const huge = `data:image/jpeg;base64,${'A'.repeat(210_000)}`
+    const res = await call('POST', '/auth/profile', { avatar: huge }, token)
+    expect(res.status).toBe(400)
+  })
+
+  it('不是图片的 data URL 会被拒', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call('POST', '/auth/profile', {
+      avatar: 'data:text/html;base64,PHNjcmlwdD4=',
+    }, token)
+    expect(res.status).toBe(400)
+  })
+})

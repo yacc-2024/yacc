@@ -31,6 +31,8 @@ export interface User {
   uid: number | null
   name: string
   avatar: string | null
+  /** 管理员定制的称号；为空时按编号自动推导 */
+  title: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -42,6 +44,7 @@ interface UserRow {
   uid: number | null
   name: string
   avatar: string | null
+  title: string | null
   perms: string | null
   password_hash: string
   salt: string
@@ -86,6 +89,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN signup_ip TEXT',
         'ALTER TABLE activation_keys ADD COLUMN spec TEXT',
         'ALTER TABLE users ADD COLUMN perms TEXT',
+        'ALTER TABLE users ADD COLUMN title TEXT',
       ]) {
         try {
           await db.prepare(sql).run()
@@ -127,6 +131,7 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
+    title: row.title ?? null,
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -356,7 +361,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           role: toUser(row).role,
           verified: row.verified === 1,
           memberSince: row.created_at,
-          label: summary.label,
+          label: row.title || summary.label,
+          title: row.title ?? null,
           commentCount: Number(commentCount?.n ?? 0),
         },
       })
@@ -450,6 +456,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         uid,
         name,
         avatar: null,
+        title: null,
         role,
         verified: verified === 1,
         perms: isAdminSignup ? adminPerms : [],
@@ -524,6 +531,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
         uid,
         name,
         avatar: null,
+        title: null,
         role: 'superadmin',
         verified: true,
         perms: ALL_PERMS,
@@ -579,10 +587,12 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       if (body.avatar !== undefined) {
         if (body.avatar === null || body.avatar === '') {
           nextAvatar = null
-        } else if (typeof body.avatar === 'string' && body.avatar.length <= 500) {
+        } else if (typeof body.avatar === 'string' && body.avatar.length <= 200_000) {
           const value = body.avatar.trim()
-          if (!/^(https?:\/\/|\/)/.test(value)) {
-            return fail('头像要填图片地址（http 开头）')
+          const isUrl = /^(https?:\/\/|\/)/.test(value)
+          const isUpload = /^data:image\/(png|jpeg|jpg|webp);base64,/.test(value)
+          if (!isUrl && !isUpload) {
+            return fail('头像要填图片地址，或者直接上传一张图')
           }
           nextAvatar = value
         } else {
@@ -924,7 +934,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       if (denied) return denied
       const rows = await db
         .prepare(
-          `SELECT u.id, u.uid, u.name, u.avatar, u.role, u.verified, u.created_at,
+          `SELECT u.id, u.uid, u.name, u.avatar, u.title, u.role, u.verified, u.created_at,
                   k.code AS key_code
            FROM users u
            LEFT JOIN activation_keys k ON k.used_by = u.id
@@ -939,7 +949,8 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           avatar: (r.avatar as string | null) ?? null,
           role: r.role,
           verified: r.verified === 1,
-          label: describeUid(r.uid as number | null).label,
+          label: (r.title as string | null) || describeUid(r.uid as number | null).label,
+          title: (r.title as string | null) ?? null,
           keyCode: (r.key_code as string | null) ?? null,
           createdAt: r.created_at,
         })),
@@ -983,6 +994,19 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           .prepare('UPDATE users SET verified = ? WHERE id = ?')
           .bind(body.verified ? 1 : 0, target.id)
           .run()
+      }
+
+      if (body.title !== undefined) {
+        if (body.title === null || body.title === '') {
+          await db.prepare('UPDATE users SET title = NULL WHERE id = ?').bind(target.id).run()
+        } else if (typeof body.title === 'string' && body.title.trim().length <= 20) {
+          await db
+            .prepare('UPDATE users SET title = ? WHERE id = ?')
+            .bind(body.title.trim(), target.id)
+            .run()
+        } else {
+          return fail('称号最多 20 个字')
+        }
       }
 
       if (Array.isArray(body.perms)) {
