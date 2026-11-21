@@ -5,7 +5,7 @@ import { api, type CommentItem } from '../lib/api'
 import { Icon } from './Icon'
 import { Avatar } from './ui'
 import { useConfirm } from './ui'
-import { formatDateTime } from '../lib/format'
+import { relativeTime } from '../lib/format'
 import { usePolling } from '../hooks/usePolling'
 
 const MAX = 200
@@ -222,15 +222,15 @@ export function Comments({
 
   const renderReply = (c: CommentItem) => (
     <div key={c.id} className="reply">
-      <Link to={`/u/${c.uid}`} className="comment__who reply__who">
-        <Avatar name={c.author} src={c.avatar} size={32} />
-        <span className="grow">
+      <div className="reply__head">
+        <Link to={`/u/${c.uid}`} className="comment__who reply__who">
+          <Avatar name={c.author} src={c.avatar} size={32} />
           <span className="comment__author">{c.author}</span>
-          {c.replyToName ? (
-            <span className="reply__to"> 回复 @{c.replyToName}</span>
-          ) : null}
-        </span>
-      </Link>
+        </Link>
+        {c.replyToName ? <span className="reply__to">回复 @{c.replyToName}</span> : null}
+        <span className="grow" />
+        <span className="comment__time">{relativeTime(c.createdAt)}</span>
+      </div>
       <p className="reply__body">{c.body}</p>
       <div className="comment__actions">
         <button
@@ -337,15 +337,13 @@ export function Comments({
               <div key={c.id} className={`comment${c.pinned ? ' comment--pinned' : ''}`}>
                 {c.pinned ? <span className="pin-badge">置顶</span> : null}
 
-                <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
-                  <Avatar name={c.author} src={c.avatar} size={32} />
-                  <span className="grow">
+                <div className="comment__head">
+                  <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
+                    <Avatar name={c.author} src={c.avatar} size={32} />
                     <span className="comment__author">{c.author}</span>
-                    <span className="t-tag faint t-num" style={{ display: 'block' }}>
-                      ID {c.uid} · {formatDateTime(c.createdAt)}
-                    </span>
-                  </span>
-                </Link>
+                  </Link>
+                  <span className="comment__time">{relativeTime(c.createdAt)}</span>
+                </div>
 
                 <p className="comment__body">{c.body}</p>
 
