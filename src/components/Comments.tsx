@@ -6,6 +6,7 @@ import { Icon } from './Icon'
 import { Avatar } from './ui'
 import { useConfirm } from './ui'
 import { formatDateTime } from '../lib/format'
+import { usePolling } from '../hooks/usePolling'
 
 const MAX = 200
 
@@ -119,6 +120,9 @@ export function Comments({
     setLoading(true)
     void load()
   }, [load])
+
+  // 别人新发的评论会自动出现（页面在前台时每 12 秒拉一次）
+  usePolling(() => load(), 12_000, mode === 'online')
 
   if (mode !== 'online') return null
 

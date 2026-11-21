@@ -3,26 +3,29 @@ import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { api } from '../lib/api'
-import { useEffect, useState } from 'react'
+import { usePolling } from '../hooks/usePolling'
+import { useCallback, useEffect, useState } from 'react'
 import { formatUid, displayTitles } from '../lib/uid'
 
 export function Me() {
   const [unread, setUnread] = useState(0)
   const { mode, account: me } = useApp()
 
-  useEffect(() => {
+  const refreshUnread = useCallback(async () => {
     if (mode !== 'online' || !me) return
-    let alive = true
-    void api
-      .notifications()
-      .then((res) => {
-        if (alive) setUnread(res.unread)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
+    try {
+      const res = await api.notifications()
+      setUnread(res.unread)
+    } catch {
+      /* 忽略 */
     }
   }, [mode, me])
+
+  useEffect(() => {
+    void refreshUnread()
+  }, [refreshUnread])
+
+  usePolling(() => refreshUnread(), 30_000, mode === 'online' && !!me)
   const { content, account } = useApp()
   const c = content!
 

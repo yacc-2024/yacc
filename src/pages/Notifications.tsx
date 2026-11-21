@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, EmptyState } from '../components/ui'
 import { api } from '../lib/api'
 import { formatDateTime } from '../lib/format'
+import { usePolling } from '../hooks/usePolling'
 
 interface Item {
   id: string
@@ -22,27 +23,27 @@ export function Notifications() {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let alive = true
+  const refresh = useCallback(async () => {
     if (mode !== 'online' || !account) {
       setLoading(false)
       return
     }
-    void api
-      .notifications()
-      .then((res) => {
-        if (!alive) return
-        setItems(res.notifications)
-        if (res.unread > 0) void api.readNotifications().catch(() => {})
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
-    return () => {
-      alive = false
+    try {
+      const res = await api.notifications()
+      setItems(res.notifications)
+      if (res.unread > 0) void api.readNotifications().catch(() => {})
+    } catch {
+      /* 忽略 */
+    } finally {
+      setLoading(false)
     }
   }, [mode, account])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  usePolling(() => refresh(), 20_000, mode === 'online' && !!account)
 
   return (
     <>

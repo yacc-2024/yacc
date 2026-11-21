@@ -31,6 +31,7 @@ import {
 import { listFavorites, toggleFavorite as toggleFavStorage } from '../data/favorites'
 import { listHistory, recordHistory } from '../data/history'
 import { commitPendingRestore } from '../data/restore'
+import { usePolling } from '../hooks/usePolling'
 import {
   api,
   cacheUser,
@@ -286,6 +287,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
     return () => setUnauthorizedHandler(null)
   }, [toast])
+
+  /* ---------------- 内容自动同步（别人发布的改动） ---------------- */
+
+  usePolling(
+    async () => {
+      if (modeRef.current !== 'online' || dirty) return
+      const remote = await api.getContent()
+      if (!remote) return
+      const data = normaliseContent(remote.content)
+      if (data.updatedAt === remoteUpdatedAt.current) return
+      remoteUpdatedAt.current = data.updatedAt
+      setContent(data)
+      setSource('remote')
+      setConflict(false)
+      await storageSet(CONTENT_CACHE_KEY, data)
+      toast('内容已自动同步')
+    },
+    60_000,
+    mode === 'online',
+  )
 
   /* ---------------- 登录态巡检 ---------------- */
 
