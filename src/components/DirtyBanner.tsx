@@ -5,7 +5,8 @@ import { Icon } from './Icon'
 export function DirtyBanner() {
   const { dirty, account, conflict, restoreMyDraft, externalChange, reloadExternal } =
     useApp()
-  if (!account || account.role !== 'admin') return null
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin'
+  if (!account || !isAdmin) return null
 
   if (externalChange) {
     return (

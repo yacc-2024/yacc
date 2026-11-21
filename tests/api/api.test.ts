@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createRequire } from 'node:module'
 import { createNodeDb, type DB } from '../../server/db'
-import { handleApi, type Env } from '../../server/app'
+import { ensureSuperadmin, handleApi, type Env } from '../../server/app'
 import { validContent } from '../fixtures'
 
 // 用 createRequire 加载，避免打包器把 node:sqlite 当普通依赖去解析
@@ -636,5 +636,90 @@ describe('五位数字账号编号', () => {
     expect(page.status).toBe(200)
     expect(page.body.data.user.name).toBe('七三班同学')
     expect(page.body.data.user.label).toContain('7 年级')
+  })
+})
+
+describe('总管理员迁移（v1.0.4）', () => {
+  it('老版本建的 yacc-admin 会被提升为总管理员', async () => {
+    // 先让建表逻辑跑一遍
+    await call('GET', '/health')
+
+    // 模拟升级前的数据：role='admin'，没有 perms
+    await env.db
+      .prepare(
+        `INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at)
+         VALUES ('u-old', 11901, 'yacc-admin', 'x', 'y', 'admin', 1, ?)`,
+      )
+      .bind(new Date().toISOString())
+      .run()
+
+    await ensureSuperadmin(env.db)
+
+    const row = await env.db
+      .prepare("SELECT role, perms FROM users WHERE name = 'yacc-admin'")
+      .first<{ role: string; perms: string | null }>()
+    expect(row?.role).toBe('superadmin')
+    expect(row?.perms).toBeNull()
+  })
+
+  it('已经有总管理员时不会影响其他人', async () => {
+    await bootstrapAdmin('导演')
+    await env.db
+      .prepare(
+        `INSERT INTO users (id, uid, name, password_hash, salt, role, verified, created_at)
+         VALUES ('u-sub', 12201, '副管理员', 'x', 'y', 'admin', 1, ?)`,
+      )
+      .bind(new Date().toISOString())
+      .run()
+
+    await call('GET', '/health')
+    await ensureSuperadmin(env.db)
+
+    const main = await env.db
+      .prepare("SELECT role FROM users WHERE name = '导演'")
+      .first<{ role: string }>()
+    const sub = await env.db
+      .prepare("SELECT role FROM users WHERE name = '副管理员'")
+      .first<{ role: string }>()
+    expect(main?.role).toBe('superadmin')
+    expect(sub?.role).toBe('admin')
+  })
+
+  it('总管理员可以发放管理员密钥', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['content', 'comments'], count: 1, expiresInDays: 30 },
+      token,
+    )
+    expect(res.status).toBe(200)
+
+    const key = res.body.data.keys[0]
+    const reg = await registerWithKey(key, '副管理员')
+    expect(reg.status).toBe(200)
+    expect(reg.body.data.user.role).toBe('admin')
+    expect(reg.body.data.user.perms).toEqual(['content', 'comments'])
+  })
+
+  it('分管理员只能用被授予的权限', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['comments'], count: 1, expiresInDays: 30 },
+      token,
+    )
+    const sub = await registerWithKey(res.body.data.keys[0], '只管评论')
+    const subToken = sub.body.data.token
+
+    // 评论可以看
+    expect((await call('GET', '/admin/comments', undefined, subToken)).status).toBe(200)
+    // 发内容不行
+    expect(
+      (await call('POST', '/admin/publish', { content: validContent() }, subToken)).status,
+    ).toBe(403)
+    // 发密钥不行
+    expect((await call('GET', '/admin/keys', undefined, subToken)).status).toBe(403)
   })
 })

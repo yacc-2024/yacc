@@ -94,6 +94,7 @@ function ensureSchema(db: DB): Promise<void> {
         }
       }
       await normaliseLegacyUids(db)
+      await ensureSuperadmin(db)
     })().catch((err) => {
       schemas.delete(db)
       throw err
@@ -169,6 +170,48 @@ async function normaliseLegacyUids(db: DB): Promise<void> {
     const uid = await allocateUid(db, { kind: 'crew', role: 1, season: 9 })
     await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
   }
+}
+
+/**
+ * 保证系统里始终有一个总管理员。
+ * 老版本建的管理员只有 role='admin'、没有权限字段，升级后会变成「什么都不能管」，
+ * 这里把它们中的第一个提升为总管理员。
+ * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
+ */
+export async function ensureSuperadmin(db: DB): Promise<void> {
+  const existing = await db
+    .prepare("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1")
+    .first<{ id: string }>()
+  if (existing) {
+    // 已经有总管理员了，但仍要把 yacc-admin 补成总管理员（用户明确指定）
+    const named = await db
+      .prepare("SELECT id, role FROM users WHERE name = ? COLLATE NOCASE")
+      .bind('yacc-admin')
+      .first<{ id: string; role: string }>()
+    if (named && named.role !== 'superadmin') {
+      await db
+        .prepare("UPDATE users SET role = 'superadmin', perms = NULL WHERE id = ?")
+        .bind(named.id)
+        .run()
+    }
+    return
+  }
+
+  const named = await db
+    .prepare("SELECT id FROM users WHERE name = ? COLLATE NOCASE")
+    .bind('yacc-admin')
+    .first<{ id: string }>()
+  const target =
+    named ??
+    (await db
+      .prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1")
+      .first<{ id: string }>())
+
+  if (!target) return
+  await db
+    .prepare("UPDATE users SET role = 'superadmin', perms = NULL WHERE id = ?")
+    .bind(target.id)
+    .run()
 }
 
 /** 取客户端 IP（Cloudflare 会带 cf-connecting-ip） */

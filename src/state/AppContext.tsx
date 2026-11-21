@@ -235,7 +235,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         const local = await loadSessionAccount()
         if (local && !cancelled) {
-          setAccount({ id: local.id, name: local.name, role: local.role, verified: true })
+          setAccount({
+            id: local.id,
+            name: local.name,
+            role: local.role === 'admin' ? 'superadmin' : local.role,
+            verified: true,
+          })
         }
       }
 
@@ -402,7 +407,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const acc = await localLogin(name, password)
     await localSetSession(acc.id)
-    setAccount({ id: acc.id, name: acc.name, role: acc.role, verified: true })
+    setAccount({
+      id: acc.id,
+      name: acc.name,
+      role: acc.role === 'admin' ? 'superadmin' : acc.role,
+      verified: true,
+    })
   }, [])
 
   const signUp = useCallback(async (key: string, name: string, password: string) => {
@@ -449,7 +459,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role: 'admin',
     })
     await localSetSession(acc.id)
-    setAccount({ id: acc.id, name: acc.name, role: acc.role, verified: true })
+    setAccount({
+      id: acc.id,
+      name: acc.name,
+      role: acc.role === 'admin' ? 'superadmin' : acc.role,
+      verified: true,
+    })
     return []
   }, [])
 

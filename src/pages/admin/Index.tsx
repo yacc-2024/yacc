@@ -64,27 +64,21 @@ export function AdminIndex() {
             to="/admin/changelog"
           />
           ) : null}
-          <ListRow
-            icon="download"
-            title="数据管理"
-            sub={mode === 'online' ? '发布到线上、备份、导入' : '导出、导入、发布'}
-            to="/admin/data"
-          />
-          {mode === 'online' ? (
-            <>
-              <ListRow
-                icon="users"
-                title="账号管理"
-                sub="改昵称、重置密码、取消认证"
-                to="/admin/users"
-              />
-              <ListRow
-                icon="lock"
-                title="密钥管理"
-                sub="发学校认证密钥给访客"
-                to="/admin/keys"
-              />
-            </>
+          {can('content') ? (
+            <ListRow
+              icon="download"
+              title="数据管理"
+              sub={mode === 'online' ? '发布到线上、备份、导入' : '导出、导入、发布'}
+              to="/admin/data"
+            />
+          ) : null}
+          {mode === 'online' && (can('users') || can('keys')) ? (
+            <ListRow
+              icon="users"
+              title="账号与密钥"
+              sub="管理账号、发放密钥"
+              to="/admin/accounts"
+            />
           ) : null}
           {mode === 'online' && can('comments') ? (
             <ListRow
@@ -97,7 +91,9 @@ export function AdminIndex() {
         </div>
 
         <p className="t-caption faint" style={{ marginTop: 20, lineHeight: 1.6 }}>
-          改动先存在这台设备上。要让别人也看到，需要到「数据管理」导出内容包，再替换网站文件。
+          {mode === 'online'
+            ? '改动先存为本地草稿，确认后在「数据管理」点「发布到线上」才会对外生效。'
+            : '改动先存在这台设备上，需要导出内容包并替换网站文件才会生效。'}
         </p>
       </div>
     </>
