@@ -274,8 +274,10 @@
   width: 100%;
   overflow: hidden;
   text-align: left;
-  background: var(--card-ink);
-  color: var(--bg);
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(127, 163, 155, 0.18), transparent 55%),
+    linear-gradient(160deg, #232329 0%, #141418 70%);
+  color: #fff;
   border-radius: var(--r-xl);
   padding: var(--s-6);
   margin-top: 2px;

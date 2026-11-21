@@ -10,6 +10,9 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
+    // 始终从线上加载：网站一更新，App 下次打开就是新版，不用重新下载安装包
+    url: 'https://yacc2026.pages.dev',
+    cleartext: false,
   },
 }
 

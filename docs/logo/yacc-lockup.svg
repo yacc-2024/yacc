@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200">
+  <g transform="translate(6 14) scale(0.42)" fill="none" stroke="#111111" stroke-width="46" stroke-linecap="round">
+    <path d="M168 148 C168 250 256 236 256 312"/>
+    <path d="M344 148 C344 250 256 236 256 312"/>
+    <path d="M256 312 L256 400"/>
+  </g>
+  <circle cx="76.6" cy="66.9" r="12.6" fill="#111111"/>
+  <circle cx="150.5" cy="66.9" r="12.6" fill="#111111"/>
+  <text x="196" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+        font-size="126" font-weight="700" letter-spacing="-5" fill="#111111">yacc</text>
+</svg>

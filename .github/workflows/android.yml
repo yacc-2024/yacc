@@ -60,6 +60,29 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
 
+      - name: 支持侧滑/返回键返回上一页
+        run: |
+          FILE=$(find android/app/src/main/java -name MainActivity.java | head -1)
+          echo "改写 $FILE"
+          cat > "$FILE" <<'JAVA'
+          package com.yacc.crew;
+
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onBackPressed() {
+              if (this.bridge != null
+                  && this.bridge.getWebView() != null
+                  && this.bridge.getWebView().canGoBack()) {
+                this.bridge.getWebView().goBack();
+              } else {
+                super.onBackPressed();
+              }
+            }
+          }
+          JAVA
+
       - name: 打 debug 包
         run: |
           cd android
