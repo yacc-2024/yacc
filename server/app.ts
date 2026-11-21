@@ -163,11 +163,21 @@ function can(me: User | null, perm: AdminPerm): boolean {
  * 老账号先按「剧组成员 · 导演 · 两季都参与」占位，之后可以在后台改。
  */
 async function normaliseLegacyUids(db: DB): Promise<void> {
+  // 1) 老版本的 6 位流水号 → 剧组成员
   const rows = await db
     .prepare('SELECT id FROM users WHERE uid IS NULL OR uid >= 100000 ORDER BY created_at ASC')
     .all<{ id: string }>()
   for (const row of rows) {
     const uid = await allocateUid(db, { kind: 'crew', role: 1, season: 9 })
+    await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
+  }
+
+  // 2) 普通访客从 0xxxx 改成 3xxxx
+  const guests = await db
+    .prepare('SELECT id FROM users WHERE uid < 10000 ORDER BY uid ASC')
+    .all<{ id: string }>()
+  for (const row of guests) {
+    const uid = await allocateUid(db, { kind: 'guest' })
     await db.prepare('UPDATE users SET uid = ? WHERE id = ?').bind(uid, row.id).run()
   }
 }

@@ -76,9 +76,11 @@ interface NavBarProps {
   large?: boolean
   sub?: string
   action?: ReactNode
+  /** 桌面端左侧已经有品牌字标时，不再重复显示大标题 */
+  brand?: boolean
 }
 
-export function NavBar({ title, back, large, sub, action }: NavBarProps) {
+export function NavBar({ title, back, large, sub, action, brand }: NavBarProps) {
   const navigate = useNavigate()
   // 大标题：滚动 0–64px 之间连续收缩；二级页直接按已收缩处理
   const progress = useScrollProgress(large ? 48 : 1)
@@ -88,7 +90,9 @@ export function NavBar({ title, back, large, sub, action }: NavBarProps) {
 
   return (
     <header
-      className={`nav${glass ? ' nav--glass' : ''}${stuck ? ' nav--stuck' : ''}`}
+      className={`nav${glass ? ' nav--glass' : ''}${stuck ? ' nav--stuck' : ''}${
+        brand ? ' nav--brand' : ''
+      }`}
       style={{ '--p': p } as React.CSSProperties}
     >
       <div className="nav__inner">

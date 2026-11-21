@@ -10,6 +10,8 @@ import {
 } from 'react-router-dom'
 import { useApp } from './state/AppContext'
 import { TabBar, PageSkeleton, Sheet } from './components/ui'
+import { SideNav } from './components/SideNav'
+import { useIsDesktop } from './hooks/useMediaQuery'
 import { RequireAdmin } from './components/guards'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
@@ -61,9 +63,11 @@ function ScrollMemory() {
 
 function TabLayout() {
   const location = useLocation()
+  const isDesktop = useIsDesktop()
   return (
-    <div className="app">
+    <div className={`app${isDesktop ? ' app--desktop' : ''}`}>
       <ScrollMemory />
+      {isDesktop ? <SideNav /> : null}
       <div className="page">
         <div className="container">
           <div className="route-enter" key={location.pathname}>
@@ -71,16 +75,18 @@ function TabLayout() {
           </div>
         </div>
       </div>
-      <TabBar />
+      {isDesktop ? null : <TabBar />}
     </div>
   )
 }
 
 function PlainLayout() {
   const location = useLocation()
+  const isDesktop = useIsDesktop()
   return (
-    <div className="app">
+    <div className={`app${isDesktop ? ' app--desktop' : ''}`}>
       <ScrollMemory />
+      {isDesktop ? <SideNav /> : null}
       <div className="page page--no-tabs">
         <div className="container">
           <div className="route-enter" key={location.pathname}>

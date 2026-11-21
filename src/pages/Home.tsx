@@ -34,6 +34,7 @@ export function Home() {
       <NavBar
         title={c.site.name}
         large
+        brand
         action={
           <Link to="/news" className="nav__action" aria-label={unread ? '公告（有新的）' : '公告'}>
             <Icon name="bell" size={22} />

@@ -1808,3 +1808,157 @@ select.input {
   font-weight: 600;
   letter-spacing: 0.2px;
 }
+
+/* ============================================================
+   桌面端（≥1024px）：左侧导航 + 更宽的内容区
+   ============================================================ */
+
+.app--desktop {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  align-items: start;
+}
+
+.app--desktop .page {
+  padding-bottom: 64px;
+}
+
+.app--desktop .container {
+  max-width: 860px;
+  padding: 0 8px;
+}
+
+.sidenav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 26px 14px 20px;
+  border-right: 1px solid var(--glass-edge);
+  background: var(--glass-nav);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+}
+
+.sidenav__brand {
+  padding: 0 12px 22px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+}
+
+.sidenav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidenav__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast);
+}
+
+.sidenav__item:hover {
+  background: var(--control-bg);
+  color: var(--text);
+}
+
+.sidenav__item[aria-current="page"] {
+  background: var(--tab-active-bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.sidenav__item--muted {
+  margin-bottom: 6px;
+  font-size: var(--fs-caption);
+}
+
+.sidenav__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.sidenav__account:hover {
+  background: var(--control-bg);
+}
+
+.sidenav__name {
+  display: block;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sidenav__role {
+  display: block;
+  font-size: var(--fs-tag);
+  color: var(--text-3);
+  line-height: 1.3;
+}
+
+@media (min-width: 1024px) {
+  .tabbar {
+    display: none;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .poster {
+    width: 268px;
+  }
+
+  .sheet-mask {
+    align-items: center;
+    padding: 32px 16px;
+  }
+
+  .sheet {
+    border-radius: var(--r-xl);
+    max-height: 80vh;
+    animation: sheet-pop 260ms var(--ease-spring);
+  }
+
+  @keyframes sheet-pop {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .toast-wrap {
+    bottom: 32px;
+  }
+}
+
+/* 桌面端：首页标题由侧栏品牌承担，避免重复 */
+@media (min-width: 1024px) {
+  .nav--brand .nav__large {
+    display: none;
+  }
+
+  .nav--brand .nav__inner {
+    height: 56px;
+  }
+}

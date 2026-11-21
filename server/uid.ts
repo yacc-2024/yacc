@@ -3,7 +3,7 @@ import type { DB } from './db'
 /**
  * 五位数账号编号：
  *
- *   0xxxx  普通访客        后四位 = 生成顺序
+ *   3xxxx  普通访客        后四位 = 生成顺序
  *   1abcc  剧组成员        a=身份(1导演 2编剧 3剪辑 4摄影 5演员) b=季(1/2/9=两季都参与) cc=顺序
  *   2abcc  认证成员        a=年级 b=班级 cc=顺序
  *
@@ -62,7 +62,7 @@ export function normaliseSpec(raw: unknown): IdSpec | null {
 
 /** 该编号段的起始值（10 位段） */
 function prefixOf(spec: IdSpec): number {
-  if (spec.kind === 'guest') return 0
+  if (spec.kind === 'guest') return 30000
   if (spec.kind === 'crew') return 10000 + spec.role * 1000 + spec.season * 100
   return 20000 + spec.grade * 1000 + spec.klass * 100
 }
@@ -72,9 +72,11 @@ export async function allocateUid(db: DB, spec: IdSpec): Promise<number> {
   const prefix = prefixOf(spec)
   if (spec.kind === 'guest') {
     const row = await db
-      .prepare('SELECT COALESCE(MAX(uid), 0) AS m FROM users WHERE uid < 10000')
+      .prepare('SELECT COALESCE(MAX(uid), ?) AS m FROM users WHERE uid >= ? AND uid < ?')
+      .bind(30000, 30000, 40000)
       .first<{ m: number }>()
-    return Number(row?.m ?? 0) + 1
+    const max = Number(row?.m ?? 30000)
+    return max < 30000 ? 30001 : max + 1
   }
   const row = await db
     .prepare('SELECT COALESCE(MAX(uid), ?) AS m FROM users WHERE uid >= ? AND uid < ?')
@@ -96,7 +98,7 @@ export function describeUid(uid: number | null | undefined): UidSummary {
   if (uid === null || uid === undefined) return { code, label: '未分配' }
   const digits = code.split('')
   const head = digits[0]
-  if (head === '0') return { code, label: '普通访客' }
+  if (head === '0' || head === '3') return { code, label: '普通访客' }
   if (head === '1') {
     const role = CREW_ROLES[Number(digits[1])]
     const season = SEASON_DIGIT[Number(digits[2])]

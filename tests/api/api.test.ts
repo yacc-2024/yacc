@@ -578,12 +578,12 @@ describe('五位数字账号编号', () => {
     expect(reg.body.data.user.uid).toBe(14901)
   })
 
-  it('普通访客不用密钥，编号 0 开头并依次排', async () => {
+  it('普通访客不用密钥，编号 3 开头并依次排', async () => {
     const a = await call('POST', '/auth/register', { name: '路人甲', password: 'abc123' })
     const b = await call('POST', '/auth/register', { name: '路人乙', password: 'abc123' })
     expect(a.status).toBe(200)
-    expect(a.body.data.user.uid).toBe(1)
-    expect(b.body.data.user.uid).toBe(2)
+    expect(a.body.data.user.uid).toBe(30001)
+    expect(b.body.data.user.uid).toBe(30002)
     // 普通访客没有认证，不能评论
     const c = await call(
       'POST',
