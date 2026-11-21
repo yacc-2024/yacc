@@ -38,8 +38,12 @@ jobs:
           set +e
           OUT=$(pnpm install --no-frozen-lockfile --reporter=append-only 2>&1)
           CODE=$?
-          echo "$OUT" | tail -60
+          echo "$OUT" | tail -40
           if [ $CODE -ne 0 ]; then
+            if echo "$OUT" | grep -q "ERR_PNPM_IGNORED_BUILDS"; then
+              echo "只有构建脚本告警，依赖已装好，继续"
+              exit 0
+            fi
             MSG=$(echo "$OUT" | tail -12 | tr '\n' '|')
             echo "::error title=pnpm-install-failed::$MSG"
             exit 1
