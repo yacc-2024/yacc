@@ -6,6 +6,7 @@ import { Icon } from './Icon'
 import { Avatar } from './ui'
 import { useConfirm } from './ui'
 import { relativeTime } from '../lib/format'
+import { formatUid } from '../lib/uid'
 import { usePolling } from '../hooks/usePolling'
 
 const MAX = 200
@@ -79,6 +80,9 @@ export function LikeButton({
   )
 }
 
+/** 评论区内存缓存：再次打开同一集时直接显示，不用等网络 */
+const commentsCache = new Map<string, CommentItem[]>()
+
 export function Comments({
   targetType,
   targetId,
@@ -99,27 +103,37 @@ export function Comments({
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<Set<string>>(new Set())
 
+  const cacheKey = `${targetType}:${targetId}`
+
   const load = useCallback(async () => {
     if (mode !== 'online') {
       setLoading(false)
       return
     }
     try {
+      // 一次请求就拿到评论和审核状态
       const res = await api.comments(targetType, targetId)
+      commentsCache.set(cacheKey, res.comments)
       setItems(res.comments)
-      const settings = await api.settings().catch(() => null)
-      if (settings) setModeration(settings.moderation === 'off' ? 'off' : 'on')
+      setModeration(res.moderation === 'off' ? 'off' : 'on')
     } catch {
       /* 静默：评论加载失败不该影响看片 */
     } finally {
       setLoading(false)
     }
-  }, [mode, targetType, targetId])
+  }, [mode, targetType, targetId, cacheKey])
 
   useEffect(() => {
-    setLoading(true)
+    const cached = commentsCache.get(cacheKey)
+    if (cached) {
+      // 有缓存就先画出来，网络回来再更新
+      setItems(cached)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
     void load()
-  }, [load])
+  }, [load, cacheKey])
 
   // 别人新发的评论会自动出现（页面在前台时每 12 秒拉一次）
   usePolling(() => load(), 12_000, mode === 'online')
@@ -155,6 +169,32 @@ export function Comments({
       if (res.status === 'pending') {
         toast('已提交，审核通过后显示')
       } else {
+        // 先把这条评论画上去，网络再慢慢同步
+        if (account) {
+          const fresh: CommentItem = {
+            id: res.id,
+            body: text,
+            createdAt: new Date().toISOString(),
+            author: account.name,
+            avatar: account.avatar ?? null,
+            uid: formatUid(account.uid),
+            mine: true,
+            pinned: false,
+            likes: 0,
+            liked: false,
+            parentId: parentId ?? null,
+            replyToName: null,
+            replies: [],
+          }
+          setItems((prev) => {
+            if (!parentId) return [fresh, ...prev]
+            const target = prev.find((c) => c.id === parentId || c.replies?.some((r) => r.id === parentId))
+            if (!target) return prev
+            return prev.map((c) =>
+              c.id === target.id ? { ...c, replies: [...(c.replies ?? []), fresh] } : c,
+            )
+          })
+        }
         toast(parentId ? '回复已发布' : '评论已发布')
         await load()
       }

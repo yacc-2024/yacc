@@ -1045,7 +1045,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           return b.createdAt.localeCompare(a.createdAt)
         })
 
-      return ok({ comments, me: me ?? null })
+      const moderation = await getSetting(db, 'comment_moderation', 'on')
+      return ok({ comments, me: me ?? null, moderation })
     }
 
     if (path === '/comments' && method === 'POST') {

@@ -246,6 +246,7 @@ export const api = {
     call<{
       comments: CommentItem[]
       me: SessionUser | null
+      moderation: string
     }>(`/comments?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(targetId)}`),
 
   replyComment: (input: {
