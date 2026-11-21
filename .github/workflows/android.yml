@@ -12,14 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
+          node-version: 22
+
+      - name: 准备 pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.28.5 --activate
+          pnpm -v
 
       - uses: actions/setup-java@v4
         with:
