@@ -179,3 +179,30 @@ describe('持久化：关掉再开，改动还在', () => {
     news.unmount()
   })
 })
+
+describe('批量删除', () => {
+  it('更新日志可以一次删掉多个版本', async () => {
+    await seedAdmin()
+    const user = userEvent.setup()
+    renderApp(['/admin/changelog'])
+
+    // 先加一个版本，凑够两条
+    await user.click(await screen.findByRole('button', { name: '新增版本' }))
+    await user.type(await screen.findByLabelText('版本号'), '1.0.1')
+    await user.type(screen.getByLabelText('改动内容'), '批量测试')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    await screen.findByText('更新日志已保存')
+
+    // 进入选择模式
+    await user.click(screen.getByRole('button', { name: '选择' }))
+    await user.click(screen.getByRole('checkbox', { name: '选择 1.0.0' }))
+    await user.click(screen.getByRole('checkbox', { name: '选择 1.0.1' }))
+    expect(screen.getByText('已选 2 项')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '删除' }))
+    await user.click(await screen.findByRole('button', { name: '批量删除' }))
+
+    await waitFor(() => expect(screen.queryByText('1.0.1')).toBeNull())
+    expect(screen.queryByText('1.0.0')).toBeNull()
+  })
+})

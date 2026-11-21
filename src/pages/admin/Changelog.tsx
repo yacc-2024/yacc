@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Sheet, useConfirm } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
+import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
 import { Icon } from '../../components/Icon'
 import { TextField } from '../../components/form'
 import { formatDate } from '../../lib/format'
@@ -13,6 +14,9 @@ export function ChangelogAdmin() {
   const confirm = useConfirm()
   const c = content!
   const [editing, setEditing] = useState<ChangelogEntry | 'new' | null>(null)
+  const bulk = useBulk<string>()
+  const askBulkDelete = useBulkDelete()
+  const [deleting, setDeleting] = useState(false)
 
   const list = [...c.changelog].reverse()
 
@@ -46,20 +50,54 @@ export function ChangelogAdmin() {
     toast('已删除')
   }
 
+  const removeMany = async () => {
+    if (bulk.count === 0) return
+    const ok = await askBulkDelete(bulk.count, '个版本')
+    if (!ok) return
+    setDeleting(true)
+    try {
+      const picked = new Set(bulk.list)
+      await updateContent((prev) => ({
+        ...prev,
+        changelog: prev.changelog.filter((x) => !picked.has(x.version)),
+      }))
+      toast(`已删除 ${picked.size} 个版本`)
+      bulk.exit()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <>
       <NavBar
-        title="更新日志"
+        title={bulk.selecting ? '选择版本' : '更新日志'}
         back
         action={
-          <button
-            type="button"
-            className="nav__action"
-            aria-label="新增版本"
-            onClick={() => setEditing('new')}
-          >
-            <Icon name="plus" size={22} />
-          </button>
+          bulk.selecting ? (
+            <button type="button" className="nav__action" onClick={bulk.exit}>
+              取消
+            </button>
+          ) : (
+            <div className="row gap-3">
+              <button
+                type="button"
+                className="nav__action"
+                onClick={bulk.start}
+                disabled={list.length === 0}
+              >
+                选择
+              </button>
+              <button
+                type="button"
+                className="nav__action"
+                aria-label="新增版本"
+                onClick={() => setEditing('new')}
+              >
+                <Icon name="plus" size={22} />
+              </button>
+            </div>
+          )
         }
       />
       <DirtyBanner />
@@ -75,13 +113,27 @@ export function ChangelogAdmin() {
         ) : (
           <div className="list" style={{ marginTop: 16 }}>
             {list.map((entry) => (
-              <button
+              <div
                 key={entry.version}
-                type="button"
                 className="list__row list__row--plain"
                 style={{ alignItems: 'flex-start', paddingBlock: 14 }}
-                onClick={() => setEditing(entry)}
               >
+                {bulk.selecting ? (
+                  <Pick
+                    checked={bulk.has(entry.version)}
+                    onChange={() => bulk.toggle(entry.version)}
+                    label={`选择 ${entry.version}`}
+                  />
+                ) : null}
+                <button
+                  type="button"
+                  className="grow"
+                  style={{ textAlign: 'left', background: 'none', border: 0 }}
+                  onClick={() => {
+                    if (bulk.selecting) bulk.toggle(entry.version)
+                    else setEditing(entry)
+                  }}
+                >
                 <span className="grow" style={{ textAlign: 'left' }}>
                   <span className="list__title" style={{ display: 'block' }}>
                     {entry.version}
@@ -93,12 +145,23 @@ export function ChangelogAdmin() {
                     {entry.items.length} 条改动
                   </span>
                 </span>
+                </button>
                 <Icon name="chevron-right" size={18} />
-              </button>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {bulk.selecting ? (
+        <BulkBar
+          count={bulk.count}
+          onSelectAll={() => bulk.toggleAll(list.map((x) => x.version))}
+          onCancel={bulk.exit}
+          onDelete={() => void removeMany()}
+          busy={deleting}
+        />
+      ) : null}
 
       {editing ? (
         <ChangelogForm

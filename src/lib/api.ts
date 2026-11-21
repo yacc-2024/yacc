@@ -274,7 +274,7 @@ export const api = {
         }>
       }>(`/admin/comments?status=${status}`),
 
-    moderate: (id: string, status: 'published' | 'hidden' | 'pending') =>
+    moderate: (id: string, status: 'published' | 'hidden' | 'pending' | 'delete') =>
       call<Record<string, never>>(`/admin/comments/${id}`, {
         method: 'POST',
         body: { status },

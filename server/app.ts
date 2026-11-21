@@ -1051,6 +1051,10 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
       const status = String(body.status ?? '')
+      if (status === 'delete') {
+        await db.prepare('DELETE FROM comments WHERE id = ?').bind(moderate[1]).run()
+        return ok()
+      }
       if (!['published', 'hidden', 'pending'].includes(status)) return fail('参数不对')
       await db
         .prepare('UPDATE comments SET status = ? WHERE id = ?')

@@ -1034,3 +1034,26 @@ describe('编号迁移不会反复覆盖（v1.1.1）', () => {
     expect(row?.uid).toBeGreaterThanOrEqual(30000)
   })
 })
+
+describe('批量删除评论（v1.2.0）', () => {
+  it('delete 状态会把评论真正删掉', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/settings', { moderation: 'off' }, token)
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '评论的人')
+    const userToken = reg.body.data.token
+
+    await call(
+      'POST',
+      '/comments',
+      { targetType: 'episode', targetId: 'ep-1-1', body: '要被删掉' },
+      userToken,
+    )
+    const listBefore = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    const id = listBefore.body.data.comments[0].id
+
+    expect((await call('POST', `/admin/comments/${id}`, { status: 'delete' }, token)).status).toBe(200)
+    const list = await call('GET', '/comments?targetType=episode&targetId=ep-1-1')
+    expect(list.body.data.comments).toHaveLength(0)
+  })
+})

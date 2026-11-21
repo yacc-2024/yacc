@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Avatar, Sheet, useConfirm } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
+import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
 import { Icon } from '../../components/Icon'
 import { MultiChips, NumberChips, TextAreaField, TextField } from '../../components/form'
 import { sortMembers } from '../../lib/format'
@@ -13,6 +14,9 @@ export function MembersAdmin() {
   const c = content!
   const confirm = useConfirm()
   const [editing, setEditing] = useState<Member | 'new' | null>(null)
+  const bulk = useBulk<string>()
+  const askBulkDelete = useBulkDelete()
+  const [deleting, setDeleting] = useState(false)
 
   const list = sortMembers(c.members)
   const seasonNumbers = c.seasons.map((s) => s.no).sort((a, b) => a - b)
@@ -67,20 +71,54 @@ export function MembersAdmin() {
     }))
   }
 
+  const removeMany = async () => {
+    if (bulk.count === 0) return
+    const ok = await askBulkDelete(bulk.count, '位成员')
+    if (!ok) return
+    setDeleting(true)
+    try {
+      const picked = new Set(bulk.list)
+      await updateContent((prev) => ({
+        ...prev,
+        members: prev.members.filter((m) => !picked.has(m.id)),
+      }))
+      toast(`已删除 ${picked.size} 位成员`)
+      bulk.exit()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <>
       <NavBar
-        title="成员管理"
+        title={bulk.selecting ? '选择成员' : '成员管理'}
         back
         action={
-          <button
-            type="button"
-            className="nav__action"
-            aria-label="新增成员"
-            onClick={() => setEditing('new')}
-          >
-            <Icon name="plus" size={22} />
-          </button>
+          bulk.selecting ? (
+            <button type="button" className="nav__action" onClick={bulk.exit}>
+              取消
+            </button>
+          ) : (
+            <div className="row gap-3">
+              <button
+                type="button"
+                className="nav__action"
+                onClick={bulk.start}
+                disabled={list.length === 0}
+              >
+                选择
+              </button>
+              <button
+                type="button"
+                className="nav__action"
+                aria-label="新增成员"
+                onClick={() => setEditing('new')}
+              >
+                <Icon name="plus" size={22} />
+              </button>
+            </div>
+          )
         }
       />
       <DirtyBanner />
@@ -93,11 +131,18 @@ export function MembersAdmin() {
           <div className="list" style={{ marginTop: 8 }}>
             {list.map((m, i) => (
               <div key={m.id} className="list__row" style={{ gap: 10 }}>
+                {bulk.selecting ? (
+                  <Pick
+                    checked={bulk.has(m.id)}
+                    onChange={() => bulk.toggle(m.id)}
+                    label={`选择 ${m.name}`}
+                  />
+                ) : null}
                 <button
                   type="button"
                   className="grow row gap-3"
                   style={{ textAlign: 'left', minWidth: 0 }}
-                  onClick={() => setEditing(m)}
+                  onClick={() => (bulk.selecting ? bulk.toggle(m.id) : setEditing(m))}
                 >
                   <Avatar name={m.name} src={m.avatar} size={32} />
                   <span style={{ minWidth: 0 }}>
@@ -147,6 +192,16 @@ export function MembersAdmin() {
           onClose={() => setEditing(null)}
           onSave={(m) => void save(m)}
           onDelete={(id) => void remove(id)}
+        />
+      ) : null}
+
+      {bulk.selecting ? (
+        <BulkBar
+          count={bulk.count}
+          onSelectAll={() => bulk.toggleAll(list.map((m) => m.id))}
+          onCancel={bulk.exit}
+          onDelete={() => void removeMany()}
+          busy={deleting}
         />
       ) : null}
     </>

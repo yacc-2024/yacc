@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Segmented, EmptyState, useConfirm, Avatar, Sheet } from '../../components/ui'
+import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { api, type AdminPerm } from '../../lib/api'
 import { formatDate } from '../../lib/format'
@@ -404,6 +405,9 @@ interface AdminComment {
 
 export function CommentsAdmin() {
   const { mode, toast } = useApp()
+  const bulk = useBulk<string>()
+  const askBulkDelete = useBulkDelete()
+  const [bulkBusy, setBulkBusy] = useState(false)
   const [tab, setTab] = useState<'pending' | 'published' | 'hidden'>('pending')
   const [items, setItems] = useState<AdminComment[]>([])
   const [loading, setLoading] = useState(true)
@@ -436,7 +440,26 @@ export function CommentsAdmin() {
   if (mode !== 'online') {
     return (
       <>
-        <NavBar title="评论审核" back />
+        <NavBar
+        title={bulk.selecting ? '选择评论' : '评论审核'}
+        back
+        action={
+          bulk.selecting ? (
+            <button type="button" className="nav__action" onClick={bulk.exit}>
+              取消
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="nav__action"
+              onClick={bulk.start}
+              disabled={items.length === 0}
+            >
+              选择
+            </button>
+          )
+        }
+      />
         <EmptyState
           icon="info"
           title="现在是离线模式"
@@ -467,9 +490,46 @@ export function CommentsAdmin() {
     }
   }
 
+  const removeMany = async () => {
+    if (bulk.count === 0) return
+    const ok = await askBulkDelete(bulk.count, '条评论')
+    if (!ok) return
+    setBulkBusy(true)
+    try {
+      const picked = [...bulk.list]
+      for (const id of picked) await api.admin.moderate(id, 'delete')
+      setItems((prev) => prev.filter((c) => !picked.includes(c.id)))
+      toast(`已删除 ${picked.length} 条评论`)
+      bulk.exit()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '删除失败', 'error')
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   return (
     <>
-      <NavBar title="评论审核" back />
+      <NavBar
+        title={bulk.selecting ? '选择评论' : '评论审核'}
+        back
+        action={
+          bulk.selecting ? (
+            <button type="button" className="nav__action" onClick={bulk.exit}>
+              取消
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="nav__action"
+              onClick={bulk.start}
+              disabled={items.length === 0}
+            >
+              选择
+            </button>
+          )
+        }
+      />
       <div className="page__body">
         <div className="card" style={{ marginTop: 8, padding: 16 }}>
           <div className="between">
@@ -512,7 +572,16 @@ export function CommentsAdmin() {
             items.map((c) => (
               <div key={c.id} className="card" style={{ marginBottom: 10, padding: 16 }}>
                 <div className="between">
-                  <span className="comment__author">{c.author}</span>
+                  <span className="row gap-2">
+                    {bulk.selecting ? (
+                      <Pick
+                        checked={bulk.has(c.id)}
+                        onChange={() => bulk.toggle(c.id)}
+                        label={`选择 ${c.author} 的评论`}
+                      />
+                    ) : null}
+                    <span className="comment__author">{c.author}</span>
+                  </span>
                   <span className="t-tag faint">{formatDate(c.createdAt.slice(0, 10))}</span>
                 </div>
                 <p className="comment__body">{c.body}</p>
@@ -547,6 +616,16 @@ export function CommentsAdmin() {
           )}
         </div>
       </div>
+
+      {bulk.selecting ? (
+        <BulkBar
+          count={bulk.count}
+          onSelectAll={() => bulk.toggleAll(items.map((c) => c.id))}
+          onCancel={bulk.exit}
+          onDelete={() => void removeMany()}
+          busy={bulkBusy}
+        />
+      ) : null}
     </>
   )
 }
@@ -569,7 +648,10 @@ interface AdminUser {
 }
 
 export function UsersPanel() {
-  const { mode, toast } = useApp()
+  const { mode, toast, account } = useApp()
+  const bulk = useBulk<string>()
+  const askBulkDelete = useBulkDelete()
+  const [bulkBusy, setBulkBusy] = useState(false)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<AdminUser | null>(null)
@@ -599,12 +681,56 @@ export function UsersPanel() {
     )
   }
 
+  const removeMany = async () => {
+    if (bulk.count === 0) return
+    const targets = users.filter((u) => bulk.selected.has(u.id))
+    const blocked = targets.filter((u) => u.id === account?.id || u.role === 'superadmin')
+    if (blocked.length > 0) {
+      toast('自己或总管理员的账号不能删除，请取消选择', 'error')
+      return
+    }
+    const ok = await askBulkDelete(bulk.count, '个账号')
+    if (!ok) return
+    setBulkBusy(true)
+    try {
+      let done = 0
+      for (const u of targets) {
+        await api.admin.deleteUser(u.id)
+        done += 1
+      }
+      toast(`已删除 ${done} 个账号`)
+      bulk.exit()
+      await load()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '删除失败', 'error')
+      await load()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   return (
     <>
       <div className="page__body">
-        <p className="t-caption faint" style={{ marginTop: 8, lineHeight: 1.6 }}>
-          所有注册过的账号。点开可以改昵称、编号、密码和认证状态。
-        </p>
+        <div className="between" style={{ marginTop: 8 }}>
+          <p className="t-caption faint" style={{ marginRight: 12, lineHeight: 1.6 }}>
+            所有注册过的账号。点开可以改昵称、编号、密码和认证状态。
+          </p>
+          {bulk.selecting ? (
+            <button type="button" className="linklike" onClick={bulk.exit}>
+              取消
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="linklike"
+              onClick={bulk.start}
+              disabled={users.length === 0}
+            >
+              选择
+            </button>
+          )}
+        </div>
 
         {loading ? (
           <p className="t-caption faint" style={{ marginTop: 20 }}>
@@ -617,12 +743,20 @@ export function UsersPanel() {
         ) : (
           <div className="list" style={{ marginTop: 16 }}>
             {users.map((u) => (
-              <button
-                key={u.id}
-                type="button"
-                className="list__row"
-                onClick={() => setEditing(u)}
-              >
+              <div key={u.id} className="list__row">
+                {bulk.selecting ? (
+                  <Pick
+                    checked={bulk.has(u.id)}
+                    onChange={() => bulk.toggle(u.id)}
+                    label={`选择 ${u.name}`}
+                  />
+                ) : null}
+                <button
+                  type="button"
+                  className="grow row gap-2"
+                  style={{ background: 'none', border: 0, textAlign: 'left' }}
+                  onClick={() => (bulk.selecting ? bulk.toggle(u.id) : setEditing(u))}
+                >
                 <Avatar name={u.name} src={u.avatar} size={32} />
                 <span className="grow" style={{ textAlign: 'left', minWidth: 0 }}>
                   <span className="list__title clamp-1" style={{ display: 'block' }}>
@@ -642,12 +776,23 @@ export function UsersPanel() {
                     </span>
                   ) : null}
                 </span>
+                </button>
                 <Icon name="chevron-right" size={18} />
-              </button>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {bulk.selecting ? (
+        <BulkBar
+          count={bulk.count}
+          onSelectAll={() => bulk.toggleAll(users.map((u) => u.id))}
+          onCancel={bulk.exit}
+          onDelete={() => void removeMany()}
+          busy={bulkBusy}
+        />
+      ) : null}
 
       {editing ? (
         <UserForm
