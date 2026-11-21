@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui'
+import { NavBar, Avatar, ListRow, Segmented, useConfirm, Sheet } from '../components/ui'
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { formatUid, displayTitles } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
+import { useInstall } from '../lib/pwa'
 import { useRef } from 'react'
 import { AvatarCropper } from '../components/AvatarCropper'
 import {
@@ -42,6 +43,8 @@ function SettingsHome() {
   const { account, signOut, toast, mode } = useApp()
   const confirm = useConfirm()
   const navigate = useNavigate()
+  const { installed, canInstall, ios, install } = useInstall()
+  const [installHelp, setInstallHelp] = useState(false)
 
   if (!account) return null
 
@@ -60,6 +63,27 @@ function SettingsHome() {
   return (
     <>
       <NavBar title="账号设置" back />
+
+      <Sheet
+        open={installHelp}
+        title="添加到主屏幕"
+        onClose={() => setInstallHelp(false)}
+        footer={
+          <button type="button" className="btn btn--primary" onClick={() => setInstallHelp(false)}>
+            知道了
+          </button>
+        }
+      >
+        <ol className="t-body" style={{ paddingLeft: 18, lineHeight: 1.9 }}>
+          <li>点浏览器底部中间的「分享」按钮</li>
+          <li>往下滑，找到「添加到主屏幕」</li>
+          <li>点右上角「添加」</li>
+        </ol>
+        <p className="field__hint" style={{ marginTop: 12 }}>
+          添加之后从桌面图标打开，就没有浏览器地址栏了。
+        </p>
+      </Sheet>
+
       <div className="page__body">
         <div className="profile-head">
           <Avatar name={account.name} src={account.avatar} size={56} />
@@ -93,6 +117,17 @@ function SettingsHome() {
             sub="深浅色、毛玻璃、动效、字号"
             to="/me/settings/appearance"
           />
+          {!installed && (canInstall || ios) ? (
+            <ListRow
+              icon="download"
+              title="安装到桌面"
+              sub="像 App 一样全屏打开"
+              onClick={() => {
+                if (canInstall) void install()
+                else setInstallHelp(true)
+              }}
+            />
+          ) : null}
         </div>
 
         {mode === 'local' ? (

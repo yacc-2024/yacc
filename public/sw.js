@@ -1,5 +1,5 @@
 /* yacc service worker：外壳缓存优先，内容网络优先 */
-const VERSION = 'yacc-v1'
+const VERSION = 'yacc-v2'
 const SHELL_CACHE = `${VERSION}-shell`
 const DATA_CACHE = `${VERSION}-data`
 
@@ -10,6 +10,7 @@ const SHELL = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',
+  '/offline.html',
 ]
 
 self.addEventListener('install', (event) => {
@@ -64,7 +65,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() =>
           caches
             .match('/index.html')
-            .then((hit) => hit || caches.match('/')),
+            .then((hit) => hit || caches.match('/offline.html')),
         ),
     )
     return
