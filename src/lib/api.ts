@@ -176,6 +176,7 @@ export const api = {
         role: string
         verified: boolean
         memberSince: string
+        memberId: string | null
         label: string
         titles: string[]
         shownTitles: string[]

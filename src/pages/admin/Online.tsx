@@ -44,6 +44,9 @@ export function KeysPanel() {
   const isSuper = account?.role === 'superadmin'
   const confirm = useConfirm()
   const [keys, setKeys] = useState<KeyRow[]>([])
+  const bulk = useBulk<string>()
+  const askBulkDelete = useBulkDelete()
+  const [bulkBusy, setBulkBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [kind, setKind] = useState<'crew' | 'member' | 'admin'>('member')
   const [perms, setPerms] = useState<AdminPerm[]>(['content'])
@@ -157,6 +160,24 @@ export function KeysPanel() {
       toast('已作废')
     } catch (err) {
       toast(err instanceof Error ? err.message : '操作失败', 'error')
+    }
+  }
+
+  const removeMany = async () => {
+    if (bulk.count === 0) return
+    const ok = await askBulkDelete(bulk.count, '个密钥')
+    if (!ok) return
+    setBulkBusy(true)
+    try {
+      const picked = [...bulk.list]
+      for (const code of picked) await api.admin.revokeKey(code)
+      setKeys((prev) => prev.filter((k) => !picked.includes(k.code)))
+      toast(`已删除 ${picked.length} 个密钥`)
+      bulk.exit()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '删除失败', 'error')
+    } finally {
+      setBulkBusy(false)
     }
   }
 
@@ -341,7 +362,23 @@ export function KeysPanel() {
         ) : null}
 
         <section className="section">
-          <h2 className="section__title">全部密钥</h2>
+          <div className="between">
+            <h2 className="section__title">全部密钥</h2>
+            {bulk.selecting ? (
+              <button type="button" className="linklike" onClick={bulk.exit}>
+                取消
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="linklike"
+                disabled={keys.length === 0}
+                onClick={bulk.start}
+              >
+                选择
+              </button>
+            )}
+          </div>
           <div style={{ marginTop: 10 }}>
             {loading ? (
               <p className="t-caption faint">加载中…</p>
@@ -354,7 +391,20 @@ export function KeysPanel() {
                 return (
                   <div key={k.code} className="keyrow">
                     <div className="between">
-                      <span className="keyrow__code">{k.code}</span>
+                      <span className="row gap-2">
+                        {bulk.selecting ? (
+                          used ? (
+                            <span className="pick pick--off" aria-hidden="true" />
+                          ) : (
+                            <Pick
+                              checked={bulk.has(k.code)}
+                              onChange={() => bulk.toggle(k.code)}
+                              label={`选择 ${k.code}`}
+                            />
+                          )
+                        ) : null}
+                        <span className="keyrow__code">{k.code}</span>
+                      </span>
                       <span
                         className="t-tag"
                         style={{
@@ -385,6 +435,22 @@ export function KeysPanel() {
           </div>
         </section>
       </div>
+
+      {bulk.selecting ? (
+        <BulkBar
+          count={bulk.count}
+          onSelectAll={() =>
+            bulk.toggleAll(
+              keys
+                .filter((k) => !k.usedAt && !(k.expiresAt && new Date(k.expiresAt) < new Date()))
+                .map((k) => k.code),
+            )
+          }
+          onCancel={bulk.exit}
+          onDelete={() => void removeMany()}
+          busy={bulkBusy}
+        />
+      ) : null}
     </>
   )
 }

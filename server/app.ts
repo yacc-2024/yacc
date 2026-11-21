@@ -49,6 +49,7 @@ interface UserRow {
   title: string | null
   titles: string | null
   shown_titles: string | null
+  member_id: string | null
   perms: string | null
   password_hash: string
   salt: string
@@ -463,6 +464,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
           role: toUser(row).role,
           verified: row.verified === 1,
           memberSince: row.created_at,
+          memberId: row.member_id ?? null,
           label: (() => {
             const shown = parseShown(row.shown_titles, row.titles, row.title)
             return shown.length ? shown.join(' · ') : summary.label

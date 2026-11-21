@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState } from '../components/ui'
+import { EpisodeRow } from '../components/media'
 import { api, ApiError } from '../lib/api'
-import { formatDate } from '../lib/format'
+import { formatDate, formatDuration } from '../lib/format'
+import { episodesOfSeason, findMember, findSeason } from '../lib/selectors'
 
 interface PublicUser {
   uid: string
@@ -13,13 +15,14 @@ interface PublicUser {
   role: string
   verified: boolean
   memberSince: string
+  memberId: string | null
   label: string
   commentCount: number
 }
 
 export function UserProfile() {
   const { uid } = useParams()
-  const { mode } = useApp()
+  const { mode, content } = useApp()
   const [user, setUser] = useState<PublicUser | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,6 +81,36 @@ export function UserProfile() {
               ) : null}
             </div>
 
+            {(() => {
+              const member = content && user.memberId ? findMember(content, user.memberId) : undefined
+              if (!content || !member) return null
+              const works = member.seasons.flatMap((no) => {
+                const season = content.seasons.find((s) => s.no === no)
+                return season ? episodesOfSeason(content, season.id) : []
+              })
+              if (works.length === 0) return null
+              return (
+                <section style={{ marginTop: 28 }}>
+                  <h2 className="t-title2" style={{ marginBottom: 10 }}>
+                    参演作品
+                  </h2>
+                  {works.map((ep) => {
+                    const season = findSeason(content, ep.seasonId)
+                    return (
+                      <EpisodeRow
+                        key={ep.id}
+                        to={`/watch/${ep.id}`}
+                        no={ep.no}
+                        title={ep.title}
+                        meta={`${season?.title ?? ''} · ${formatDuration(ep.durationSec)} · ${formatDate(ep.publishedAt)}`}
+                        cover={ep.cover}
+                      />
+                    )
+                  })}
+                </section>
+              )
+            })()}
+
             <div className="card" style={{ marginTop: 24 }}>
               <div className="between">
                 <span className="t-caption faint">加入时间</span>
@@ -95,9 +128,7 @@ export function UserProfile() {
               </div>
             </div>
 
-            <p className="t-tag faint" style={{ marginTop: 20, textAlign: 'center' }}>
-              每一位访客唯一的数字 ID，不可更改。
-            </p>
+
           </>
         ) : (
           <p className="t-caption faint" style={{ marginTop: 24 }}>

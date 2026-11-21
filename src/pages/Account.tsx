@@ -225,9 +225,7 @@ function ProfileSettingsInner() {
               </button>
             ) : null}
           </div>
-          <p className="field__hint" style={{ marginTop: 10 }}>
-            每一位访客唯一的数字 ID，不可更改。
-          </p>
+
         </div>
 
         {account.titles && account.titles.length > 0 ? (

@@ -2127,3 +2127,9 @@ select.input {
 .account-card:active {
   background: var(--control-bg);
 }
+
+/* 不可选的选择框 */
+.pick--off {
+  opacity: 0.35;
+  border-style: dashed;
+}
