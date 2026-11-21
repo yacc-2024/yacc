@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "api": "node scripts/build-api.mjs && node .data/api.mjs",
-    "dev:online": "node scripts/dev-online.mjs"
+    "dev:online": "node scripts/dev-online.mjs",
+    "build:app": "VITE_API_BASE=https://yacc2026.pages.dev vite build",
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android"
   },
   "dependencies": {
     "idb-keyval": "^6.2.1",
@@ -21,6 +24,9 @@
     "react-router-dom": "^6.30.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",

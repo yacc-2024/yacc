@@ -8,3 +8,4 @@ coverage/
 .pnpm-store/
 wrangler.toml
 *.bak
+android/

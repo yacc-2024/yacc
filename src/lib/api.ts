@@ -5,6 +5,12 @@
 
 const TOKEN_KEY = 'yacc:token'
 
+/**
+ * 网页版走同源的 /api；装成 apk 后页面在本地壳里，
+ * 构建时用 VITE_API_BASE=https://yacc2026.pages.dev 指到线上。
+ */
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+
 let onUnauthorized: (() => void) | null = null
 
 /** 请求带着 token 却被拒（多半是被别的设备顶掉），交给上层处理 */
@@ -79,7 +85,7 @@ async function request<T>(
   const token = options.token ?? getToken()
   if (token) headers.authorization = `Bearer ${token}`
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method: options.method ?? 'GET',
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),

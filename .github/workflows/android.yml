@@ -1,0 +1,53 @@
+name: 打包安卓 App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'app-v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建网页（接口指向线上）
+        run: pnpm build:app
+
+      - name: 生成安卓工程
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: 打 debug 包
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: yacc-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

@@ -83,6 +83,26 @@ function tooFast(key: string, limit: number, windowMs: number): boolean {
   return false
 }
 
+/** 允许的来源：网站自己 + 安卓壳（Capacitor 默认 https://localhost） */
+const ALLOWED_ORIGINS = new Set([
+  'https://localhost',
+  'http://localhost',
+  'capacitor://localhost',
+])
+
+function corsHeaders(origin: string | null): Record<string, string> {
+  if (!origin) return {}
+  const ok = ALLOWED_ORIGINS.has(origin) || origin.endsWith('.yacc2026.pages.dev')
+  if (!ok) return {}
+  return {
+    'access-control-allow-origin': origin,
+    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, authorization',
+    'access-control-max-age': '86400',
+    vary: 'origin',
+  }
+}
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -386,6 +406,21 @@ async function getSetting(db: DB, key: string, fallback: string): Promise<string
 const TARGET_TYPES = new Set(['episode', 'extra'])
 
 export async function handleApi(request: Request, env: Env): Promise<Response> {
+  const origin = request.headers.get('origin')
+
+  if (request.method.toUpperCase() === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(origin) })
+  }
+
+  const res = await handleApiInner(request, env)
+  const extra = corsHeaders(origin)
+  if (Object.keys(extra).length === 0) return res
+  const headers = new Headers(res.headers)
+  for (const [k, v] of Object.entries(extra)) headers.set(k, v)
+  return new Response(res.body, { status: res.status, headers })
+}
+
+async function handleApiInner(request: Request, env: Env): Promise<Response> {
   const db = env.db
   await ensureSchema(db)
 
