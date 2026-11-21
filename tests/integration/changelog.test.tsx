@@ -81,3 +81,22 @@ describe('外观：深浅色与字号', () => {
     expect(document.documentElement.style.fontSize).toBe('125%')
   })
 })
+
+describe('版本号跟随最新日志', () => {
+  it('显示日期最新的那条版本，而不是数组第一条', async () => {
+    await seedAdmin()
+    const user = userEvent.setup()
+    renderApp(['/admin/changelog'])
+
+    // 新增一个比 1.0.0 更新的版本
+    await user.click(await screen.findByRole('button', { name: '新增版本' }))
+    await user.type(await screen.findByLabelText('版本号'), '1.2.0')
+    await user.type(screen.getByLabelText('改动内容'), '加了新功能')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    await screen.findByText('更新日志已保存')
+
+    const view = renderApp(['/me/version'])
+    expect(await screen.findByText('当前版本 v1.2.0')).toBeInTheDocument()
+    view.unmount()
+  })
+})

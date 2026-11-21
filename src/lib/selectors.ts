@@ -111,3 +111,37 @@ export function nextEpisodeNo(content: Content, seasonId: string): number {
   const list = episodesOfSeason(content, seasonId)
   return list.reduce((max, e) => Math.max(max, e.no), 0) + 1
 }
+
+
+/**
+ * 最新一条更新日志。
+ * 先按日期倒序；日期相同再按版本号倒序（1.0.10 > 1.0.9）。
+ */
+export function latestChangelog(
+  list: Content['changelog'],
+): Content['changelog'][number] | null {
+  if (!list || list.length === 0) return null
+  const compareVersion = (a: string, b: string) => {
+    const pa = a.split('.').map((n) => Number(n) || 0)
+    const pb = b.split('.').map((n) => Number(n) || 0)
+    for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+      const d = (pa[i] ?? 0) - (pb[i] ?? 0)
+      if (d !== 0) return d
+    }
+    return 0
+  }
+  return [...list].sort((a, b) => {
+    const byDate = (b.date ?? '').localeCompare(a.date ?? '')
+    if (byDate !== 0) return byDate
+    return compareVersion(b.version, a.version)
+  })[0]
+}
+
+/** 按时间倒序排好，最新的在最上面 */
+export function sortedChangelog(list: Content['changelog']): Content['changelog'] {
+  return [...list].sort((a, b) => {
+    const byDate = (b.date ?? '').localeCompare(a.date ?? '')
+    if (byDate !== 0) return byDate
+    return b.version.localeCompare(a.version, undefined, { numeric: true })
+  })
+}

@@ -5,6 +5,7 @@ import { NavBar, Avatar, ListRow, Segmented, useConfirm } from '../components/ui
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { formatUid, displayTitles } from '../lib/uid'
+import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useRef } from 'react'
 import { AvatarCropper } from '../components/AvatarCropper'
 import {
@@ -542,7 +543,8 @@ export function AppearanceSettings() {
 export function Version() {
   const { content } = useApp()
   const c = content!
-  const list = [...c.changelog].reverse()
+  const latest = latestChangelog(c.changelog)
+  const list = sortedChangelog(c.changelog)
 
   return (
     <>
@@ -551,7 +553,7 @@ export function Version() {
         <div style={{ marginTop: 8, textAlign: 'center' }}>
           <p style={{ fontSize: 30, fontWeight: 700, letterSpacing: -1.2 }}>yacc</p>
           <p className="t-caption" style={{ marginTop: 4 }}>
-            当前版本 {c.changelog[0]?.version ?? '—'}
+            当前版本 {latest?.version ? `v${latest.version}` : '—'}
           </p>
         </div>
 
