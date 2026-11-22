@@ -1475,3 +1475,60 @@ describe('更新日志自动补齐（v1.6.0）', () => {
     expect(entry[0].items[0]).toBe('我自己写的')
   })
 })
+
+describe('实时调整管理员权限（v1.7.0）', () => {
+  it('总管理员可以改别人的权限，立刻生效', async () => {
+    const superToken = await bootstrapAdmin()
+    const keyRes = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['comments'], count: 1, expiresInDays: 30 },
+      superToken,
+    )
+    const sub = await registerWithKey(keyRes.body.data.keys[0], '分管理员')
+    const subToken = sub.body.data.token
+    const subId = sub.body.data.user.id
+
+    // 现在只能看评论
+    expect((await call('GET', '/admin/comments', undefined, subToken)).status).toBe(200)
+    expect((await call('GET', '/admin/users', undefined, subToken)).status).toBe(403)
+
+    // 总管理员加上「账号管理」
+    const res = await call('POST', `/admin/users/${subId}`, { perms: ['comments', 'users'] }, superToken)
+    expect(res.status).toBe(200)
+
+    // 立刻可以访问用户管理
+    expect((await call('GET', '/admin/users', undefined, subToken)).status).toBe(200)
+    // 但内容相关的还是不行
+    expect(
+      (await call('POST', '/admin/publish', { content: validContent() }, subToken)).status,
+    ).toBe(403)
+  })
+
+  it('取消权限后立刻失效', async () => {
+    const superToken = await bootstrapAdmin()
+    const keyRes = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['users'], count: 1, expiresInDays: 30 },
+      superToken,
+    )
+    const sub = await registerWithKey(keyRes.body.data.keys[0], '要收权的')
+    const subToken = sub.body.data.token
+    expect((await call('GET', '/admin/users', undefined, subToken)).status).toBe(200)
+
+    await call('POST', `/admin/users/${sub.body.data.user.id}`, { perms: [] }, superToken)
+    expect((await call('GET', '/admin/users', undefined, subToken)).status).toBe(403)
+  })
+
+  it('分管理员不能改别人的权限', async () => {
+    const superToken = await bootstrapAdmin()
+    const k1 = await call('POST', '/admin/keys', { kind: 'admin', perms: ['users'], count: 1, expiresInDays: 30 }, superToken)
+    const k2 = await call('POST', '/admin/keys', { kind: 'admin', perms: ['comments'], count: 1, expiresInDays: 30 }, superToken)
+    const a = await registerWithKey(k1.body.data.keys[0], '管理甲')
+    const b = await registerWithKey(k2.body.data.keys[0], '管理乙')
+
+    const res = await call('POST', `/admin/users/${b.body.data.user.id}`, { perms: ['content'] }, a.body.data.token)
+    expect(res.status).toBe(403)
+  })
+})

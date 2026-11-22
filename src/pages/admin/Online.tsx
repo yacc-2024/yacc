@@ -710,6 +710,7 @@ interface AdminUser {
   label: string
   titles: string[]
   memberId: string | null
+  perms: string[]
   keyCode: string | null
   createdAt: string
 }
@@ -893,6 +894,9 @@ function UserForm({
   const [name, setName] = useState(user.name)
   const [uid, setUid] = useState(user.uid)
   const [memberId, setMemberId] = useState(user.memberId ?? '')
+  const [permList, setPermList] = useState<string[]>(user.perms ?? [])
+  const isSuper = account?.role === 'superadmin'
+  const targetIsAdmin = user.role === 'admin'
   const [titleList, setTitleList] = useState<string[]>(user.titles ?? [])
   const [titleDraft, setTitleDraft] = useState('')
   const [password, setPassword] = useState('')
@@ -908,6 +912,7 @@ function UserForm({
         verified?: boolean
         titles?: string[]
         memberId?: string | null
+        perms?: string[]
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
@@ -917,6 +922,9 @@ function UserForm({
         titleList.every((t, i) => t === (user.titles ?? [])[i])
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
+      if (isSuper && targetIsAdmin && permList.join() !== (user.perms ?? []).join()) {
+        patch.perms = permList
+      }
 
       if (uid.trim() && uid.trim() !== user.uid) {
         const numeric = Number(uid.trim())
@@ -991,6 +999,32 @@ function UserForm({
           可以强制改成任意编号（1–99999），不要求符合身份规则；称号可以单独定制。
         </p>
       </div>
+
+      {isSuper && targetIsAdmin ? (
+        <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+          <p className="t-caption faint">这名管理员可以做什么</p>
+          <div className="chips" style={{ marginTop: 10 }}>
+            {PERM_LABELS.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className="chip"
+                aria-pressed={permList.includes(value)}
+                onClick={() =>
+                  setPermList((prev) =>
+                    prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value],
+                  )
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="field__hint">
+            改完保存立刻生效，对方下次操作就会按新权限判断。
+          </p>
+        </div>
+      ) : null}
 
       <div className="field">
         <label className="field__label" htmlFor="user-member">

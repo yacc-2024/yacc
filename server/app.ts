@@ -2130,6 +2130,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           role: r.role,
           verified: r.verified === 1,
           label: (r.title as string | null) || describeUid(r.uid as number | null).label,
+          perms: parsePerms(r.perms as string | null),
           title: (r.title as string | null) ?? null,
           titles: parseTitles(r.titles as string | null, r.title as string | null),
           shownTitles: parseShown(

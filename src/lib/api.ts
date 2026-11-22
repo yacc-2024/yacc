@@ -510,6 +510,7 @@ export const api = {
           verified: boolean
           label: string
           titles: string[]
+          perms: string[]
           memberId: string | null
           keyCode: string | null
           createdAt: string
@@ -530,6 +531,7 @@ export const api = {
         verified?: boolean
         titles?: string[]
         memberId?: string | null
+        perms?: string[]
       },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
