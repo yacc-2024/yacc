@@ -76,7 +76,6 @@ export function Forum() {
       <NavBar
         title="论坛"
         large
-        sub="聊聊拍摄、剪辑，或者最近看的片子"
         action={
           <Link to="/forum/new" className="nav__action" aria-label="发帖">
             <Icon name="plus" size={22} />
