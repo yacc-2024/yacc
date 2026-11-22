@@ -90,13 +90,13 @@ describe('版本号跟随最新日志', () => {
 
     // 新增一个比 1.0.0 更新的版本
     await user.click(await screen.findByRole('button', { name: '新增版本' }))
-    await user.type(await screen.findByLabelText('版本号'), '1.2.0')
+    await user.type(await screen.findByLabelText('版本号'), '9.9.9')
     await user.type(screen.getByLabelText('改动内容'), '加了新功能')
     await user.click(screen.getByRole('button', { name: '保存' }))
     await screen.findByText('更新日志已保存')
 
     const view = renderApp(['/me/version'])
-    expect(await screen.findByText('当前版本 v1.2.0')).toBeInTheDocument()
+    expect(await screen.findByText('当前版本 v9.9.9')).toBeInTheDocument()
     view.unmount()
   })
 })
