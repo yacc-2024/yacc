@@ -2047,6 +2047,54 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       return ok({ version: row?.version ?? 0 })
     }
 
+    if (path === '/admin/versions' && method === 'GET') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const rows = await db
+        .prepare(
+          `SELECT d.version, d.published_at, d.published_by, LENGTH(d.content) AS size,
+                  u.name AS publisher
+           FROM documents d LEFT JOIN users u ON u.id = d.published_by
+           ORDER BY d.version DESC LIMIT 20`,
+        )
+        .all<{
+          version: number
+          published_at: string
+          published_by: string | null
+          size: number
+          publisher: string | null
+        }>()
+      return ok({
+        versions: rows.map((r) => ({
+          version: r.version,
+          publishedAt: r.published_at,
+          publisher: r.publisher ?? '系统',
+          size: Number(r.size ?? 0),
+        })),
+      })
+    }
+
+    if (path === '/admin/rollback' && method === 'POST') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const target = Number(body.version)
+      const row = await db
+        .prepare('SELECT content FROM documents WHERE version = ?')
+        .bind(target)
+        .first<{ content: string }>()
+      if (!row) return fail('找不到这个版本', 404)
+      await db
+        .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
+        .bind(row.content, nowIso(), me!.id)
+        .run()
+      const fresh = await db
+        .prepare('SELECT version FROM documents ORDER BY version DESC LIMIT 1')
+        .first<{ version: number }>()
+      return ok({ version: fresh?.version ?? 0 })
+    }
+
     if (path === '/admin/keys' && method === 'GET') {
       const denied = need('keys:issue')
       if (denied) return denied

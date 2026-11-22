@@ -1532,3 +1532,38 @@ describe('实时调整管理员权限（v1.7.0）', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('版本历史与回滚（v2.0）', () => {
+  it('能看到历史版本并回滚', async () => {
+    const token = await bootstrapAdmin()
+    const first = validContent()
+    await call('POST', '/admin/publish', { content: first }, token)
+
+    const changed = validContent()
+    changed.site.name = '改过的名字'
+    await call('POST', '/admin/publish', { content: changed }, token)
+
+    const list = await call('GET', '/admin/versions', undefined, token)
+    expect(list.status).toBe(200)
+    expect(list.body.data.versions.length).toBeGreaterThanOrEqual(2)
+
+    const oldest = list.body.data.versions[list.body.data.versions.length - 1]
+    const res = await call('POST', '/admin/rollback', { version: oldest.version }, token)
+    expect(res.status).toBe(200)
+
+    const now = await call('GET', '/content')
+    expect((now.body as { site: { name: string } }).site.name).toBe('yacc')
+  })
+
+  it('没有发布权限的管理员看不到版本历史', async () => {
+    const superToken = await bootstrapAdmin()
+    const key = await call(
+      'POST',
+      '/admin/keys',
+      { kind: 'admin', perms: ['comments:review'], count: 1, expiresInDays: 30 },
+      superToken,
+    )
+    const sub = await registerWithKey(key.body.data.keys[0], '只管评论')
+    expect((await call('GET', '/admin/versions', undefined, sub.body.data.token)).status).toBe(403)
+  })
+})

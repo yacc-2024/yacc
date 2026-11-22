@@ -466,6 +466,14 @@ export const api = {
   settings: () => call<{ moderation: string }>('/settings'),
 
   admin: {
+    versions: () =>
+      call<{
+        versions: Array<{ version: number; publishedAt: string; publisher: string; size: number }>
+      }>('/admin/versions'),
+
+    rollback: (version: number) =>
+      call<{ version: number }>('/admin/rollback', { method: 'POST', body: { version } }),
+
     publish: (content: unknown) =>
       call<{ version: number }>('/admin/publish', { method: 'POST', body: { content } }),
 

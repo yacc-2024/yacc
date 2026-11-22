@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../../state/AppContext'
+import { api } from '../../lib/api'
 import { NavBar, Sheet, useConfirm } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { Icon } from '../../components/Icon'
@@ -40,6 +41,23 @@ export function DataAdmin() {
   const [importErrors, setImportErrors] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [hasRollback, setHasRollback] = useState(false)
+  const [versions, setVersions] = useState<
+    Array<{ version: number; publishedAt: string; publisher: string }>
+  >([])
+
+  const refreshVersions = useCallback(async () => {
+    if (mode !== 'online') return
+    try {
+      const res = await api.admin.versions()
+      setVersions(res.versions)
+    } catch {
+      /* 没有权限或离线时静默 */
+    }
+  }, [mode])
+
+  useEffect(() => {
+    void refreshVersions()
+  }, [refreshVersions])
 
   useEffect(() => {
     void loadRollback().then((snap) => setHasRollback(!!snap))
@@ -248,6 +266,49 @@ export function DataAdmin() {
             <Icon name="chevron-right" size={18} />
           </button>
         </div>
+
+        {mode === 'online' && versions.length > 0 ? (
+          <section style={{ marginTop: 22 }}>
+            <h2 className="section__title" style={{ marginBottom: 10 }}>
+              版本历史
+            </h2>
+            <div className="list">
+              {versions.map((v) => (
+                <div key={v.version} className="list__row list__row--plain">
+                  <span className="grow" style={{ textAlign: 'left' }}>
+                    <span className="list__title" style={{ display: 'block' }}>
+                      第 {v.version} 版
+                    </span>
+                    <span className="list__sub">
+                      {formatDateTime(v.publishedAt)} · {v.publisher}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="linklike"
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: `回到第 ${v.version} 版？`,
+                        message: '会以这版内容生成一次新的发布，历史记录不会丢。',
+                        confirmText: '回滚',
+                      })
+                      if (!ok) return
+                      try {
+                        await api.admin.rollback(v.version)
+                        toast('已回滚，刷新页面查看')
+                        await refreshVersions()
+                      } catch (err) {
+                        toast(err instanceof Error ? err.message : '回滚失败', 'error')
+                      }
+                    }}
+                  >
+                    回滚
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <input
           ref={fileRef}
