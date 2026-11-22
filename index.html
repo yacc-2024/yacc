@@ -32,8 +32,8 @@
         pointer-events: none;
       }
       #yacc-splash svg {
-        width: 76px;
-        height: 76px;
+        width: 108px;
+        height: 108px;
         animation: yacc-splash-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
       }
       @keyframes yacc-splash-in {
@@ -56,12 +56,11 @@
   <body>
     <div id="yacc-splash" aria-hidden="true">
       <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-        <g fill="#ffffff">
-          <rect x="140" y="96" width="44" height="156"/>
-          <rect x="328" y="96" width="44" height="156"/>
-          <rect x="140" y="208" width="232" height="44"/>
-          <rect x="234" y="252" width="44" height="160"/>
+        <g fill="none" stroke="#ffffff" stroke-width="74" stroke-linecap="butt" stroke-linejoin="round">
+          <path d="M130 133 L256 241 L382 133" />
         </g>
+        <rect x="219" y="204" width="74" height="200" fill="#ffffff" />
+        <circle cx="256" cy="241" r="23" fill="#ffffff" />
       </svg>
     </div>
     <div id="root"></div>
