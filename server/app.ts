@@ -406,7 +406,7 @@ async function getSetting(db: DB, key: string, fallback: string): Promise<string
 
 /* ---------------- 主路由 ---------------- */
 
-const TARGET_TYPES = new Set(['episode', 'extra'])
+const TARGET_TYPES = new Set(['episode', 'extra', 'post'])
 
 export async function handleApi(request: Request, env: Env): Promise<Response> {
   const origin = request.headers.get('origin')
@@ -496,6 +496,33 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare("SELECT COUNT(*) AS n FROM comments WHERE user_id = ? AND status = 'published'")
         .bind(row.id)
         .first<{ n: number }>()
+      const followerCount = await db
+        .prepare('SELECT COUNT(*) AS n FROM follows WHERE followee_id = ?')
+        .bind(row.id)
+        .first<{ n: number }>()
+      const followingCount = await db
+        .prepare('SELECT COUNT(*) AS n FROM follows WHERE follower_id = ?')
+        .bind(row.id)
+        .first<{ n: number }>()
+      const likeCount = await db
+        .prepare(
+          `SELECT
+             (SELECT COUNT(*) FROM post_likes l JOIN posts p ON p.id = l.post_id WHERE p.user_id = ?)
+           + (SELECT COUNT(*) FROM reactions r JOIN comments c ON c.id = r.target_id
+                WHERE r.target_type = 'comment' AND c.user_id = ?) AS n`,
+        )
+        .bind(row.id, row.id)
+        .first<{ n: number }>()
+      const viewer = await currentUser(db, request)
+      const isFollowing =
+        viewer && viewer.id !== row.id
+          ? Boolean(
+              await db
+                .prepare('SELECT 1 AS x FROM follows WHERE follower_id = ? AND followee_id = ?')
+                .bind(viewer.id, row.id)
+                .first<{ x: number }>(),
+            )
+          : false
       return ok({
         user: {
           uid: formatUid(row.uid),
@@ -513,6 +540,12 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           titles: parseTitles(row.titles, row.title),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           commentCount: Number(commentCount?.n ?? 0),
+          followers: Number(followerCount?.n ?? 0),
+          followingCount: Number(followingCount?.n ?? 0),
+          likes: Number(likeCount?.n ?? 0),
+          isFollowing,
+          isMe: viewer?.id === row.id,
+          userId: row.id,
         },
       })
     }
@@ -1044,6 +1077,302 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
       return ok()
+    }
+
+    /* ---------- 论坛 ---------- */
+
+    const POST_MAX = 500
+    const MAX_IMAGES = 3
+    const MAX_IMAGE_CHARS = 220_000
+
+    // 帖子列表
+    if (path === '/posts' && method === 'GET') {
+      const limit = Math.min(30, Math.max(1, Number(url.searchParams.get('limit')) || 20))
+      const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
+      const onlyUser = url.searchParams.get('userId') ?? ''
+
+      const rows = await db
+        .prepare(
+          `SELECT p.id, p.body, p.created_at, p.views, p.user_id,
+                  u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles,
+                  (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                  (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post'
+                     AND c.target_id = p.id AND c.status = 'published') AS comments
+           FROM posts p JOIN users u ON u.id = p.user_id
+           WHERE p.status = 'published' AND (? = '' OR p.user_id = ?)
+           ORDER BY p.created_at DESC
+           LIMIT ? OFFSET ?`,
+        )
+        .bind(onlyUser, onlyUser, limit, offset)
+        .all<Record<string, unknown>>()
+
+      const ids = rows.map((r) => String(r.id))
+      const images = ids.length
+        ? await db
+            .prepare(
+              `SELECT id, post_id FROM post_images WHERE post_id IN (${ids.map(() => '?').join(',')})`,
+            )
+            .bind(...ids)
+            .all<{ id: string; post_id: string }>()
+        : []
+      const imageMap = new Map<string, string[]>()
+      for (const img of images) {
+        const list = imageMap.get(img.post_id) ?? []
+        list.push(img.id)
+        imageMap.set(img.post_id, list)
+      }
+
+      const liked = me
+        ? await db
+            .prepare('SELECT post_id FROM post_likes WHERE user_id = ?')
+            .bind(me.id)
+            .all<{ post_id: string }>()
+        : []
+      const likedSet = new Set(liked.map((l) => l.post_id))
+
+      const followed = me
+        ? await db
+            .prepare('SELECT followee_id FROM follows WHERE follower_id = ?')
+            .bind(me.id)
+            .all<{ followee_id: string }>()
+        : []
+      const followedSet = new Set(followed.map((f) => f.followee_id))
+
+      return ok({
+        posts: rows.map((r) => ({
+          id: r.id,
+          body: r.body,
+          createdAt: r.created_at,
+          views: Number(r.views ?? 0),
+          author: r.author,
+          avatar: (r.avatar as string | null) ?? null,
+          uid: formatUid(r.uid as number | null),
+          authorId: r.user_id,
+          title: (r.title as string | null) ?? null,
+          label:
+            parseShown(
+              r.shown_titles as string | null,
+              r.titles as string | null,
+              r.title as string | null,
+            ).join(' · ') || describeUid(r.uid as number | null).label,
+          likes: Number(r.likes ?? 0),
+          comments: Number(r.comments ?? 0),
+          liked: likedSet.has(String(r.id)),
+          following: followedSet.has(String(r.user_id)),
+          mine: me?.id === r.user_id,
+          images: imageMap.get(String(r.id)) ?? [],
+        })),
+      })
+    }
+
+    // 发帖
+    if (path === '/posts' && method === 'POST') {
+      if (!me) return fail('登录后才能发帖', 401)
+      if (!me.verified) return fail('需要认证后才能发帖', 403)
+      if (tooFast(`post:${me.id}`, 5, 86_400_000)) {
+        return fail('今天发的有点多了，明天再来', 429)
+      }
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const text = typeof body.body === 'string' ? body.body.trim() : ''
+      if (!text) return fail('写点什么吧')
+      if (text.length > POST_MAX) return fail(`最多 ${POST_MAX} 个字`)
+
+      const images = Array.isArray(body.images) ? (body.images as unknown[]) : []
+      const clean = images
+        .filter((x): x is string => typeof x === 'string')
+        .filter((x) => /^data:image\/(png|jpeg|jpg|webp);base64,/.test(x))
+        .slice(0, MAX_IMAGES)
+      if (clean.some((x) => x.length > MAX_IMAGE_CHARS)) {
+        return fail('图片有点大，换一张小一点的')
+      }
+
+      const id = randomHex(8)
+      await db
+        .prepare('INSERT INTO posts (id, user_id, body, created_at) VALUES (?, ?, ?, ?)')
+        .bind(id, me.id, text, nowIso())
+        .run()
+      for (const data of clean) {
+        await db
+          .prepare('INSERT INTO post_images (id, post_id, data, created_at) VALUES (?, ?, ?, ?)')
+          .bind(randomHex(8), id, data, nowIso())
+          .run()
+      }
+      return ok({ id })
+    }
+
+    // 单帖详情（顺便加浏览量）
+    const postOne = /^\/posts\/([a-z0-9]+)$/.exec(path)
+    if (postOne && method === 'GET') {
+      const row = await db
+        .prepare(
+          `SELECT p.id, p.body, p.created_at, p.views, p.user_id,
+                  u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles
+           FROM posts p JOIN users u ON u.id = p.user_id
+           WHERE p.id = ? AND p.status = 'published'`,
+        )
+        .bind(postOne[1])
+        .first<Record<string, unknown>>()
+      if (!row) return fail('帖子不在了', 404)
+
+      if (!me || me.id !== row.user_id) {
+        await db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').bind(row.id).run()
+      }
+
+      const images = await db
+        .prepare('SELECT id FROM post_images WHERE post_id = ?')
+        .bind(row.id)
+        .all<{ id: string }>()
+      const likes = await db
+        .prepare('SELECT COUNT(*) AS n FROM post_likes WHERE post_id = ?')
+        .bind(row.id)
+        .first<{ n: number }>()
+      const liked = me
+        ? await db
+            .prepare('SELECT 1 AS x FROM post_likes WHERE post_id = ? AND user_id = ?')
+            .bind(row.id, me.id)
+            .first<{ x: number }>()
+        : null
+      const following = me
+        ? await db
+            .prepare('SELECT 1 AS x FROM follows WHERE follower_id = ? AND followee_id = ?')
+            .bind(me.id, row.user_id)
+            .first<{ x: number }>()
+        : null
+
+      return ok({
+        post: {
+          id: row.id,
+          body: row.body,
+          createdAt: row.created_at,
+          views: Number(row.views ?? 0) + (me && me.id === row.user_id ? 0 : 0),
+          author: row.author,
+          avatar: (row.avatar as string | null) ?? null,
+          uid: formatUid(row.uid as number | null),
+          authorId: row.user_id,
+          label:
+            parseShown(
+              row.shown_titles as string | null,
+              row.titles as string | null,
+              row.title as string | null,
+            ).join(' · ') || describeUid(row.uid as number | null).label,
+          likes: Number(likes?.n ?? 0),
+          liked: Boolean(liked),
+          following: Boolean(following),
+          mine: me?.id === row.user_id,
+          images: images.map((i) => i.id),
+        },
+      })
+    }
+
+    // 删帖
+    if (postOne && method === 'DELETE') {
+      if (!me) return fail('未登录', 401)
+      const row = await db
+        .prepare('SELECT user_id FROM posts WHERE id = ?')
+        .bind(postOne[1])
+        .first<{ user_id: string }>()
+      if (!row) return fail('帖子不在了', 404)
+      const admin = me.role === 'admin' || me.role === 'superadmin'
+      if (row.user_id !== me.id && !admin) return fail('只能删自己的帖子', 403)
+      await db.prepare('DELETE FROM posts WHERE id = ?').bind(postOne[1]).run()
+      await db.prepare('DELETE FROM post_images WHERE post_id = ?').bind(postOne[1]).run()
+      await db.prepare('DELETE FROM post_likes WHERE post_id = ?').bind(postOne[1]).run()
+      await db
+        .prepare("DELETE FROM comments WHERE target_type = 'post' AND target_id = ?")
+        .bind(postOne[1])
+        .run()
+      return ok()
+    }
+
+    // 点赞
+    const likePost = /^\/posts\/([a-z0-9]+)\/like$/.exec(path)
+    if (likePost && method === 'POST') {
+      if (!me) return fail('登录后才能点赞', 401)
+      if (tooFast(`plike:${me.id}`, 20, 20_000)) return fail('请勿频繁点击', 429)
+      const exists = await db
+        .prepare('SELECT 1 AS x FROM posts WHERE id = ?')
+        .bind(likePost[1])
+        .first<{ x: number }>()
+      if (!exists) return fail('帖子不在了', 404)
+
+      const liked = await db
+        .prepare('SELECT 1 AS x FROM post_likes WHERE post_id = ? AND user_id = ?')
+        .bind(likePost[1], me.id)
+        .first<{ x: number }>()
+      if (liked) {
+        await db
+          .prepare('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?')
+          .bind(likePost[1], me.id)
+          .run()
+      } else {
+        await db
+          .prepare('INSERT INTO post_likes (post_id, user_id, created_at) VALUES (?, ?, ?)')
+          .bind(likePost[1], me.id, nowIso())
+          .run()
+      }
+      const count = await db
+        .prepare('SELECT COUNT(*) AS n FROM post_likes WHERE post_id = ?')
+        .bind(likePost[1])
+        .first<{ n: number }>()
+      return ok({ liked: !liked, likes: Number(count?.n ?? 0) })
+    }
+
+    // 图片
+    const mediaOne = /^\/media\/([a-z0-9]+)$/.exec(path)
+    if (mediaOne && method === 'GET') {
+      const row = await db
+        .prepare('SELECT data FROM post_images WHERE id = ?')
+        .bind(mediaOne[1])
+        .first<{ data: string }>()
+      if (!row) return fail('图片不在了', 404)
+      const match = /^data:(image\/[a-z]+);base64,(.+)$/.exec(row.data)
+      if (!match) return fail('图片格式不对', 500)
+      const binary = Uint8Array.from(atob(match[2]), (ch) => ch.charCodeAt(0))
+      return new Response(binary, {
+        headers: {
+          'content-type': match[1],
+          'cache-control': 'public, max-age=604800, immutable',
+        },
+      })
+    }
+
+    // 关注
+    const followOne = /^\/follows\/([a-z0-9]+)$/.exec(path)
+    if (followOne && method === 'POST') {
+      if (!me) return fail('登录后才能关注', 401)
+      const targetId = followOne[1]
+      if (targetId === me.id) return fail('不能关注自己', 400)
+      const target = await db
+        .prepare('SELECT id FROM users WHERE id = ?')
+        .bind(targetId)
+        .first<{ id: string }>()
+      if (!target) return fail('找不到这个人', 404)
+
+      const body = await readJson(request)
+      const action = String(body?.action ?? '')
+      if (action === 'unfollow') {
+        await db
+          .prepare('DELETE FROM follows WHERE follower_id = ? AND followee_id = ?')
+          .bind(me.id, targetId)
+          .run()
+        return ok({ following: false })
+      }
+
+      await db
+        .prepare(
+          'INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
+        )
+        .bind(me.id, targetId, nowIso())
+        .run()
+      await db
+        .prepare(
+          `INSERT INTO notifications (id, user_id, type, actor_name, body, created_at)
+           VALUES (?, ?, 'follow', ?, ?, ?)`,
+        )
+        .bind(randomHex(8), targetId, me.name, '关注了你', nowIso())
+        .run()
+      return ok({ following: true })
     }
 
     /* ---------- 评论 ---------- */

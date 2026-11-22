@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, SectionHead } from '../components/ui'
 import { PosterCard } from '../components/media'
 import { Icon } from '../components/Icon'
+import { ForumCard } from '../components/ForumCard'
+import { api, type ForumPost } from '../lib/api'
 import { DirtyBanner } from '../components/DirtyBanner'
 import { EventSheet } from '../components/detailSheets'
 import {
@@ -19,8 +21,23 @@ import { hasUnreadNews } from '../lib/news'
 import type { CrewEvent } from '../data/schema'
 
 export function Home() {
-  const { content, account } = useApp()
+  const { content, account, mode } = useApp()
   const c = content!
+  const [posts, setPosts] = useState<ForumPost[]>([])
+
+  useEffect(() => {
+    if (mode !== 'online') return
+    let alive = true
+    void api
+      .posts(2)
+      .then((res) => {
+        if (alive) setPosts(res.posts)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [mode])
   const [evt, setEvt] = useState<CrewEvent | null>(null)
 
   const featured = featuredItems(c)
@@ -82,6 +99,24 @@ export function Home() {
             </span>
           </Link>
         ) : null}
+
+        <section className="section">
+          <div className="section__head">
+            <h2 className="section__title">YACC 论坛</h2>
+            <Link to="/forum" className="section__more">
+              全部
+              <Icon name="chevron-right" size={14} />
+            </Link>
+          </div>
+          {posts.length === 0 ? (
+            <Link to="/forum/new" className="card notice" style={{ display: 'block' }}>
+              <span className="notice__title">还没有人发帖</span>
+              <span className="notice__sub">点这里发第一帖，聊聊拍摄、剪辑或者最近看的片子。</span>
+            </Link>
+          ) : (
+            posts.map((post) => <ForumCard key={post.id} post={post} />)
+          )}
+        </section>
 
         {featured.length > 0 ? (
           <section className="section">

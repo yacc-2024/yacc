@@ -24,6 +24,9 @@ import { Watch } from './pages/Watch'
 import { UserProfile } from './pages/UserProfile'
 import { Notifications } from './pages/Notifications'
 import { Devices } from './pages/Devices'
+import { Forum } from './pages/Forum'
+import { NewPost } from './pages/NewPost'
+import { PostDetail } from './pages/PostDetail'
 import { Me } from './pages/Me'
 import { Login } from './pages/Login'
 import { Favorites, History } from './pages/Library'
@@ -165,6 +168,9 @@ export function App() {
         <Route path="u/:uid" element={<UserProfile />} />
         <Route path="me/notifications" element={<Notifications />} />
         <Route path="me/settings/devices" element={<Devices />} />
+        <Route path="forum" element={<Forum />} />
+        <Route path="forum/new" element={<NewPost />} />
+        <Route path="forum/:id" element={<PostDetail />} />
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
         <Route path="me/settings" element={<Settings />} />

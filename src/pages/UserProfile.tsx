@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState } from '../components/ui'
+import { ForumCard } from '../components/ForumCard'
+import type { ForumPost } from '../lib/api'
 import { EpisodeRow } from '../components/media'
 import { api, ApiError } from '../lib/api'
 import { formatDate, formatDuration } from '../lib/format'
@@ -16,6 +18,12 @@ interface PublicUser {
   verified: boolean
   memberSince: string
   memberId: string | null
+  userId: string
+  followers: number
+  followingCount: number
+  likes: number
+  isFollowing: boolean
+  isMe: boolean
   label: string
   commentCount: number
 }
@@ -24,6 +32,8 @@ export function UserProfile() {
   const { uid } = useParams()
   const { mode, content } = useApp()
   const [user, setUser] = useState<PublicUser | null>(null)
+  const [posts, setPosts] = useState<ForumPost[]>([])
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -41,6 +51,20 @@ export function UserProfile() {
       alive = false
     }
   }, [mode, uid])
+
+  useEffect(() => {
+    if (mode !== 'online' || !user) return
+    let alive = true
+    void api
+      .posts(10, 0, user.userId)
+      .then((res) => {
+        if (alive) setPosts(res.posts)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [mode, user])
 
   if (mode !== 'online') {
     return (
@@ -110,6 +134,54 @@ export function UserProfile() {
                 </section>
               )
             })()}
+
+            <div className="row" style={{ justifyContent: 'center', gap: 28, marginTop: 20 }}>
+              <span style={{ textAlign: 'center' }}>
+                <span className="t-title3 t-num" style={{ display: 'block' }}>{user.followingCount}</span>
+                <span className="t-tag faint">关注</span>
+              </span>
+              <span style={{ textAlign: 'center' }}>
+                <span className="t-title3 t-num" style={{ display: 'block' }}>{user.followers}</span>
+                <span className="t-tag faint">粉丝</span>
+              </span>
+              <span style={{ textAlign: 'center' }}>
+                <span className="t-title3 t-num" style={{ display: 'block' }}>{user.likes}</span>
+                <span className="t-tag faint">获赞</span>
+              </span>
+            </div>
+
+            {!user.isMe ? (
+              <button
+                type="button"
+                className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
+                style={{ display: 'block', margin: '16px auto 0', minHeight: 38, padding: '0 26px' }}
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true)
+                  try {
+                    const res = await api.follow(user.userId, user.isFollowing ? 'unfollow' : 'follow')
+                    setUser({
+                      ...user,
+                      isFollowing: res.following,
+                      followers: user.followers + (res.following ? 1 : -1),
+                    })
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+              >
+                {user.isFollowing ? '已关注' : '关注'}
+              </button>
+            ) : null}
+
+            {posts.length > 0 ? (
+              <section style={{ marginTop: 24 }}>
+                <h2 className="section__title" style={{ marginBottom: 6 }}>他的帖子</h2>
+                {posts.map((p) => (
+                  <ForumCard key={p.id} post={p} />
+                ))}
+              </section>
+            ) : null}
 
             <div className="card" style={{ marginTop: 24 }}>
               <div className="between">

@@ -76,6 +76,38 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS posts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  views INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'published'
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_time ON posts (status, created_at);
+
+CREATE TABLE IF NOT EXISTS post_images (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  data TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (post_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id TEXT NOT NULL,
+  followee_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (follower_id, followee_id)
+);
+
 CREATE TABLE IF NOT EXISTS notifications (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,

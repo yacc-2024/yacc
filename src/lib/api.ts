@@ -52,6 +52,24 @@ export class ApiError extends Error {
   }
 }
 
+export interface ForumPost {
+  id: string
+  body: string
+  createdAt: string
+  views: number
+  author: string
+  avatar: string | null
+  uid: string
+  authorId: string
+  label: string
+  likes: number
+  comments?: number
+  liked: boolean
+  following: boolean
+  mine: boolean
+  images: string[]
+}
+
 export interface CommentItem {
   id: string
   body: string
@@ -235,6 +253,24 @@ export const api = {
       body: { oldPassword, newPassword },
     }),
 
+  posts: (limit = 20, offset = 0, userId = '') =>
+    call<{ posts: ForumPost[] }>(
+      `/posts?limit=${limit}&offset=${offset}${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`,
+    ),
+
+  createPost: (body: string, images: string[]) =>
+    call<{ id: string }>('/posts', { method: 'POST', body: { body, images } }),
+
+  post: (id: string) => call<{ post: ForumPost }>(`/posts/${id}`),
+
+  deletePost: (id: string) => call<Record<string, never>>(`/posts/${id}`, { method: 'DELETE' }),
+
+  likePost: (id: string) =>
+    call<{ liked: boolean; likes: number }>(`/posts/${id}/like`, { method: 'POST' }),
+
+  follow: (userId: string, action: 'follow' | 'unfollow') =>
+    call<{ following: boolean }>(`/follows/${userId}`, { method: 'POST', body: { action } }),
+
   memberLinks: () =>
     call<{
       links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
@@ -251,6 +287,12 @@ export const api = {
         verified: boolean
         memberSince: string
         memberId: string | null
+        followers: number
+        followingCount: number
+        likes: number
+        isFollowing: boolean
+        isMe: boolean
+        userId: string
         label: string
         titles: string[]
         shownTitles: string[]

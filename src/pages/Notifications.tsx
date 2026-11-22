@@ -70,7 +70,8 @@ export function Notifications() {
               >
                 <span className="grow">
                   <span className="list__title" style={{ display: 'block' }}>
-                    {n.actorName} 回复了你
+                    {n.actorName}
+                    {n.type === 'follow' ? ' 关注了你' : ' 回复了你'}
                     {!n.read ? <span className="dot" style={{ marginLeft: 6 }} /> : null}
                   </span>
                   <span className="list__sub clamp-2" style={{ display: 'block' }}>

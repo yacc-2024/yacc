@@ -2515,3 +2515,116 @@ select.input {
     background-position: -100% 0;
   }
 }
+
+/* ---------- 论坛 ---------- */
+
+.post {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.post:last-child {
+  border-bottom: 0;
+}
+
+.post__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.post__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+}
+
+.post__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.post__title {
+  display: block;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.follow-btn {
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.follow-btn--on {
+  border-color: var(--control-border);
+  color: var(--text-3);
+  background: var(--control-bg);
+}
+
+.post__date {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.post__body {
+  display: block;
+  margin-top: 10px;
+}
+
+.post__text {
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.post__images {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.post__images--1 {
+  grid-template-columns: 1fr;
+}
+
+.post__images--1 img {
+  max-height: 320px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--r-md);
+  object-fit: cover;
+}
+
+.post__images--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.post__images--3 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.post__images img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--control-bg);
+}
+
+.post__actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 12px;
+}

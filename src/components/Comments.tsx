@@ -15,7 +15,7 @@ export function LikeButton({
   targetType,
   targetId,
 }: {
-  targetType: 'episode' | 'extra'
+  targetType: 'episode' | 'extra' | 'post'
   targetId: string
 }) {
   const { mode, account, toast } = useApp()
@@ -87,7 +87,7 @@ export function Comments({
   targetType,
   targetId,
 }: {
-  targetType: 'episode' | 'extra'
+  targetType: 'episode' | 'extra' | 'post'
   targetId: string
 }) {
   const { mode, account, toast } = useApp()

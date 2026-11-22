@@ -1338,3 +1338,91 @@ describe('设备记忆与下线（v1.5.0）', () => {
     ).toBe(400)
   })
 })
+
+describe('论坛与关注（v1.6.0）', () => {
+  async function makeUser(adminToken: string, name: string) {
+    const key = await makeKey(adminToken, 'visitor')
+    const reg = await registerWithKey(key, name)
+    return { token: reg.body.data.token as string, id: reg.body.data.user.id as string, uid: reg.body.data.user.uid as number }
+  }
+
+  it('可以发帖、看列表、看详情（浏览量只给作者）', async () => {
+    const adminToken = await bootstrapAdmin()
+    const a = await makeUser(adminToken, '发帖人')
+
+    const created = await call('POST', '/posts', { body: '第一次发帖' }, a.token)
+    expect(created.status).toBe(200)
+
+    const list = await call('GET', '/posts')
+    expect(list.body.data.posts).toHaveLength(1)
+    expect(list.body.data.posts[0].body).toBe('第一次发帖')
+
+    const one = await call('GET', `/posts/${created.body.data.id}`)
+    expect(one.status).toBe(200)
+    expect(one.body.data.post.views).toBe(0)
+  })
+
+  it('没认证的人不能发帖', async () => {
+    await bootstrapAdmin()
+    const guest = await call('POST', '/auth/register', { name: '路人', password: 'abc123' })
+    const res = await call('POST', '/posts', { body: '我能发吗' }, guest.body.data.token)
+    expect(res.status).toBe(403)
+  })
+
+  it('帖子可以点赞、可以带图片', async () => {
+    const adminToken = await bootstrapAdmin()
+    const a = await makeUser(adminToken, '有图的人')
+    const img = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=='
+
+    const created = await call('POST', '/posts', { body: '带图', images: [img] }, a.token)
+    const list = await call('GET', '/posts')
+    expect(list.body.data.posts[0].images).toHaveLength(1)
+
+    const like = await call('POST', `/posts/${created.body.data.id}/like`, {}, a.token)
+    expect(like.body.data).toEqual({ liked: true, likes: 1 })
+
+    const mediaRes = await handleApi(
+      new Request(`http://localhost/api/media/${list.body.data.posts[0].images[0]}`),
+      env,
+    )
+    expect(mediaRes.status).toBe(200)
+    expect(mediaRes.headers.get('content-type')).toContain('image/')
+  })
+
+  it('关注、取消关注，粉丝数会变，对方收到通知', async () => {
+    const adminToken = await bootstrapAdmin()
+    const a = await makeUser(adminToken, '被关注者')
+    const b = await makeUser(adminToken, '粉丝')
+
+    const res = await call('POST', `/follows/${a.id}`, { action: 'follow' }, b.token)
+    expect(res.body.data.following).toBe(true)
+
+    const page = await call('GET', `/users/${a.uid}`)
+    expect(page.body.data.user.followers).toBe(1)
+
+    const inbox = await call('GET', '/notifications', undefined, a.token)
+    expect(inbox.body.data.notifications[0].type).toBe('follow')
+
+    await call('POST', `/follows/${a.id}`, { action: 'unfollow' }, b.token)
+    const after = await call('GET', `/users/${a.uid}`)
+    expect(after.body.data.user.followers).toBe(0)
+  })
+
+  it('帖子下面可以评论', async () => {
+    const adminToken = await bootstrapAdmin()
+    const a = await makeUser(adminToken, '楼主')
+    await call('POST', '/admin/settings', { moderation: 'off' }, adminToken)
+    const created = await call('POST', '/posts', { body: '来聊聊' }, a.token)
+
+    const comment = await call(
+      'POST',
+      '/comments',
+      { targetType: 'post', targetId: created.body.data.id, body: '沙发' },
+      a.token,
+    )
+    expect(comment.status).toBe(200)
+
+    const list = await call('GET', `/comments?targetType=post&targetId=${created.body.data.id}`)
+    expect(list.body.data.comments).toHaveLength(1)
+  })
+})
