@@ -3170,9 +3170,9 @@ select.input {
 .badge-v {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   height: 18px;
-  padding: 0 8px 0 3px;
+  padding: 0 8px 0 6px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
@@ -3197,20 +3197,18 @@ select.input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 13px;
-  height: 13px;
-  border-radius: 4px;
+  width: 11px;
+  height: 11px;
   line-height: 0;
+  background: none;
 }
 
 .badge-v--blue .badge-v__mark {
-  background: rgba(255, 255, 255, 0.95);
-  color: #1667e0;
+  color: #ffffff;
 }
 
 .badge-v--gold .badge-v__mark {
-  background: rgba(255, 255, 255, 0.85);
-  color: #b97a00;
+  color: #5a3d00;
 }
 
 /* 不同形状的称号框 */
