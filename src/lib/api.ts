@@ -62,6 +62,7 @@ export interface ForumPost {
   uid: string
   authorId: string
   badge?: string
+  badgeKind?: 'admin' | 'crew' | 'member' | 'guest'
   label: string
   likes: number
   comments?: number

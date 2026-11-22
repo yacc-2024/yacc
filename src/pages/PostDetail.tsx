@@ -10,6 +10,7 @@ import { relativeTime } from '../lib/format'
 export function PostDetail() {
   const { id } = useParams()
   const { mode, account, toast } = useApp()
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin'
   const confirm = useConfirm()
   const navigate = useNavigate()
   const [post, setPost] = useState<ForumPost | null>(null)
@@ -96,11 +97,19 @@ export function PostDetail() {
                   <span>
                     <span className="post__name-row">
                       <span className="post__name">{post.author}</span>
-                      {post.badge ? <span className="svip">{post.badge}</span> : null}
+                      {post.badge ? (
+                        <span className={`svip svip--${post.badgeKind ?? 'guest'}`}>
+                          {post.badgeKind === 'admin' ? <span className="svip__star">★</span> : null}
+                          {post.badgeKind === 'crew' || post.badgeKind === 'member' ? (
+                            <span className="svip__check">✓</span>
+                          ) : null}
+                          {post.badge}
+                        </span>
+                      ) : null}
                     </span>
                   </span>
                 </Link>
-                {post.mine ? (
+                {post.mine || isAdmin ? (
                   <button type="button" className="act" onClick={() => void remove()}>
                     删除
                   </button>
@@ -141,10 +150,6 @@ export function PostDetail() {
                   <Icon name="heart" size={15} filled={post.liked} />
                   {post.likes > 0 ? post.likes : '点赞'}
                 </button>
-                <span className="act">
-                  <Icon name="info" size={15} />
-                  评论
-                </span>
                 <span className="act">
                   <Icon name="share" size={15} />
                   分享

@@ -11,6 +11,7 @@ export function ForumCard({
   onFollow,
   onComment,
   onPin,
+  onDelete,
   isAdmin,
 }: {
   post: ForumPost
@@ -18,6 +19,7 @@ export function ForumCard({
   onFollow?: () => void
   onComment?: () => void
   onPin?: () => void
+  onDelete?: () => void
   isAdmin?: boolean
 }) {
   return (
@@ -28,7 +30,15 @@ export function ForumCard({
           <span>
             <span className="post__name-row">
               <span className="post__name">{post.author}</span>
-              {post.badge ? <span className="svip">{post.badge}</span> : null}
+              {post.badge ? (
+                <span className={`svip svip--${post.badgeKind ?? 'guest'}`}>
+                  {post.badgeKind === 'admin' ? <span className="svip__star">★</span> : null}
+                  {post.badgeKind === 'crew' || post.badgeKind === 'member' ? (
+                    <span className="svip__check">✓</span>
+                  ) : null}
+                  {post.badge}
+                </span>
+              ) : null}
             </span>
           </span>
         </Link>
@@ -73,9 +83,14 @@ export function ForumCard({
           {post.comments ? `${post.comments} 条评论` : '评论'}
         </button>
         {isAdmin ? (
-          <button type="button" className="act" onClick={onPin}>
-            {post.pinned ? '取消置顶' : '置顶'}
-          </button>
+          <>
+            <button type="button" className="act" onClick={onPin}>
+              {post.pinned ? '取消置顶' : '置顶'}
+            </button>
+            <button type="button" className="act" onClick={onDelete}>
+              删除
+            </button>
+          </>
         ) : (
           <span className="act">
             <Icon name="share" size={15} />

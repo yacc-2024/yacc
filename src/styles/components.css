@@ -2968,3 +2968,52 @@ select.input {
   background: rgba(255, 255, 255, 0.92);
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
+
+/* 徽章按身份区分颜色 */
+.svip::before {
+  content: none;
+}
+
+.svip__star,
+.svip__check {
+  margin-right: 3px;
+  font-size: 8px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
+.svip--admin {
+  background: linear-gradient(96deg, #ffd36b 0%, #ff9f1a 45%, #ff5a2e 100%);
+  box-shadow: 0 1px 5px rgba(255, 159, 26, 0.4);
+}
+
+.svip--crew {
+  background: linear-gradient(96deg, #7fd4ff 0%, #3d9bff 50%, #2f6bff 100%);
+  box-shadow: 0 1px 5px rgba(61, 155, 255, 0.38);
+}
+
+.svip--member {
+  background: linear-gradient(96deg, #8ef0c0 0%, #2fc98a 50%, #12a673 100%);
+  box-shadow: 0 1px 5px rgba(47, 201, 138, 0.35);
+}
+
+.svip--guest {
+  background: linear-gradient(96deg, #c9c9d0 0%, #9a9aa4 100%);
+  box-shadow: none;
+}
+
+/* 按钮不换行 */
+.follow-btn,
+.post__actions .act,
+.act {
+  white-space: nowrap;
+}
+
+.post__actions {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.post__actions .act {
+  flex: 0 0 auto;
+}

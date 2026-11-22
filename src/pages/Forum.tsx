@@ -97,6 +97,15 @@ export function Forum() {
               onLike={() => void like(p)}
               onFollow={() => void follow(p)}
               onComment={() => setCommentFor(p)}
+              onDelete={async () => {
+                try {
+                  await api.deletePost(p.id)
+                  toast('已删除')
+                  await load()
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : '删除失败', 'error')
+                }
+              }}
               isAdmin={account?.role === 'admin' || account?.role === 'superadmin'}
               onPin={async () => {
                 try {

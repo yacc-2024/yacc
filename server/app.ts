@@ -259,6 +259,15 @@ function shortBadge(role: string | null, uid: number | null): string {
   return '普通访客'
 }
 
+/** 徽章的种类，用来区分颜色和角标 */
+function badgeKind(role: string | null, uid: number | null): string {
+  if (role === 'admin' || role === 'superadmin') return 'admin'
+  const code = formatUid(uid)
+  if (code[0] === '1') return 'crew'
+  if (code[0] === '2') return 'member'
+  return 'guest'
+}
+
 function can(me: User | null, perm: AdminPerm): boolean {
   if (!me) return false
   if (me.role === 'superadmin') return true
@@ -1216,6 +1225,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           authorId: r.user_id,
           title: (r.title as string | null) ?? null,
           badge: shortBadge(r.role as string, r.uid as number | null),
+          badgeKind: badgeKind(r.role as string, r.uid as number | null),
           label:
             parseShown(
               r.shown_titles as string | null,
@@ -1319,6 +1329,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           uid: formatUid(row.uid as number | null),
           authorId: row.user_id,
           badge: shortBadge(row.role as string, row.uid as number | null),
+          badgeKind: badgeKind(row.role as string, row.uid as number | null),
           label:
             parseShown(
               row.shown_titles as string | null,
