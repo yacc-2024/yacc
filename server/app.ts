@@ -2037,14 +2037,71 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         return fail(`内容校验没通过：${check.errors.slice(0, 3).join('；')}`)
       }
       const raw = JSON.stringify(check.data)
+
+      // 冲突检测：客户端基于的版本已经不是最新的
+      const baseUpdatedAt = typeof body.baseUpdatedAt === 'string' ? body.baseUpdatedAt : ''
+      if (baseUpdatedAt) {
+        const latest = await db
+          .prepare('SELECT content FROM documents ORDER BY version DESC LIMIT 1')
+          .first<{ content: string }>()
+        if (latest) {
+          let latestUpdatedAt = ''
+          try {
+            latestUpdatedAt = (JSON.parse(latest.content) as { updatedAt?: string }).updatedAt ?? ''
+          } catch {
+            latestUpdatedAt = ''
+          }
+          if (latestUpdatedAt && latestUpdatedAt !== baseUpdatedAt) {
+            return json(
+              {
+                ok: false,
+                error: '线上内容已经被更新过了',
+                code: 'conflict',
+                latestUpdatedAt,
+              },
+              409,
+            )
+          }
+        }
+      }
+
       await db
         .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
         .bind(raw, nowIso(), me!.id)
+        .run()
+      await db
+        .prepare('INSERT INTO activity (id, user_id, user_name, action, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(randomHex(8), me!.id, me!.name, 'publish', '发布了一版内容', nowIso())
         .run()
       const row = await db
         .prepare('SELECT version FROM documents ORDER BY version DESC LIMIT 1')
         .first<{ version: number }>()
       return ok({ version: row?.version ?? 0 })
+    }
+
+    if (path === '/admin/activity' && method === 'GET') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const rows = await db
+        .prepare(
+          'SELECT id, user_name, action, detail, created_at FROM activity ORDER BY created_at DESC LIMIT 50',
+        )
+        .all<{
+          id: string
+          user_name: string | null
+          action: string
+          detail: string | null
+          created_at: string
+        }>()
+      return ok({
+        activity: rows.map((r) => ({
+          id: r.id,
+          userName: r.user_name ?? '系统',
+          action: r.action,
+          detail: r.detail ?? '',
+          createdAt: r.created_at,
+        })),
+      })
     }
 
     if (path === '/admin/versions' && method === 'GET') {

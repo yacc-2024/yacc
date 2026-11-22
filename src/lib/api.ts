@@ -474,8 +474,22 @@ export const api = {
     rollback: (version: number) =>
       call<{ version: number }>('/admin/rollback', { method: 'POST', body: { version } }),
 
-    publish: (content: unknown) =>
-      call<{ version: number }>('/admin/publish', { method: 'POST', body: { content } }),
+    publish: (content: unknown, baseUpdatedAt?: string) =>
+      call<{ version: number }>('/admin/publish', {
+        method: 'POST',
+        body: { content, baseUpdatedAt },
+      }),
+
+    activity: () =>
+      call<{
+        activity: Array<{
+          id: string
+          userName: string
+          action: string
+          detail: string
+          createdAt: string
+        }>
+      }>('/admin/activity'),
 
     keys: () =>
       call<{

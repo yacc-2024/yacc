@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../../state/AppContext'
-import { api } from '../../lib/api'
+import { api, ApiError } from '../../lib/api'
 import { NavBar, Sheet, useConfirm } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { Icon } from '../../components/Icon'
@@ -44,6 +44,23 @@ export function DataAdmin() {
   const [versions, setVersions] = useState<
     Array<{ version: number; publishedAt: string; publisher: string }>
   >([])
+  const [activity, setActivity] = useState<
+    Array<{ id: string; userName: string; detail: string; createdAt: string }>
+  >([])
+
+  const refreshActivity = useCallback(async () => {
+    if (mode !== 'online') return
+    try {
+      const res = await api.admin.activity()
+      setActivity(res.activity)
+    } catch {
+      /* 权限不足时静默 */
+    }
+  }, [mode])
+
+  useEffect(() => {
+    void refreshActivity()
+  }, [refreshActivity])
 
   const refreshVersions = useCallback(async () => {
     if (mode !== 'online') return
@@ -131,7 +148,26 @@ export function DataAdmin() {
   const onPublish = async () => {
     try {
       await publishToServer()
+      void refreshActivity()
     } catch (err) {
+      const data = err instanceof ApiError ? (err.data as { code?: string } | null) : null
+      if (err instanceof ApiError && err.status === 409 && data?.code === 'conflict') {
+        const ok = await confirm({
+          title: '线上内容已经有更新',
+          message: '另一位管理员在你之后发布过内容。继续发布会用你这里的版本覆盖它。',
+          confirmText: '仍然覆盖',
+          danger: true,
+        })
+        if (!ok) return
+        try {
+          await publishToServer()
+          void refreshActivity()
+          return
+        } catch (err2) {
+          toast(err2 instanceof Error ? err2.message : '发布失败', 'error')
+          return
+        }
+      }
       toast(err instanceof Error ? err.message : '发布失败', 'error')
     }
   }
@@ -266,6 +302,28 @@ export function DataAdmin() {
             <Icon name="chevron-right" size={18} />
           </button>
         </div>
+
+        {mode === 'online' && activity.length > 0 ? (
+          <section style={{ marginTop: 22 }}>
+            <h2 className="section__title" style={{ marginBottom: 10 }}>
+              最近动态
+            </h2>
+            <div className="list">
+              {activity.slice(0, 8).map((a) => (
+                <div key={a.id} className="list__row list__row--plain">
+                  <span className="grow">
+                    <span className="list__title" style={{ display: 'block' }}>
+                      {a.userName}
+                    </span>
+                    <span className="list__sub">
+                      {a.detail} · {formatDateTime(a.createdAt)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {mode === 'online' && versions.length > 0 ? (
           <section style={{ marginTop: 22 }}>

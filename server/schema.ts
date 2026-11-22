@@ -102,6 +102,15 @@ CREATE TABLE IF NOT EXISTS post_likes (
   PRIMARY KEY (post_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS activity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  user_name TEXT,
+  action TEXT NOT NULL,
+  detail TEXT,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS follows (
   follower_id TEXT NOT NULL,
   followee_id TEXT NOT NULL,

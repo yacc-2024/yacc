@@ -420,7 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error('当前不是在线模式：先用「导出内容包」发布')
     }
     if (!content) throw new Error('内容还没加载好')
-    const { version } = await api.admin.publish(content)
+    const { version } = await api.admin.publish(content, remoteUpdatedAt.current)
     await clearDraft()
     setDirty(false)
     await reload()

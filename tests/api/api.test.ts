@@ -1567,3 +1567,50 @@ describe('版本历史与回滚（v2.0）', () => {
     expect((await call('GET', '/admin/versions', undefined, sub.body.data.token)).status).toBe(403)
   })
 })
+
+describe('协作冲突与动态（v2.0）', () => {
+  it('基于旧版本发布会返回 409', async () => {
+    const token = await bootstrapAdmin()
+    const a = validContent()
+    a.updatedAt = '2026-11-23T01:00:00+08:00'
+    await call('POST', '/admin/publish', { content: a }, token)
+
+    // 别人又发了一版
+    const b = validContent()
+    b.updatedAt = '2026-11-23T02:00:00+08:00'
+    await call('POST', '/admin/publish', { content: b }, token)
+
+    // 我拿着旧版本去发
+    const res = await call(
+      'POST',
+      '/admin/publish',
+      { content: a, baseUpdatedAt: '2026-11-23T01:00:00+08:00' },
+      token,
+    )
+    expect(res.status).toBe(409)
+    expect(res.body.code).toBe('conflict')
+  })
+
+  it('版本一致时可以正常发布', async () => {
+    const token = await bootstrapAdmin()
+    const a = validContent()
+    a.updatedAt = '2026-11-23T03:00:00+08:00'
+    await call('POST', '/admin/publish', { content: a }, token)
+
+    const res = await call(
+      'POST',
+      '/admin/publish',
+      { content: a, baseUpdatedAt: '2026-11-23T03:00:00+08:00' },
+      token,
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it('发布后会留下动态记录', async () => {
+    const token = await bootstrapAdmin()
+    await call('POST', '/admin/publish', { content: validContent() }, token)
+    const res = await call('GET', '/admin/activity', undefined, token)
+    expect(res.status).toBe(200)
+    expect(res.body.data.activity[0].userName).toBe('导演')
+  })
+})
