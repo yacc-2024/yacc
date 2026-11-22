@@ -3166,20 +3166,31 @@ select.input {
   font-weight: 800;
 }
 
-/* 剧组认证：抖音式 蓝底 + 黄色 V */
+/* 认证徽章：蓝 V = 剧组，黄 V = 学校认证（抖音式） */
 .badge-v {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   height: 18px;
-  padding: 0 7px 0 3px;
+  padding: 0 8px 0 3px;
   border-radius: 999px;
-  background: linear-gradient(100deg, #2f8cff 0%, #1667e0 100%);
-  color: #fff;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-v--blue {
+  background: linear-gradient(100deg, #2f8cff 0%, #1667e0 100%);
+  color: #fff;
   box-shadow: 0 1px 6px rgba(47, 140, 255, 0.4);
+}
+
+.badge-v--gold {
+  background: linear-gradient(100deg, #ffe066 0%, #ffb300 55%, #e89400 100%);
+  color: #4a3200;
+  box-shadow: 0 1px 6px rgba(255, 179, 0, 0.4);
 }
 
 .badge-v__mark {
@@ -3188,9 +3199,32 @@ select.input {
   width: 13px;
   height: 13px;
   border-radius: 4px;
-  background: linear-gradient(160deg, #ffe066 0%, #ffb300 100%);
-  color: #1c3f7a;
   font-size: 9px;
   font-weight: 900;
   line-height: 1;
+}
+
+.badge-v--blue .badge-v__mark {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1667e0;
+}
+
+.badge-v--gold .badge-v__mark {
+  background: rgba(255, 255, 255, 0.85);
+  color: #b97a00;
+}
+
+/* 不同形状的称号框 */
+.svip--svip {
+  border-radius: 0;
+  padding: 0 11px;
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
+  box-shadow: none;
+}
+
+.svip--gold {
+  border-radius: 0;
+  padding: 0 11px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%, 8px 50%);
+  box-shadow: none;
 }

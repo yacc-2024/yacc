@@ -43,10 +43,10 @@ export function Badge({
   label?: string
 }) {
   const cls = style && style !== 'auto' ? style : kind
-  // 剧组认证：抖音式 蓝底 + 黄色 V
-  if (cls === 'crew') {
+  // 认证类：蓝 V（剧组）/ 黄 V（学校认证）
+  if (cls === 'crew' || cls === 'member') {
     return (
-      <span className="badge-v">
+      <span className={`badge-v badge-v--${cls === 'crew' ? 'blue' : 'gold'}`}>
         <span className="badge-v__mark">V</span>
         <span>{label ?? badgeLabelOf(kind)}</span>
       </span>
