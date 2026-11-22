@@ -61,6 +61,7 @@ export interface ForumPost {
   avatar: string | null
   uid: string
   authorId: string
+  badge?: string
   label: string
   likes: number
   comments?: number

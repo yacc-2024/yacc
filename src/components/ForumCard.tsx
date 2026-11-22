@@ -26,8 +26,10 @@ export function ForumCard({
         <Link to={`/u/${post.uid}`} className="post__who">
           <Avatar name={post.author} src={post.avatar} size={32} />
           <span>
-            <span className="post__name">{post.author}</span>
-            {post.label ? <span className="post__title">{post.label}</span> : null}
+            <span className="post__name-row">
+              <span className="post__name">{post.author}</span>
+              {post.badge ? <span className="svip">{post.badge}</span> : null}
+            </span>
           </span>
         </Link>
         {onFollow ? (

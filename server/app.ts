@@ -250,6 +250,15 @@ function parsePerms(raw: string | null | undefined): AdminPerm[] {
   }
 }
 
+/** 论坛里只显示大类身份，不展示具体分工和季数 */
+function shortBadge(role: string | null, uid: number | null): string {
+  if (role === 'admin' || role === 'superadmin') return '管理员'
+  const code = formatUid(uid)
+  if (code[0] === '1') return '剧组成员'
+  if (code[0] === '2') return '认证成员'
+  return '普通访客'
+}
+
 function can(me: User | null, perm: AdminPerm): boolean {
   if (!me) return false
   if (me.role === 'superadmin') return true
@@ -1151,7 +1160,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const rows = await db
         .prepare(
           `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
-                  u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles,
+                  u.name AS author, u.avatar, u.uid, u.role, u.title, u.titles, u.shown_titles,
                   (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post'
                      AND c.target_id = p.id AND c.status = 'published') AS comments
@@ -1206,6 +1215,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           uid: formatUid(r.uid as number | null),
           authorId: r.user_id,
           title: (r.title as string | null) ?? null,
+          badge: shortBadge(r.role as string, r.uid as number | null),
           label:
             parseShown(
               r.shown_titles as string | null,
@@ -1308,6 +1318,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           avatar: (row.avatar as string | null) ?? null,
           uid: formatUid(row.uid as number | null),
           authorId: row.user_id,
+          badge: shortBadge(row.role as string, row.uid as number | null),
           label:
             parseShown(
               row.shown_titles as string | null,
