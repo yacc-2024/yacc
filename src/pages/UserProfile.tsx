@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet } from '../components/ui'
+import { Badge, badgeKindOf } from '../components/Badge'
 import { EpisodeRow } from '../components/media'
 import { api, ApiError } from '../lib/api'
 import { formatDate, formatDuration } from '../lib/format'
@@ -111,7 +112,7 @@ export function UserProfile() {
               <p className="dy-uid t-num">ID {user.uid}</p>
               {bio ? <p className="dy-bio">{bio}</p> : null}
               <span className="title-row" style={{ marginTop: 8 }}>
-                <span className="title-chip">{user.role === 'admin' || user.role === 'superadmin' ? '管理员' : user.verified ? '认证成员' : '访客'}</span>
+                <Badge kind={badgeKindOf(user.role, user.rawUid, user.verified)} />
               </span>
             </div>
 

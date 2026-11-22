@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon'
 import { Comments } from '../components/Comments'
 import { api, type ForumPost } from '../lib/api'
 import { relativeTime } from '../lib/format'
+import { Badge, type BadgeKind } from '../components/Badge'
 
 export function PostDetail() {
   const { id } = useParams()
@@ -97,15 +98,7 @@ export function PostDetail() {
                   <span>
                     <span className="post__name-row">
                       <span className="post__name">{post.author}</span>
-                      {post.badge ? (
-                        <span className={`svip svip--${post.badgeKind ?? 'guest'}`}>
-                          {post.badgeKind === 'admin' ? <span className="svip__star">★</span> : null}
-                          {post.badgeKind === 'crew' || post.badgeKind === 'member' ? (
-                            <span className="svip__check">✓</span>
-                          ) : null}
-                          {post.badge}
-                        </span>
-                      ) : null}
+                      <Badge kind={(post.badgeKind as BadgeKind) ?? 'guest'} label={post.badge} />
                     </span>
                   </span>
                 </Link>

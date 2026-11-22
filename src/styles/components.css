@@ -3017,3 +3017,14 @@ select.input {
 .post__actions .act {
   flex: 0 0 auto;
 }
+
+/* 自定义称号：中性样式，和身份徽章区分 */
+.title-chip--plain {
+  background: var(--control-bg);
+  color: var(--text-2);
+  box-shadow: none;
+}
+
+.title-chip--plain::before {
+  content: none;
+}

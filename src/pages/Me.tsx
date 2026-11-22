@@ -6,6 +6,7 @@ import { api } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 import { useCallback, useEffect, useState } from 'react'
 import { formatUid, displayTitles } from '../lib/uid'
+import { Badge, badgeKindOf } from '../components/Badge'
 
 export function Me() {
   const [unread, setUnread] = useState(0)
@@ -72,17 +73,27 @@ export function Me() {
                   ID {formatUid(account.uid)}
                 </span>
                 <span className="title-row">
+                  <Badge kind={badgeKindOf(account.role, account.uid, account.verified)} />
                   {displayTitles(
                     account.uid,
                     account.role,
                     account.verified,
                     account.titles,
                     account.shownTitles,
-                  ).map((t) => (
-                    <span key={t} className="title-chip">
-                      {t}
-                    </span>
-                  ))}
+                  )
+                    .filter(
+                      (t) =>
+                        t !== '管理员' &&
+                        t !== '剧组成员' &&
+                        t !== '认证成员' &&
+                        t !== '普通访客' &&
+                        t !== '访客',
+                    )
+                    .map((t) => (
+                      <span key={t} className="title-chip title-chip--plain">
+                        {t}
+                      </span>
+                    ))}
                 </span>
               </span>
             </Link>

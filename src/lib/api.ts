@@ -4,6 +4,33 @@
  */
 
 const TOKEN_KEY = 'yacc:token'
+const CACHE_PREFIX = 'yacc:cache:'
+
+interface CacheBox<T> {
+  at: number
+  data: T
+}
+
+/** 读本地缓存；过期返回 null */
+function readCache<T>(key: string, ttl: number): T | null {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key)
+    if (!raw) return null
+    const box = JSON.parse(raw) as CacheBox<T>
+    if (Date.now() - box.at > ttl) return null
+    return box.data
+  } catch {
+    return null
+  }
+}
+
+function writeCache<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), data }))
+  } catch {
+    /* 空间满了就算了 */
+  }
+}
 
 /** 每台设备一个固定编号，用来记住「这台已经授权过」 */
 export function deviceId(): string {
@@ -256,15 +283,34 @@ export const api = {
       body: { oldPassword, newPassword },
     }),
 
-  posts: (limit = 20, offset = 0, userId = '') =>
-    call<{ posts: ForumPost[] }>(
-      `/posts?limit=${limit}&offset=${offset}${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`,
-    ),
+  posts: async (limit = 20, offset = 0, userId = '') => {
+    const path = `/posts?limit=${limit}&offset=${offset}${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`
+    const key = `posts:${path}`
+    const cached = readCache<{ posts: ForumPost[] }>(key, 120_000)
+    if (cached) {
+      // 先返回缓存，后台悄悄更新
+      void call<{ posts: ForumPost[] }>(path).then((fresh) => writeCache(key, fresh)).catch(() => {})
+      return cached
+    }
+    const fresh = await call<{ posts: ForumPost[] }>(path)
+    writeCache(key, fresh)
+    return fresh
+  },
 
   createPost: (body: string, images: string[]) =>
     call<{ id: string }>('/posts', { method: 'POST', body: { body, images } }),
 
-  post: (id: string) => call<{ post: ForumPost }>(`/posts/${id}`),
+  post: async (id: string) => {
+    const key = `post:${id}`
+    const cached = readCache<{ post: ForumPost }>(key, 120_000)
+    if (cached) {
+      void call<{ post: ForumPost }>(`/posts/${id}`).then((fresh) => writeCache(key, fresh)).catch(() => {})
+      return cached
+    }
+    const fresh = await call<{ post: ForumPost }>(`/posts/${id}`)
+    writeCache(key, fresh)
+    return fresh
+  },
 
   deletePost: (id: string) => call<Record<string, never>>(`/posts/${id}`, { method: 'DELETE' }),
 
@@ -294,7 +340,19 @@ export const api = {
       links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
     }>('/members/links'),
 
-  userProfile: (uid: string) =>
+  userProfile: async (uid: string) => {
+    const key = `profile:${uid}`
+    const cached = readCache<{ user: never }>(key, 120_000)
+    if (cached) {
+      void call<{ user: never }>(`/users/${uid}`).then((fresh) => writeCache(key, fresh)).catch(() => {})
+      return cached
+    }
+    const fresh = await call<{ user: never }>(`/users/${uid}`)
+    writeCache(key, fresh)
+    return fresh
+  },
+
+  userProfileUncached: (uid: string) =>
     call<{
       user: {
         uid: string
