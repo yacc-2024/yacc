@@ -131,6 +131,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE sessions ADD COLUMN device TEXT',
         'ALTER TABLE sessions ADD COLUMN device_id TEXT',
         'ALTER TABLE login_requests ADD COLUMN device_id TEXT',
+        'ALTER TABLE posts ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN uid INTEGER',
         'ALTER TABLE users ADD COLUMN avatar TEXT',
         'ALTER TABLE users ADD COLUMN signup_ip TEXT',
@@ -462,6 +463,57 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       })
     }
 
+    const userContent = /^\/users\/(\d{1,6})\/content$/.exec(path)
+    if (userContent && method === 'GET') {
+      const raw = Number(userContent[1])
+      const target = await db
+        .prepare('SELECT id FROM users WHERE uid = ?')
+        .bind(raw)
+        .first<{ id: string }>()
+      if (!target) return fail('找不到这个账号', 404)
+
+      const posts = await db
+        .prepare(
+          `SELECT id, body, created_at, pinned FROM posts
+           WHERE user_id = ? AND status = 'published'
+           ORDER BY created_at DESC LIMIT 50`,
+        )
+        .bind(target.id)
+        .all<{ id: string; body: string; created_at: string; pinned: number }>()
+
+      const comments = await db
+        .prepare(
+          `SELECT c.id, c.body, c.created_at, c.target_type, c.target_id
+           FROM comments c
+           WHERE c.user_id = ? AND c.status = 'published'
+           ORDER BY c.created_at DESC LIMIT 50`,
+        )
+        .bind(target.id)
+        .all<{
+          id: string
+          body: string
+          created_at: string
+          target_type: string
+          target_id: string
+        }>()
+
+      return ok({
+        posts: posts.map((p) => ({
+          id: p.id,
+          body: p.body,
+          createdAt: p.created_at,
+          pinned: p.pinned === 1,
+        })),
+        comments: comments.map((c) => ({
+          id: c.id,
+          body: c.body,
+          createdAt: c.created_at,
+          targetType: c.target_type,
+          targetId: c.target_id,
+        })),
+      })
+    }
+
     /* ---------- 公开：成员页与账号的对应关系 ---------- */
 
     if (path === '/members/links' && method === 'GET') {
@@ -513,6 +565,10 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         )
         .bind(row.id, row.id)
         .first<{ n: number }>()
+      const postCount = await db
+        .prepare("SELECT COUNT(*) AS n FROM posts WHERE user_id = ? AND status = 'published'")
+        .bind(row.id)
+        .first<{ n: number }>()
       const viewer = await currentUser(db, request)
       const isFollowing =
         viewer && viewer.id !== row.id
@@ -546,6 +602,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           isFollowing,
           isMe: viewer?.id === row.id,
           userId: row.id,
+          postCount: Number(postCount?.n ?? 0),
         },
       })
     }
@@ -1093,14 +1150,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
       const rows = await db
         .prepare(
-          `SELECT p.id, p.body, p.created_at, p.views, p.user_id,
+          `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
                   u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles,
                   (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post'
                      AND c.target_id = p.id AND c.status = 'published') AS comments
            FROM posts p JOIN users u ON u.id = p.user_id
            WHERE p.status = 'published' AND (? = '' OR p.user_id = ?)
-           ORDER BY p.created_at DESC
+           ORDER BY p.pinned DESC, p.created_at DESC
            LIMIT ? OFFSET ?`,
         )
         .bind(onlyUser, onlyUser, limit, offset)
@@ -1157,6 +1214,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             ).join(' · ') || describeUid(r.uid as number | null).label,
           likes: Number(r.likes ?? 0),
           comments: Number(r.comments ?? 0),
+          pinned: r.pinned === 1,
           liked: likedSet.has(String(r.id)),
           following: followedSet.has(String(r.user_id)),
           mine: me?.id === r.user_id,
@@ -1206,7 +1264,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     if (postOne && method === 'GET') {
       const row = await db
         .prepare(
-          `SELECT p.id, p.body, p.created_at, p.views, p.user_id,
+          `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
                   u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles
            FROM posts p JOIN users u ON u.id = p.user_id
            WHERE p.id = ? AND p.status = 'published'`,
@@ -1281,6 +1339,19 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       await db
         .prepare("DELETE FROM comments WHERE target_type = 'post' AND target_id = ?")
         .bind(postOne[1])
+        .run()
+      return ok()
+    }
+
+    const pinPost = /^\/posts\/([a-z0-9]+)\/pin$/.exec(path)
+    if (pinPost && method === 'POST') {
+      if (!me) return fail('未登录', 401)
+      if (me.role !== 'admin' && me.role !== 'superadmin') return fail('只有管理员能置顶', 403)
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      await db
+        .prepare('UPDATE posts SET pinned = ? WHERE id = ?')
+        .bind(body.pinned ? 1 : 0, pinPost[1])
         .run()
       return ok()
     }

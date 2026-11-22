@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS posts (
   body TEXT NOT NULL,
   created_at TEXT NOT NULL,
   views INTEGER NOT NULL DEFAULT 0,
+  pinned INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'published'
 );
 

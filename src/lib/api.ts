@@ -67,6 +67,7 @@ export interface ForumPost {
   liked: boolean
   following: boolean
   mine: boolean
+  pinned?: boolean
   images: string[]
 }
 
@@ -265,6 +266,21 @@ export const api = {
 
   deletePost: (id: string) => call<Record<string, never>>(`/posts/${id}`, { method: 'DELETE' }),
 
+  pinPost: (id: string, pinned: boolean) =>
+    call<Record<string, never>>(`/posts/${id}/pin`, { method: 'POST', body: { pinned } }),
+
+  userContent: (uid: string) =>
+    call<{
+      posts: Array<{ id: string; body: string; createdAt: string; pinned: boolean }>
+      comments: Array<{
+        id: string
+        body: string
+        createdAt: string
+        targetType: string
+        targetId: string
+      }>
+    }>(`/users/${uid}/content`),
+
   likePost: (id: string) =>
     call<{ liked: boolean; likes: number }>(`/posts/${id}/like`, { method: 'POST' }),
 
@@ -293,6 +309,7 @@ export const api = {
         isFollowing: boolean
         isMe: boolean
         userId: string
+        postCount: number
         label: string
         titles: string[]
         shownTitles: string[]

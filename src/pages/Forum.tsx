@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { NavBar, EmptyState } from '../components/ui'
+import { NavBar, EmptyState, Sheet } from '../components/ui'
+import { Comments } from '../components/Comments'
 import { Icon } from '../components/Icon'
 import { ForumCard } from '../components/ForumCard'
 import { api, type ForumPost } from '../lib/api'
@@ -13,6 +14,7 @@ export function Forum() {
   const { mode, account, toast } = useApp()
   const [posts, setPosts] = useState<ForumPost[]>(forumCache ?? [])
   const [loading, setLoading] = useState(!forumCache)
+  const [commentFor, setCommentFor] = useState<ForumPost | null>(null)
 
   const load = useCallback(async () => {
     if (mode !== 'online') {
@@ -94,10 +96,34 @@ export function Forum() {
               post={p}
               onLike={() => void like(p)}
               onFollow={() => void follow(p)}
+              onComment={() => setCommentFor(p)}
+              isAdmin={account?.role === 'admin' || account?.role === 'superadmin'}
+              onPin={async () => {
+                try {
+                  await api.pinPost(p.id, !p.pinned)
+                  toast(p.pinned ? '已取消置顶' : '已置顶')
+                  await load()
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : '操作失败', 'error')
+                }
+              }}
             />
           ))
         )}
       </div>
+
+      <Sheet
+        open={!!commentFor}
+        title={commentFor ? `${commentFor.author} 的帖子` : '评论'}
+        onClose={() => setCommentFor(null)}
+      >
+        {commentFor ? (
+          <div style={{ maxHeight: '62vh', overflowY: 'auto' }}>
+            <p className="post__text" style={{ marginBottom: 12 }}>{commentFor.body}</p>
+            <Comments targetType="post" targetId={commentFor.id} />
+          </div>
+        ) : null}
+      </Sheet>
     </>
   )
 }

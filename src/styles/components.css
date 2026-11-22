@@ -2783,3 +2783,61 @@ select.input {
   font-size: 17px;
   line-height: 1.75;
 }
+
+/* ---------- 个人主页：抖音式头部 ---------- */
+
+.dy-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-top: 12px;
+}
+
+.dy-stats {
+  display: flex;
+  gap: 22px;
+  flex: 1;
+  justify-content: space-around;
+}
+
+.dy-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.dy-stat__num {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dy-stat__label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.dy-info {
+  margin-top: 16px;
+}
+
+.dy-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.dy-uid {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.dy-bio {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}

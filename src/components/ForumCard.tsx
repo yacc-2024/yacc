@@ -9,10 +9,16 @@ export function ForumCard({
   post,
   onLike,
   onFollow,
+  onComment,
+  onPin,
+  isAdmin,
 }: {
   post: ForumPost
   onLike?: () => void
   onFollow?: () => void
+  onComment?: () => void
+  onPin?: () => void
+  isAdmin?: boolean
 }) {
   return (
     <article className="post">
@@ -48,6 +54,8 @@ export function ForumCard({
         ) : null}
       </Link>
 
+      {post.pinned ? <span className="pin-badge" style={{ marginTop: 10 }}>置顶</span> : null}
+
       <footer className="post__actions">
         <button
           type="button"
@@ -58,14 +66,20 @@ export function ForumCard({
           <Icon name="heart" size={15} filled={post.liked} />
           {post.likes > 0 ? post.likes : '点赞'}
         </button>
-        <Link to={`/forum/${post.id}`} className="act">
-          <Icon name="info" size={15} />
+        <button type="button" className="act" onClick={onComment}>
+          <Icon name="message" size={15} />
           {post.comments ? `${post.comments} 条评论` : '评论'}
-        </Link>
-        <span className="act">
-          <Icon name="share" size={15} />
-          分享
-        </span>
+        </button>
+        {isAdmin ? (
+          <button type="button" className="act" onClick={onPin}>
+            {post.pinned ? '取消置顶' : '置顶'}
+          </button>
+        ) : (
+          <span className="act">
+            <Icon name="share" size={15} />
+            分享
+          </span>
+        )}
       </footer>
     </article>
   )
