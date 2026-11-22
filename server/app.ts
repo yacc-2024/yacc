@@ -23,7 +23,24 @@ export interface Env {
   adminCode: string
 }
 
-export type AdminPerm = 'content' | 'users' | 'keys' | 'comments'
+export type AdminPerm =
+  | 'content'
+  | 'users'
+  | 'keys'
+  | 'comments'
+  | 'content:home'
+  | 'content:about'
+  | 'content:members'
+  | 'content:works'
+  | 'content:changelog'
+  | 'content:publish'
+  | 'users:view'
+  | 'users:edit'
+  | 'users:delete'
+  | 'users:uid'
+  | 'keys:issue'
+  | 'keys:revoke'
+  | 'comments:review'
 
 export interface User {
   id: string
@@ -199,7 +216,40 @@ function toUser(row: UserRow): User {
   }
 }
 
-const ALL_PERMS: AdminPerm[] = ['content', 'users', 'keys', 'comments']
+const ALL_PERMS: AdminPerm[] = [
+  'content',
+  'users',
+  'keys',
+  'comments',
+  'content:home',
+  'content:about',
+  'content:members',
+  'content:works',
+  'content:changelog',
+  'content:publish',
+  'users:view',
+  'users:edit',
+  'users:delete',
+  'users:uid',
+  'keys:issue',
+  'keys:revoke',
+  'comments:review',
+]
+
+/** 旧的粗粒度权限等价于它下面所有细分权限 */
+const LEGACY_MAP: Record<string, AdminPerm[]> = {
+  content: [
+    'content:home',
+    'content:about',
+    'content:members',
+    'content:works',
+    'content:changelog',
+    'content:publish',
+  ],
+  users: ['users:view', 'users:edit', 'users:delete', 'users:uid'],
+  keys: ['keys:issue', 'keys:revoke'],
+  comments: ['comments:review'],
+}
 
 const MAX_TITLES = 10
 const MAX_SHOWN = 3
@@ -273,7 +323,12 @@ function can(me: User | null, perm: AdminPerm): boolean {
   if (!me) return false
   if (me.role === 'superadmin') return true
   if (me.role !== 'admin') return false
-  return me.perms.includes(perm)
+  if (me.perms.includes(perm)) return true
+  // 拥有粗粒度权限 = 拥有它下面的所有细分权限
+  for (const [parent, children] of Object.entries(LEGACY_MAP)) {
+    if (children.includes(perm) && me.perms.includes(parent as AdminPerm)) return true
+  }
+  return false
 }
 
 /**
@@ -1973,7 +2028,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/publish' && method === 'POST') {
-      const denied = need('content')
+      const denied = need('content:publish')
       if (denied) return denied
       const body = await readJson(request)
       if (!body || typeof body.content !== 'object') return fail('请求格式不对')
@@ -1993,7 +2048,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/keys' && method === 'GET') {
-      const denied = need('keys')
+      const denied = need('keys:issue')
       if (denied) return denied
       const rows = await db
         .prepare(
@@ -2018,7 +2073,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/keys' && method === 'POST') {
-      const denied = need('keys')
+      const denied = need('keys:issue')
       if (denied) return denied
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
@@ -2065,7 +2120,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/comments' && method === 'GET') {
-      const denied = need('comments')
+      const denied = need('comments:review')
       if (denied) return denied
       const status = url.searchParams.get('status') ?? 'pending'
       const rows = await db
@@ -2092,7 +2147,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
     const moderate = /^\/admin\/comments\/([a-z0-9]+)$/.exec(path)
     if (moderate && method === 'POST') {
-      const denied = need('comments')
+      const denied = need('comments:review')
       if (denied) return denied
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')
@@ -2110,7 +2165,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     }
 
     if (path === '/admin/users' && method === 'GET') {
-      const denied = need('users')
+      const denied = need('users:view')
       if (denied) return denied
       const rows = await db
         .prepare(
@@ -2246,7 +2301,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
     const deleteUser = /^\/admin\/users\/([a-z0-9]+)$/.exec(path)
     if (deleteUser && method === 'DELETE') {
-      const denied = need('users')
+      const denied = need('users:delete')
       if (denied) return denied
 
       const target = await db
@@ -2281,6 +2336,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
     const changeUid = /^\/admin\/users\/([a-z0-9]+)\/uid$/.exec(path)
     if (changeUid && method === 'POST') {
+      const deniedUid = need('users:uid')
+      if (deniedUid) return deniedUid
       if (me!.role !== 'superadmin') return fail('只有总管理员能改编号', 403)
       const body = await readJson(request)
       if (!body) return fail('请求格式不对')

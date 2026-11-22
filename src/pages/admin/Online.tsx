@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Segmented, EmptyState, useConfirm, Avatar, Sheet } from '../../components/ui'
 import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
+import { PERM_GROUPS, expandPerms } from '../../lib/perms'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { api, type AdminPerm } from '../../lib/api'
 import { formatDate } from '../../lib/format'
@@ -23,12 +24,7 @@ interface KeyRow {
   expiresAt: string | null
 }
 
-const PERM_LABELS: Array<[AdminPerm, string]> = [
-  ['content', '内容编辑'],
-  ['users', '账号管理'],
-  ['keys', '密钥发放'],
-  ['comments', '评论审核'],
-]
+
 
 const CREW_ROLE_DIGITS: Record<string, number> = {
   导演: 1,
@@ -49,7 +45,7 @@ export function KeysPanel() {
   const [bulkBusy, setBulkBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [kind, setKind] = useState<'crew' | 'member' | 'admin'>('member')
-  const [perms, setPerms] = useState<AdminPerm[]>(['content'])
+  const [perms, setPerms] = useState<string[]>(['content:publish'])
   const [memberId, setMemberId] = useState('')
   const [grade, setGrade] = useState(8)
   const [klass, setKlass] = useState(7)
@@ -102,7 +98,7 @@ export function KeysPanel() {
           }
         | { kind: 'member'; grade: number; klass: number }
       if (kind === 'admin') {
-        spec = { kind: 'admin', perms }
+        spec = { kind: 'admin', perms: perms as AdminPerm[] }
       } else if (kind === 'crew') {
         const member = members.find((m) => m.id === memberId)
         if (!member) {
@@ -207,25 +203,32 @@ export function KeysPanel() {
               <p className="field__label" style={{ marginTop: 16 }}>
                 这名管理员可以做什么
               </p>
-              <div className="chips">
-                {PERM_LABELS.map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className="chip"
-                    aria-pressed={perms.includes(value)}
-                    onClick={() =>
-                      setPerms((prev) =>
-                        prev.includes(value)
-                          ? prev.filter((p) => p !== value)
-                          : [...prev, value],
-                      )
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {PERM_GROUPS.map((group) => (
+                <div key={group.title} style={{ marginTop: 10 }}>
+                  <p className="t-tag faint" style={{ marginBottom: 6 }}>
+                    {group.title}
+                  </p>
+                  <div className="chips">
+                    {group.items.map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className="chip"
+                        aria-pressed={perms.includes(value)}
+                        onClick={() =>
+                          setPerms((prev) =>
+                            prev.includes(value)
+                              ? prev.filter((p) => p !== value)
+                              : [...prev, value],
+                          )
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </>
           ) : kind === 'crew' ? (
             <>
@@ -1003,23 +1006,32 @@ function UserForm({
       {isSuper && targetIsAdmin ? (
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
           <p className="t-caption faint">这名管理员可以做什么</p>
-          <div className="chips" style={{ marginTop: 10 }}>
-            {PERM_LABELS.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className="chip"
-                aria-pressed={permList.includes(value)}
-                onClick={() =>
-                  setPermList((prev) =>
-                    prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value],
-                  )
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {PERM_GROUPS.map((group) => (
+            <div key={group.title} style={{ marginTop: 12 }}>
+              <p className="t-tag faint" style={{ marginBottom: 6 }}>
+                {group.title}
+              </p>
+              <div className="chips">
+                {group.items.map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="chip"
+                    aria-pressed={expandPerms(permList).has(value)}
+                    onClick={() =>
+                      setPermList((prev) =>
+                        prev.includes(value)
+                          ? prev.filter((p) => p !== value)
+                          : [...prev, value],
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           <p className="field__hint">
             改完保存立刻生效，对方下次操作就会按新权限判断。
           </p>

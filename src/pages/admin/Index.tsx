@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../../state/AppContext'
 import { NavBar, ListRow } from '../../components/ui'
 import { DirtyBanner } from '../../components/DirtyBanner'
+import { expandPerms } from '../../lib/perms'
 
 export function AdminIndex() {
   const { content, mode, account } = useApp()
   const all = account?.role === 'superadmin'
-  const perms = account?.perms ?? []
-  const can = (p: string) => all || perms.includes(p)
+  const owned = expandPerms(account?.perms ?? [])
+  const can = (p: string) => all || owned.has(p)
   const c = content!
 
   return (
@@ -24,7 +25,7 @@ export function AdminIndex() {
       <DirtyBanner />
       <div className="page__body">
         <div className="list" style={{ marginTop: 8 }}>
-          {can('content') ? (
+          {can('content:home') ? (
           <ListRow
             icon="home"
             title="主页管理"
@@ -32,7 +33,7 @@ export function AdminIndex() {
             to="/admin/home"
           />
           ) : null}
-          {can('content') ? (
+          {can('content:about') ? (
           <ListRow
             icon="info"
             title="关于页管理"
@@ -40,7 +41,7 @@ export function AdminIndex() {
             to="/admin/about"
           />
           ) : null}
-          {can('content') ? (
+          {can('content:members') ? (
           <ListRow
             icon="users"
             title="成员管理"
@@ -48,7 +49,7 @@ export function AdminIndex() {
             to="/admin/members"
           />
           ) : null}
-          {can('content') ? (
+          {can('content:works') ? (
           <ListRow
             icon="film"
             title="作品管理"
@@ -56,7 +57,7 @@ export function AdminIndex() {
             to="/admin/works"
           />
           ) : null}
-          {can('content') ? (
+          {can('content:changelog') ? (
           <ListRow
             icon="info"
             title="更新日志"
@@ -64,7 +65,7 @@ export function AdminIndex() {
             to="/admin/changelog"
           />
           ) : null}
-          {can('content') ? (
+          {can('content:publish') ? (
             <ListRow
               icon="download"
               title="数据管理"
@@ -72,7 +73,7 @@ export function AdminIndex() {
               to="/admin/data"
             />
           ) : null}
-          {mode === 'online' && (can('users') || can('keys')) ? (
+          {mode === 'online' && (can('users:view') || can('keys:issue')) ? (
             <ListRow
               icon="users"
               title="账号与密钥"
@@ -80,7 +81,7 @@ export function AdminIndex() {
               to="/admin/accounts"
             />
           ) : null}
-          {mode === 'online' && can('comments') ? (
+          {mode === 'online' && can('comments:review') ? (
             <ListRow
               icon="info"
               title="评论审核"
