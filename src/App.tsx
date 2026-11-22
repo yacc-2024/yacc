@@ -159,6 +159,10 @@ export function App() {
         <Route path="me" element={<Me />} />
       </Route>
 
+      <Route element={<TabLayout />}>
+        <Route path="forum" element={<Forum />} />
+      </Route>
+
       <Route element={<PlainLayout />}>
         <Route path="about" element={<About />} />
         <Route path="news" element={<NewsList />} />
@@ -168,7 +172,6 @@ export function App() {
         <Route path="u/:uid" element={<UserProfile />} />
         <Route path="me/notifications" element={<Notifications />} />
         <Route path="me/settings/devices" element={<Devices />} />
-        <Route path="forum" element={<Forum />} />
         <Route path="forum/new" element={<NewPost />} />
         <Route path="forum/:id" element={<PostDetail />} />
         <Route path="me/favorites" element={<Favorites />} />

@@ -19,10 +19,12 @@ import { featuredItems } from '../lib/selectors'
 import { hasUnreadNews } from '../lib/news'
 import type { CrewEvent } from '../data/schema'
 
+let homePostsCache: ForumPost[] | null = null
+
 export function Home() {
   const { content, account, mode } = useApp()
   const c = content!
-  const [posts, setPosts] = useState<ForumPost[]>([])
+  const [posts, setPosts] = useState<ForumPost[]>(homePostsCache ?? [])
 
   useEffect(() => {
     if (mode !== 'online') return
@@ -30,7 +32,9 @@ export function Home() {
     void api
       .posts(2)
       .then((res) => {
-        if (alive) setPosts(res.posts)
+        if (!alive) return
+        homePostsCache = res.posts
+        setPosts(res.posts)
       })
       .catch(() => {})
     return () => {

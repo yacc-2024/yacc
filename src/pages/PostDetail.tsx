@@ -89,7 +89,7 @@ export function PostDetail() {
           </p>
         ) : (
           <>
-            <article className="post" style={{ borderBottom: 0 }}>
+            <article className="post post--detail">
               <header className="post__head">
                 <Link to={`/u/${post.uid}`} className="post__who">
                   <Avatar name={post.author} src={post.avatar} size={32} />

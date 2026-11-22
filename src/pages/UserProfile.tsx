@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet } from '../components/ui'
-import { ForumCard } from '../components/ForumCard'
-import type { ForumPost } from '../lib/api'
 import { EpisodeRow } from '../components/media'
 import { api, ApiError } from '../lib/api'
 import { formatDate, formatDuration } from '../lib/format'
@@ -33,7 +31,6 @@ export function UserProfile() {
   const { uid } = useParams()
   const { mode, content } = useApp()
   const [user, setUser] = useState<PublicUser | null>(null)
-  const [posts, setPosts] = useState<ForumPost[]>([])
   const [showAllWorks, setShowAllWorks] = useState(false)
   const [showContent, setShowContent] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -54,20 +51,6 @@ export function UserProfile() {
       alive = false
     }
   }, [mode, uid])
-
-  useEffect(() => {
-    if (mode !== 'online' || !user) return
-    let alive = true
-    void api
-      .posts(10, 0, user.userId)
-      .then((res) => {
-        if (alive) setPosts(res.posts)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [mode, user])
 
   if (mode !== 'online') {
     return (
@@ -193,7 +176,7 @@ export function UserProfile() {
               <button
                 type="button"
                 className="between"
-                style={{ width: '100%', marginTop: 12, background: 'none', border: 0 }}
+                style={{ width: '100%', marginTop: 12, background: 'none', border: 0, padding: 0 }}
                 onClick={() => setShowContent(true)}
               >
                 <span className="t-caption faint">发表内容</span>
@@ -201,34 +184,17 @@ export function UserProfile() {
                   {user.postCount + user.commentCount} 条 ›
                 </span>
               </button>
-            </div>
-
-            {posts.length > 0 ? (
-              <section style={{ marginTop: 24 }}>
-                <h2 className="section__title" style={{ marginBottom: 6 }}>他的帖子</h2>
-                {posts.map((p) => (
-                  <ForumCard key={p.id} post={p} />
-                ))}
-              </section>
-            ) : null}
-
-            <div className="card" style={{ marginTop: 24 }}>
-              <div className="between">
-                <span className="t-caption faint">加入时间</span>
-                <span className="t-caption">{formatDate(user.memberSince.slice(0, 10))}</span>
-              </div>
-              <div className="between" style={{ marginTop: 10 }}>
-                <span className="t-caption faint">公开评论</span>
-                <span className="t-caption">{user.commentCount} 条</span>
-              </div>
-              <div className="between" style={{ marginTop: 10 }}>
+              <div className="between" style={{ marginTop: 12 }}>
                 <span className="t-caption faint">身份</span>
                 <span className="t-caption">
-                  {user.role === 'admin' ? '管理员' : user.verified ? '认证访客' : '普通访客'}
+                  {user.role === 'admin' || user.role === 'superadmin'
+                    ? '管理员'
+                    : user.verified
+                      ? '认证访客'
+                      : '普通访客'}
                 </span>
               </div>
             </div>
-
 
           </>
         ) : (

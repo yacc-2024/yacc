@@ -2841,3 +2841,71 @@ select.input {
   line-height: 1.6;
   color: var(--text-2);
 }
+
+/* ============================================================
+   论坛 v3：卡片化 + 按钮有形状
+   ============================================================ */
+
+.post {
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.post__actions {
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.post__actions .act {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--control-bg);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast);
+}
+
+.post__actions .act:active {
+  background: var(--accent-weak);
+}
+
+.post__actions .act--on {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.post__images img {
+  border-radius: 14px;
+}
+
+.post__head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.follow-btn {
+  min-height: 32px;
+  padding: 0 16px;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* 帖子详情里不用卡片包装 */
+.post--detail {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
