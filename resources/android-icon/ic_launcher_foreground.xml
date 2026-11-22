@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Y 标记：矢量，任何分辨率都清晰 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 两臂：直角端头 + 圆角交汇 -->
+    <path
+        android:pathData="M26.46,28.08 L54,50.76 L81.54,28.08"
+        android:strokeColor="#4DBDF5"
+        android:strokeWidth="15.66"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+    <!-- 竖干 -->
+    <path
+        android:pathData="M46.17,42.93 h15.66 v42.39 h-15.66 z"
+        android:fillColor="#4DBDF5" />
+
+    <!-- 交汇处的圆角 -->
+    <path
+        android:pathData="M54,41.05 a9.71,9.71 0 1,1 -0.01,0 z"
+        android:fillColor="#4DBDF5" />
+</vector>

@@ -62,18 +62,22 @@ jobs:
 
       - name: 换掉安卓桌面图标
         run: |
+          # 旧系统用的图标（各密度位图）
           for f in resources/android-icon/ic_launcher-*.png; do
             name=$(basename "$f" .png)
             density=${name#ic_launcher-}
             cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher.png"
             cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
           done
-          for f in resources/android-icon/ic_launcher_foreground-*.png; do
-            name=$(basename "$f" .png)
-            density=${name#ic_launcher_foreground-}
-            cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher_foreground.png"
-          done
-          echo "桌面图标已替换"
+          # 安卓 8+ 用矢量前景，任何分辨率都不糊
+          mkdir -p android/app/src/main/res/drawable
+          cp resources/android-icon/ic_launcher_foreground.xml \
+             android/app/src/main/res/drawable/ic_launcher_foreground.xml
+          cp resources/android-icon/ic_launcher_adaptive.xml \
+             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          cp resources/android-icon/ic_launcher_adaptive.xml \
+             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          echo "桌面图标已替换（自适应用矢量）"
 
       - name: 换掉原生启动图
         run: |
