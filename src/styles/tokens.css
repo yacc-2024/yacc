@@ -32,7 +32,7 @@
   --glass-edge: rgba(0, 0, 0, 0.06);
   --glass-solid: rgba(255, 255, 255, 0.98);
   --control-bg: rgba(120, 120, 128, 0.12);
-  --tab-active-bg: rgba(22, 22, 26, 0.11);
+  --tab-active-bg: rgba(22, 22, 26, 0.13);
   --control-border: rgba(0, 0, 0, 0.05);
 
   /* ---- 字号 ---- */
@@ -102,7 +102,7 @@
     --glass-edge: rgba(255, 255, 255, 0.08);
     --glass-solid: rgba(20, 20, 23, 0.98);
     --control-bg: rgba(120, 120, 128, 0.22);
-    --tab-active-bg: rgba(255, 255, 255, 0.16);
+    --tab-active-bg: rgba(0, 0, 0, 0.45);
     --control-border: rgba(255, 255, 255, 0.06);
   }
 }
@@ -131,6 +131,6 @@
   --glass-edge: rgba(255, 255, 255, 0.08);
   --glass-solid: rgba(20, 20, 23, 0.98);
   --control-bg: rgba(120, 120, 128, 0.22);
-  --tab-active-bg: rgba(255, 255, 255, 0.16);
+  --tab-active-bg: rgba(0, 0, 0, 0.45);
   --control-border: rgba(255, 255, 255, 0.06);
 }
