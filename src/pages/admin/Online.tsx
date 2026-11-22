@@ -204,11 +204,28 @@ export function KeysPanel() {
               <p className="field__label" style={{ marginTop: 16 }}>
                 这名管理员可以做什么
               </p>
-              {PERM_GROUPS.map((group) => (
+              {PERM_GROUPS.map((group) => {
+                const values = group.items.map(([v]) => v)
+                const allOn = values.every((v) => perms.includes(v))
+                return (
                 <div key={group.title} style={{ marginTop: 10 }}>
-                  <p className="t-tag faint" style={{ marginBottom: 6 }}>
-                    {group.title}
-                  </p>
+                  <div className="between" style={{ marginBottom: 6 }}>
+                    <span className="t-tag faint">{group.title}</span>
+                    <button
+                      type="button"
+                      className="linklike"
+                      style={{ fontSize: 11 }}
+                      onClick={() =>
+                        setPerms((prev) =>
+                          allOn
+                            ? prev.filter((p) => !values.includes(p))
+                            : Array.from(new Set([...prev, ...values])),
+                        )
+                      }
+                    >
+                      {allOn ? '取消全选' : '全选'}
+                    </button>
+                  </div>
                   <div className="chips">
                     {group.items.map(([value, label]) => (
                       <button
@@ -229,7 +246,8 @@ export function KeysPanel() {
                     ))}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </>
           ) : kind === 'crew' ? (
             <>
@@ -1049,11 +1067,29 @@ function UserForm({
       {isSuper && targetIsAdmin ? (
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
           <p className="t-caption faint">这名管理员可以做什么</p>
-          {PERM_GROUPS.map((group) => (
+          {PERM_GROUPS.map((group) => {
+            const values = group.items.map(([v]) => v)
+            const owned = expandPerms(permList)
+            const allOn = values.every((v) => owned.has(v))
+            return (
             <div key={group.title} style={{ marginTop: 12 }}>
-              <p className="t-tag faint" style={{ marginBottom: 6 }}>
-                {group.title}
-              </p>
+              <div className="between" style={{ marginBottom: 6 }}>
+                <span className="t-tag faint">{group.title}</span>
+                <button
+                  type="button"
+                  className="linklike"
+                  style={{ fontSize: 11 }}
+                  onClick={() =>
+                    setPermList((prev) =>
+                      allOn
+                        ? prev.filter((p) => !values.includes(p))
+                        : Array.from(new Set([...prev, ...values])),
+                    )
+                  }
+                >
+                  {allOn ? '取消全选' : '全选'}
+                </button>
+              </div>
               <div className="chips">
                 {group.items.map(([value, label]) => (
                   <button
@@ -1074,7 +1110,8 @@ function UserForm({
                 ))}
               </div>
             </div>
-          ))}
+            )
+          })}
           <p className="field__hint">
             改完保存立刻生效，对方下次操作就会按新权限判断。
           </p>
