@@ -45,7 +45,7 @@ export function Login() {
       } catch {
         /* 网络抖动继续等 */
       }
-    }, 3000)
+    }, 1500)
     return () => {
       alive = false
       window.clearInterval(timer)

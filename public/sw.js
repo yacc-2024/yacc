@@ -1,5 +1,5 @@
 /* yacc service worker：外壳缓存优先，内容网络优先 */
-const VERSION = 'yacc-v3'
+const VERSION = 'yacc-v4'
 const SHELL_CACHE = `${VERSION}-shell`
 const DATA_CACHE = `${VERSION}-data`
 
@@ -38,6 +38,10 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
+
+  // 接口请求一律不走缓存：缓存登录态会导致「刚登录又掉登」
+  if (url.pathname.startsWith('/api/')) return
+  if (req.headers.get('authorization')) return
 
   // 内容包：网络优先，失败用缓存
   if (url.pathname === '/content.json') {

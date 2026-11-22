@@ -1275,6 +1275,66 @@ describe('多设备授权登录（v1.4.0）', () => {
     await makeKey(token)
     const a = await call('POST', '/auth/login', { name: '导演', password: 'abc123', device: '手机A', replace: true })
     const list = await call('GET', '/auth/sessions', undefined, a.body.data.token)
-    expect(list.body.data.sessions[0].device).toBe('手机A')
+    expect(list.body.data.sessions.some((s: { name: string }) => s.name === '手机A')).toBe(true)
+  })
+})
+
+describe('设备记忆与下线（v1.5.0）', () => {
+  it('批准过的设备再次登录不需要授权', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机A', deviceId: 'dev-a', replace: true,
+    })
+    const b = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机B', deviceId: 'dev-b',
+    })
+    await call('POST', `/auth/requests/${b.body.requestId}`, { action: 'approve' }, a.body.data.token)
+
+    // 同一台设备再来一次，直接放行
+    const again = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机B', deviceId: 'dev-b',
+    })
+    expect(again.status).toBe(200)
+    expect(again.body.data.token).toBeTruthy()
+  })
+
+  it('主设备可以让其他设备下线', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机A', deviceId: 'dev-a', replace: true,
+    })
+    const b = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机B', deviceId: 'dev-b',
+    })
+    await call('POST', `/auth/requests/${b.body.requestId}`, { action: 'approve' }, a.body.data.token)
+    const bToken = (await call('GET', `/auth/request-status?id=${b.body.requestId}`)).body.data.token
+
+    const list = await call('GET', '/auth/sessions', undefined, a.body.data.token)
+    const other = list.body.data.sessions.find((s: { current: boolean }) => !s.current)
+    expect(other).toBeTruthy()
+
+    expect(
+      (await call('DELETE', `/auth/devices/${encodeURIComponent(other.key)}`, undefined, a.body.data.token))
+        .status,
+    ).toBe(200)
+
+    // 被下线的设备令牌失效
+    expect((await call('GET', '/auth/me', undefined, bToken)).status).toBe(401)
+  })
+
+  it('不能删除当前设备', async () => {
+    const token = await bootstrapAdmin()
+    await makeKey(token)
+    const a = await call('POST', '/auth/login', {
+      name: '导演', password: 'abc123', device: '手机A', deviceId: 'dev-a', replace: true,
+    })
+    const list = await call('GET', '/auth/sessions', undefined, a.body.data.token)
+    const cur = list.body.data.sessions.find((s: { current: boolean }) => s.current)
+    expect(
+      (await call('DELETE', `/auth/devices/${encodeURIComponent(cur.key)}`, undefined, a.body.data.token))
+        .status,
+    ).toBe(400)
   })
 })

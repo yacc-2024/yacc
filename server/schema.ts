@@ -21,14 +21,24 @@ CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   device TEXT,
+  device_id TEXT,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auth_devices (
+  user_id TEXT NOT NULL,
+  device_id TEXT NOT NULL,
+  name TEXT,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, device_id)
 );
 
 CREATE TABLE IF NOT EXISTS login_requests (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   device TEXT,
+  device_id TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   token TEXT,
   created_at TEXT NOT NULL

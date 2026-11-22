@@ -260,12 +260,21 @@ export function EmptyState({
 
 export function PageSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="page__body" aria-busy="true" aria-live="polite">
-      <div className="sk sk--hero" style={{ marginTop: 8 }} />
-      <div className="sk sk--text" style={{ width: '40%' }} />
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="sk sk--row" />
-      ))}
+    <div className="page__body sk-page" aria-busy="true" aria-live="polite">
+      <div className="sk-line" style={{ width: 96 }} />
+      <div className="sk sk--hero" />
+      <div className="sk-line" style={{ width: '46%', marginTop: 4 }} />
+      <div className="sk-card">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="sk-row">
+            <div className="sk sk--avatar" />
+            <div className="grow">
+              <div className="sk-line" style={{ width: `${58 - i * 8}%` }} />
+              <div className="sk-line" style={{ width: `${86 - i * 6}%`, marginTop: 8 }} />
+            </div>
+          </div>
+        ))}
+      </div>
       <span className="sr-only">正在加载</span>
     </div>
   )

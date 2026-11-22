@@ -129,6 +129,8 @@ function ensureSchema(db: DB): Promise<void> {
       // 老库补列：新库这两条会报「duplicate column」，忽略
       for (const sql of [
         'ALTER TABLE sessions ADD COLUMN device TEXT',
+        'ALTER TABLE sessions ADD COLUMN device_id TEXT',
+        'ALTER TABLE login_requests ADD COLUMN device_id TEXT',
         'ALTER TABLE users ADD COLUMN uid INTEGER',
         'ALTER TABLE users ADD COLUMN avatar TEXT',
         'ALTER TABLE users ADD COLUMN signup_ip TEXT',
@@ -362,7 +364,7 @@ async function readJson(request: Request): Promise<Record<string, unknown> | nul
 
 /* ---------------- 会话 ---------------- */
 
-async function createSession(db: DB, userId: string, device = ''): Promise<string> {
+async function createSession(db: DB, userId: string, device = '', deviceId = ''): Promise<string> {
   // 默认单设备：新会话建立时把旧会话作废（多设备授权走 login_requests）
   await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run()
   const token = randomHex(32)
@@ -370,9 +372,9 @@ async function createSession(db: DB, userId: string, device = ''): Promise<strin
   const expires = new Date(Date.now() + SESSION_DAYS * 86400_000).toISOString()
   await db
     .prepare(
-      'INSERT INTO sessions (token_hash, user_id, device, created_at, expires_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO sessions (token_hash, user_id, device, device_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
     )
-    .bind(tokenHash, userId, device, nowIso(), expires)
+    .bind(tokenHash, userId, device, deviceId, nowIso(), expires)
     .run()
   return token
 }
@@ -653,7 +655,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const passed = await verifyPassword(password, row.salt, row.password_hash)
       if (!passed) return fail('密码不对，再试一次', 401)
       const device = typeof body.device === 'string' ? body.device.slice(0, 40) : ''
+      const deviceId = typeof body.deviceId === 'string' ? body.deviceId.slice(0, 40) : ''
       const replace = body.replace === true
+
+      // 这台设备之前被批准过，直接放行
+      const known = deviceId
+        ? await db
+            .prepare('SELECT 1 AS x FROM auth_devices WHERE user_id = ? AND device_id = ?')
+            .bind(row.id, deviceId)
+            .first<{ x: number }>()
+        : null
 
       // 已经有「别的设备」在线，且没有要求顶掉
       // 同一台设备重复登录（比如换了浏览器）不拦截，直接替换
@@ -664,7 +675,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .bind(row.id, nowIso(), device)
         .first<{ n: number }>()
 
-      if (Number(active?.n ?? 0) > 0 && !replace) {
+      if (Number(active?.n ?? 0) > 0 && !replace && !known) {
         // 复用同一个设备上一次的申请，避免重复点登录堆积
         const existing = await db
           .prepare(
@@ -678,9 +689,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           requestId = randomHex(8)
           await db
             .prepare(
-              'INSERT INTO login_requests (id, user_id, device, status, created_at) VALUES (?, ?, ?, ?, ?)',
+              'INSERT INTO login_requests (id, user_id, device, device_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
             )
-            .bind(requestId, row.id, device, 'pending', nowIso())
+            .bind(requestId, row.id, device, deviceId, 'pending', nowIso())
             .run()
         }
 
@@ -696,7 +707,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         )
       }
 
-      const token = await createSession(db, row.id, device)
+      const token = await createSession(db, row.id, device, deviceId)
       return ok({ token, user: toUser(row) })
     }
 
@@ -750,7 +761,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const req = await db
         .prepare('SELECT * FROM login_requests WHERE id = ? AND user_id = ?')
         .bind(decideRequest[1], who.id)
-        .first<{ id: string; user_id: string; device: string | null; status: string }>()
+        .first<{
+        id: string
+        user_id: string
+        device: string | null
+        device_id: string | null
+        status: string
+      }>()
       if (!req) return fail('找不到这条申请', 404)
       if (req.status !== 'pending') return fail('这条申请已经处理过了', 409)
 
@@ -763,7 +780,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       }
       if (action !== 'approve') return fail('参数不对')
 
-      // 批准：为那台设备建一个独立会话，把令牌交给它
+      // 批准：记住这台设备，以后同一设备登录不再需要授权
+      if (req.device_id) {
+        await db
+          .prepare(
+            'INSERT INTO auth_devices (user_id, device_id, name, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, device_id) DO UPDATE SET name = excluded.name',
+          )
+          .bind(who.id, req.device_id, req.device ?? '', nowIso())
+          .run()
+      }
+
       const token = randomHex(32)
       const tokenHash = await sha256Hex(token)
       const expires = new Date(Date.now() + SESSION_DAYS * 86400_000).toISOString()
@@ -783,20 +809,79 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     /* ---------- 已登录设备 ---------- */
 
     if (path === '/auth/sessions' && method === 'GET') {
+      const who = await currentUser(db, request)
       if (!who) return fail('未登录', 401)
+
       const rows = await db
         .prepare(
-          'SELECT device, created_at, expires_at FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC',
+          'SELECT device, device_id, created_at, expires_at FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC',
         )
         .bind(who.id, nowIso())
-        .all<{ device: string | null; created_at: string; expires_at: string }>()
-      return ok({
-        sessions: rows.map((r) => ({
-          device: r.device || '未知设备',
+        .all<{
+          device: string | null
+          device_id: string | null
+          created_at: string
+          expires_at: string
+        }>()
+
+      // 同一个设备可能有多条会话，按设备合并，只留最新一条
+      const seen = new Map<string, { key: string; name: string; createdAt: string }>()
+      for (const r of rows) {
+        const key = r.device_id || r.device || 'unknown'
+        if (seen.has(key)) continue
+        seen.set(key, {
+          key,
+          name: r.device || '未知设备',
           createdAt: r.created_at,
-          expiresAt: r.expires_at,
+        })
+      }
+
+      const header = request.headers.get('authorization') ?? ''
+      const raw = header.replace(/^Bearer\s+/i, '').trim()
+      const mine = raw
+        ? await db
+            .prepare('SELECT device_id, device FROM sessions WHERE token_hash = ?')
+            .bind(await sha256Hex(raw))
+            .first<{ device_id: string | null; device: string | null }>()
+        : null
+      const myKey = mine?.device_id || mine?.device || ''
+
+      return ok({
+        sessions: Array.from(seen.values()).map((s) => ({
+          ...s,
+          current: s.key === myKey,
         })),
       })
+    }
+
+    const dropDevice = /^\/auth\/devices\/(.+)$/.exec(path)
+    if (dropDevice && method === 'DELETE') {
+      const who = await currentUser(db, request)
+      if (!who) return fail('未登录', 401)
+      const key = decodeURIComponent(dropDevice[1])
+      if (!key) return fail('参数不对')
+
+      // 不能把手里的这台设备踢掉
+      const header = request.headers.get('authorization') ?? ''
+      const raw = header.replace(/^Bearer\s+/i, '').trim()
+      const mine = raw
+        ? await db
+            .prepare('SELECT device_id, device FROM sessions WHERE token_hash = ?')
+            .bind(await sha256Hex(raw))
+            .first<{ device_id: string | null; device: string | null }>()
+        : null
+      const myKey = mine?.device_id || mine?.device || ''
+      if (key === myKey) return fail('不能删除当前设备', 400)
+
+      await db
+        .prepare('DELETE FROM sessions WHERE user_id = ? AND (device_id = ? OR device = ?)')
+        .bind(who.id, key, key)
+        .run()
+      await db
+        .prepare('DELETE FROM auth_devices WHERE user_id = ? AND (device_id = ? OR name = ?)')
+        .bind(who.id, key, key)
+        .run()
+      return ok()
     }
 
     if (path === '/auth/session' && method === 'DELETE') {

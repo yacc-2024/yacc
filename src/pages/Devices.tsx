@@ -7,7 +7,9 @@ import { usePolling } from '../hooks/usePolling'
 
 export function Devices() {
   const { mode, account, toast } = useApp()
-  const [sessions, setSessions] = useState<Array<{ device: string; createdAt: string }>>([])
+  const [sessions, setSessions] = useState<
+    Array<{ key: string; name: string; createdAt: string; current: boolean }>
+  >([])
   const [requests, setRequests] = useState<Array<{ id: string; device: string; createdAt: string }>>([])
   const [loading, setLoading] = useState(true)
 
@@ -31,7 +33,7 @@ export function Devices() {
     void refresh()
   }, [refresh])
 
-  usePolling(() => refresh(), 15_000, mode === 'online' && !!account)
+  usePolling(() => refresh(), 8_000, mode === 'online' && !!account)
 
   const decide = async (id: string, action: 'approve' | 'deny') => {
     try {
@@ -91,19 +93,37 @@ export function Devices() {
             <EmptyState icon="lock" title="没有在线设备" desc="登录后这里会显示。" />
           ) : (
             <div className="list">
-              {sessions.map((s, i) => (
-                <div key={`${s.device}-${i}`} className="list__row list__row--plain">
+              {sessions.map((s) => (
+                <div key={s.key} className="list__row list__row--plain">
                   <span className="grow">
                     <span className="list__title" style={{ display: 'block' }}>
-                      {s.device}
-                      {i === 0 ? (
+                      {s.name}
+                      {s.current ? (
                         <span className="title-chip" style={{ marginLeft: 8 }}>
-                          主设备
+                          当前设备
                         </span>
                       ) : null}
                     </span>
                     <span className="list__sub">{relativeTime(s.createdAt)}登录</span>
                   </span>
+                  {s.current ? null : (
+                    <button
+                      type="button"
+                      className="linklike"
+                      style={{ color: 'var(--danger)' }}
+                      onClick={async () => {
+                        try {
+                          await api.removeDevice(s.key)
+                          toast('已让这台设备下线')
+                          await refresh()
+                        } catch (err) {
+                          toast(err instanceof Error ? err.message : '操作失败', 'error')
+                        }
+                      }}
+                    >
+                      下线
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

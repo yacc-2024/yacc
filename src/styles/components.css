@@ -2432,3 +2432,86 @@ select.input {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-weak);
 }
+
+/* ---------------- 加载骨架（更柔和） ---------------- */
+
+.sk-page {
+  padding-top: 24px;
+  animation: sk-fade-in 260ms var(--ease) both;
+}
+
+@keyframes sk-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sk-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton) 25%,
+    color-mix(in srgb, var(--skeleton) 60%, var(--bg)) 50%,
+    var(--skeleton) 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+.sk--hero {
+  height: 168px;
+  border-radius: var(--r-xl);
+  margin: 14px 0 10px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton) 25%,
+    color-mix(in srgb, var(--skeleton) 60%, var(--bg)) 50%,
+    var(--skeleton) 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+.sk-card {
+  margin-top: 18px;
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.sk-row + .sk-row {
+  border-top: 1px solid var(--glass-edge);
+}
+
+.sk--avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 50%;
+  background: var(--skeleton);
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes sk-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

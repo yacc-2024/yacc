@@ -5,6 +5,18 @@
 
 const TOKEN_KEY = 'yacc:token'
 
+/** 每台设备一个固定编号，用来记住「这台已经授权过」 */
+export function deviceId(): string {
+  if (typeof localStorage === 'undefined') return ''
+  const key = 'yacc:device-id'
+  let id = localStorage.getItem(key)
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36)
+    localStorage.setItem(key, id)
+  }
+  return id
+}
+
 /** 给服务器看的设备名，方便在主设备上区分 */
 export function deviceLabel(): string {
   if (typeof navigator === 'undefined') return '未知设备'
@@ -170,6 +182,7 @@ export const api = {
         password,
         replace: options?.replace ?? false,
         device: options?.device ?? deviceLabel(),
+        deviceId: deviceId(),
       },
     }),
 
@@ -183,9 +196,12 @@ export const api = {
     call<Record<string, never>>(`/auth/requests/${id}`, { method: 'POST', body: { action } }),
 
   sessions: () =>
-    call<{ sessions: Array<{ device: string; createdAt: string; expiresAt: string }> }>(
-      '/auth/sessions',
-    ),
+    call<{
+      sessions: Array<{ key: string; name: string; createdAt: string; current: boolean }>
+    }>('/auth/sessions'),
+
+  removeDevice: (key: string) =>
+    call<Record<string, never>>(`/auth/devices/${encodeURIComponent(key)}`, { method: 'DELETE' }),
 
   revokeCurrentSession: () =>
     call<Record<string, never>>('/auth/session', { method: 'DELETE' }),
