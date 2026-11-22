@@ -47,7 +47,18 @@ export function Badge({
   if (cls === 'crew' || cls === 'member') {
     return (
       <span className={`badge-v badge-v--${cls === 'crew' ? 'blue' : 'gold'}`}>
-        <span className="badge-v__mark">V</span>
+        <span className="badge-v__mark" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="9" height="9">
+            <path
+              d="M2.6 3.4 L6 8.2 L9.4 3.4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
         <span>{label ?? badgeLabelOf(kind)}</span>
       </span>
     )
