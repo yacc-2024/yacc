@@ -2628,3 +2628,158 @@ select.input {
   gap: 22px;
   margin-top: 12px;
 }
+
+/* ---------- 主页论坛入口 ---------- */
+
+.forum-teaser {
+  display: block;
+  padding: 6px 0;
+}
+
+.forum-teaser__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.forum-teaser__row + .forum-teaser__row {
+  border-top: 1px solid var(--glass-edge);
+}
+
+.forum-teaser__name {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.forum-teaser__text {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.forum-teaser__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.forum-teaser__empty {
+  display: block;
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: center;
+}
+
+.forum-teaser__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ============================================================
+   公告卡 v2：更玻璃、更克制（去掉左侧色条）
+   ============================================================ */
+
+.notice {
+  padding: 18px 18px 16px;
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 55%
+    ),
+    var(--glass-surface);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+}
+
+.notice__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: var(--control-bg);
+  color: var(--text-2);
+}
+
+.notice__tag {
+  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.notice__title {
+  font-size: var(--fs-title3);
+  letter-spacing: -0.3px;
+}
+
+.notice__more {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+/* ============================================================
+   论坛卡片 v2
+   ============================================================ */
+
+.post {
+  padding: 20px 0;
+}
+
+.post__name {
+  font-size: 15px;
+  letter-spacing: -0.1px;
+}
+
+.post__title {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.post__date {
+  margin-top: 8px;
+}
+
+.post__body {
+  margin-top: 12px;
+}
+
+.post__text {
+  font-size: 15.5px;
+  line-height: 1.72;
+  letter-spacing: -0.1px;
+}
+
+.post__images img {
+  border-radius: 14px;
+}
+
+.post__actions {
+  gap: 26px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-edge);
+}
+
+/* 帖子详情：楼主更大，楼层更轻 */
+.post--detail .post__text {
+  font-size: 17px;
+  line-height: 1.75;
+}

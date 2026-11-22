@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { NavBar, SectionHead } from '../components/ui'
+import { NavBar, SectionHead, Avatar } from '../components/ui'
 import { PosterCard } from '../components/media'
 import { Icon } from '../components/Icon'
-import { ForumCard } from '../components/ForumCard'
 import { api, type ForumPost } from '../lib/api'
 import { DirtyBanner } from '../components/DirtyBanner'
 import { EventSheet } from '../components/detailSheets'
@@ -85,7 +84,7 @@ export function Home() {
           <Link to="/news" className="notice" aria-label={`公告：${headline.title}`}>
             <span className="notice__head">
               <span className="notice__icon" aria-hidden="true">
-                <Icon name="bell" size={15} />
+                <Icon name="bell" size={14} />
               </span>
               <span className="notice__tag">{headline.pinned ? '置顶公告' : '最新公告'}</span>
               <span className="grow" />
@@ -99,24 +98,6 @@ export function Home() {
             </span>
           </Link>
         ) : null}
-
-        <section className="section">
-          <div className="section__head">
-            <h2 className="section__title">YACC 论坛</h2>
-            <Link to="/forum" className="section__more">
-              全部
-              <Icon name="chevron-right" size={14} />
-            </Link>
-          </div>
-          {posts.length === 0 ? (
-            <Link to="/forum/new" className="card notice" style={{ display: 'block' }}>
-              <span className="notice__title">还没有人发帖</span>
-              <span className="notice__sub">点这里发第一帖，聊聊拍摄、剪辑或者最近看的片子。</span>
-            </Link>
-          ) : (
-            posts.map((post) => <ForumCard key={post.id} post={post} />)
-          )}
-        </section>
 
         {featured.length > 0 ? (
           <section className="section">
@@ -196,6 +177,36 @@ export function Home() {
             </div>
           </section>
         ) : null}
+
+        <section className="section">
+          <SectionHead title="YACC 论坛" moreTo="/forum" />
+          {posts.length === 0 ? (
+            <Link to="/forum" className="forum-teaser">
+              <span className="forum-teaser__empty">还没有人发帖，点这里进去看看</span>
+            </Link>
+          ) : (
+            <Link to="/forum" className="forum-teaser">
+              {posts.slice(0, 2).map((p) => (
+                <span key={p.id} className="forum-teaser__row">
+                  <Avatar name={p.author} src={p.avatar} size={32} />
+                  <span className="grow" style={{ minWidth: 0 }}>
+                    <span className="forum-teaser__name">{p.author}</span>
+                    <span className="forum-teaser__text clamp-1">{p.body}</span>
+                  </span>
+                  <span className="forum-teaser__meta">
+                    <Icon name="heart" size={12} />
+                    {p.likes}
+                  </span>
+                </span>
+              ))}
+              <span className="forum-teaser__more">
+                进入论坛
+                <Icon name="chevron-right" size={13} />
+              </span>
+            </Link>
+          )}
+        </section>
+
 
         <footer
           style={{

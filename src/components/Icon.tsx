@@ -27,6 +27,7 @@ export type IconName =
   | 'download'
   | 'upload'
   | 'lock'
+  | 'message'
 
 interface Props extends SVGProps<SVGSVGElement> {
   name: IconName
@@ -124,6 +125,9 @@ const paths: Record<IconName, JSX.Element> = {
     </>
   ),
   check: <path d="m5 12.6 4.6 4.4L19 6.8" />,
+  message: (
+    <path d="M4.5 6.2A2.7 2.7 0 0 1 7.2 3.5h9.6a2.7 2.7 0 0 1 2.7 2.7v7.1a2.7 2.7 0 0 1-2.7 2.7H10l-4 3.4v-3.4a2.7 2.7 0 0 1-1.5-2.4Z" />
+  ),
   close: <path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6" />,
   edit: (
     <>

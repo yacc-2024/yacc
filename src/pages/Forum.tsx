@@ -7,10 +7,12 @@ import { ForumCard } from '../components/ForumCard'
 import { api, type ForumPost } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 
+let forumCache: ForumPost[] | null = null
+
 export function Forum() {
   const { mode, account, toast } = useApp()
-  const [posts, setPosts] = useState<ForumPost[]>([])
-  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState<ForumPost[]>(forumCache ?? [])
+  const [loading, setLoading] = useState(!forumCache)
 
   const load = useCallback(async () => {
     if (mode !== 'online') {
@@ -19,6 +21,7 @@ export function Forum() {
     }
     try {
       const res = await api.posts()
+      forumCache = res.posts
       setPosts(res.posts)
     } catch {
       /* 忽略 */
