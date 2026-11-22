@@ -54,6 +54,8 @@ export interface User {
   shownTitles: string[]
   /** 称号框样式，管理员指定 */
   badgeStyle: string | null
+  /** 每个称号单独的外观 */
+  titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -69,6 +71,7 @@ interface UserRow {
   titles: string | null
   shown_titles: string | null
   badge_style: string | null
+  title_styles: string | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -161,6 +164,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN titles TEXT',
         'ALTER TABLE users ADD COLUMN shown_titles TEXT',
         'ALTER TABLE users ADD COLUMN badge_style TEXT',
+        'ALTER TABLE users ADD COLUMN title_styles TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
         'ALTER TABLE comments ADD COLUMN parent_id TEXT',
         'ALTER TABLE comments ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
@@ -210,6 +214,7 @@ function toUser(row: UserRow): User {
     titles: parseTitles(row.titles, row.title),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
+    titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -272,6 +277,22 @@ function parseTitles(raw: string | null | undefined, legacy: string | null): str
     }
   }
   return legacy ? [legacy] : []
+}
+
+const BADGE_STYLES = ['crew', 'member', 'vip', 'svip', 'gold']
+
+function parseTitleStyles(raw: string | null | undefined): Record<string, string> {
+  if (!raw) return {}
+  try {
+    const obj = JSON.parse(raw) as Record<string, unknown>
+    const out: Record<string, string> = {}
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === 'string' && BADGE_STYLES.includes(v)) out[k] = v
+    }
+    return out
+  } catch {
+    return {}
+  }
 }
 
 function parseShown(
@@ -811,6 +832,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           titles: parseTitles(row.titles, row.title),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
+    titleStyles: parseTitleStyles(row.title_styles),
           commentCount: Number(commentCount?.n ?? 0),
           followers: Number(followerCount?.n ?? 0),
           followingCount: Number(followingCount?.n ?? 0),
@@ -914,6 +936,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         titles: [],
         shownTitles: [],
         badgeStyle: null,
+        titleStyles: {},
         role,
         verified: verified === 1,
         perms: isAdminSignup ? adminPerms : [],
@@ -1231,6 +1254,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         titles: [],
         shownTitles: [],
         badgeStyle: null,
+        titleStyles: {},
         role: 'superadmin',
         verified: true,
         perms: ALL_PERMS,
@@ -2380,6 +2404,17 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           )
           .run()
         void current
+      }
+
+      if (body.titleStyles && typeof body.titleStyles === 'object') {
+        const clean: Record<string, string> = {}
+        for (const [k, v] of Object.entries(body.titleStyles as Record<string, unknown>)) {
+          if (typeof v === 'string' && BADGE_STYLES.includes(v)) clean[k] = v
+        }
+        await db
+          .prepare('UPDATE users SET title_styles = ? WHERE id = ?')
+          .bind(JSON.stringify(clean), target.id)
+          .run()
       }
 
       if (typeof body.badgeStyle === 'string' || body.badgeStyle === null) {

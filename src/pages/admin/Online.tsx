@@ -716,6 +716,7 @@ interface AdminUser {
   memberId: string | null
   perms: string[]
   badgeStyle: string | null
+  titleStyles: Record<string, string>
   keyCode: string | null
   createdAt: string
 }
@@ -901,6 +902,7 @@ function UserForm({
   const [memberId, setMemberId] = useState(user.memberId ?? '')
   const [permList, setPermList] = useState<string[]>(user.perms ?? [])
   const [badgeStyle, setBadgeStyle] = useState<string>(user.badgeStyle ?? 'auto')
+  const [titleStyles, setTitleStyles] = useState<Record<string, string>>(user.titleStyles ?? {})
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -925,6 +927,7 @@ function UserForm({
         perms?: string[]
         role?: 'visitor' | 'admin'
         badgeStyle?: string
+        titleStyles?: Record<string, string>
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
@@ -935,6 +938,9 @@ function UserForm({
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
       if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
+      if (JSON.stringify(titleStyles) !== JSON.stringify(user.titleStyles ?? {})) {
+        patch.titleStyles = titleStyles
+      }
       if (editableRole && roleDraft !== user.role) {
         patch.role = roleDraft === 'admin' ? 'admin' : 'visitor'
       }
@@ -1150,17 +1156,45 @@ function UserForm({
           </button>
         </div>
         {titleList.length > 0 ? (
-          <div className="chips" style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {titleList.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className="chip"
-                aria-pressed
-                onClick={() => setTitleList((prev) => prev.filter((x) => x !== t))}
-              >
-                {t} ×
-              </button>
+              <div key={t} className="row gap-2" style={{ alignItems: 'center' }}>
+                <span className="grow t-body">{t}</span>
+                <select
+                  className="input"
+                  style={{ width: 120, minHeight: 36 }}
+                  aria-label={`${t} 的外观`}
+                  value={titleStyles[t] ?? 'auto'}
+                  onChange={(e) =>
+                    setTitleStyles((prev) => {
+                      const next = { ...prev }
+                      if (e.target.value === 'auto') delete next[t]
+                      else next[t] = e.target.value
+                      return next
+                    })
+                  }
+                >
+                  {BADGE_STYLES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="linklike"
+                  onClick={() => {
+                    setTitleList((prev) => prev.filter((x) => x !== t))
+                    setTitleStyles((prev) => {
+                      const next = { ...prev }
+                      delete next[t]
+                      return next
+                    })
+                  }}
+                >
+                  删除
+                </button>
+              </div>
             ))}
           </div>
         ) : null}

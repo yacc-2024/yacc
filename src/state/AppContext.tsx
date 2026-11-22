@@ -56,6 +56,7 @@ export interface SessionUser {
   titles?: string[]
   shownTitles?: string[]
   badgeStyle?: string | null
+  titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]
@@ -311,7 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await storageSet(CONTENT_CACHE_KEY, data)
       toast('内容已自动同步')
     },
-    60_000,
+    120_000,
     mode === 'online',
   )
 

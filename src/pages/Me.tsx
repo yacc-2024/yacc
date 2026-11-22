@@ -93,9 +93,12 @@ export function Me() {
                         t !== '访客',
                     )
                     .map((t) => (
-                      <span key={t} className="title-chip title-chip--plain">
-                        {t}
-                      </span>
+                      <Badge
+                        key={t}
+                        kind={badgeKindOf(account.role, account.uid, account.verified)}
+                        style={account.titleStyles?.[t] ?? account.badgeStyle}
+                        label={t}
+                      />
                     ))}
                 </span>
               </span>

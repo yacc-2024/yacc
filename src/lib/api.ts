@@ -24,9 +24,33 @@ function readCache<T>(key: string, ttl: number): T | null {
   }
 }
 
+/** 只保留最近 25 条缓存，避免 localStorage 越滚越大拖慢读写 */
+function pruneCache(): void {
+  try {
+    const keys: Array<{ k: string; at: number }> = []
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i)
+      if (!k || !k.startsWith(CACHE_PREFIX)) continue
+      let at = 0
+      try {
+        at = (JSON.parse(localStorage.getItem(k) ?? '{}') as { at?: number }).at ?? 0
+      } catch {
+        at = 0
+      }
+      keys.push({ k, at })
+    }
+    if (keys.length <= 25) return
+    keys.sort((a, b) => a.at - b.at)
+    for (const item of keys.slice(0, keys.length - 25)) localStorage.removeItem(item.k)
+  } catch {
+    /* 忽略 */
+  }
+}
+
 function writeCache<T>(key: string, data: T): void {
   try {
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), data }))
+    pruneCache()
   } catch {
     /* 空间满了就算了 */
   }
@@ -91,6 +115,7 @@ export interface ForumPost {
   badge?: string
   badgeKind?: 'admin' | 'crew' | 'member' | 'guest'
   badgeStyle?: string | null
+  titleStyles?: Record<string, string>
   label: string
   likes: number
   comments?: number
@@ -130,6 +155,7 @@ export interface SessionUser {
   /** 自己选择展示的称号（最多 3 个） */
   shownTitles?: string[]
   badgeStyle?: string | null
+  titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: AdminPerm[]
@@ -277,6 +303,7 @@ export const api = {
     avatar?: string | null
     shownTitles?: string[]
   badgeStyle?: string | null
+  titleStyles?: Record<string, string>
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -372,6 +399,7 @@ export const api = {
         isFollowing: boolean
         isMe: boolean
         badgeStyle: string | null
+        titleStyles: Record<string, string>
         userId: string
         postCount: number
         label: string
@@ -565,6 +593,7 @@ export const api = {
           titles: string[]
           perms: string[]
           badgeStyle: string | null
+          titleStyles: Record<string, string>
           memberId: string | null
           keyCode: string | null
           createdAt: string
@@ -588,6 +617,7 @@ export const api = {
         perms?: string[]
         role?: 'admin' | 'visitor'
         badgeStyle?: string | null
+  titleStyles?: Record<string, string>
       },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),
