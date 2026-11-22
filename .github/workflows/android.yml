@@ -60,6 +60,21 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
 
+      - name: 换掉安卓桌面图标
+        run: |
+          for f in resources/android-icon/ic_launcher-*.png; do
+            name=$(basename "$f" .png)
+            density=${name#ic_launcher-}
+            cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher.png"
+            cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
+          done
+          for f in resources/android-icon/ic_launcher_foreground-*.png; do
+            name=$(basename "$f" .png)
+            density=${name#ic_launcher_foreground-}
+            cp "$f" "android/app/src/main/res/mipmap-$density/ic_launcher_foreground.png"
+          done
+          echo "桌面图标已替换"
+
       - name: 换掉原生启动图
         run: |
           for f in resources/android-splash/*.png; do
