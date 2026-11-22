@@ -153,6 +153,7 @@ function ensureSchema(db: DB): Promise<void> {
       }
       await normaliseLegacyUids(db)
       await ensureSuperadmin(db)
+      await ensureChangelogSeed(db)
     })().catch((err) => {
       schemas.delete(db)
       throw err
@@ -321,6 +322,134 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
+const CHANGELOG_KEY = 'migrate:changelog-v16'
+
+/** 站点历次更新（面向访客，不含管理端功能） */
+const CHANGELOG_SEED = [
+  {
+    version: '1.6.0',
+    date: '2026-11-22',
+    items: [
+      '新增 YACC 论坛：可以发帖、配图、点赞和评论',
+      '帖子支持评论区与楼中楼回复',
+      '首页新增论坛入口，只展示最新动态',
+      '个人主页新增关注、粉丝与获赞',
+      '被关注时会收到消息提醒',
+    ],
+  },
+  {
+    version: '1.5.0',
+    date: '2026-11-22',
+    items: [
+      '大幅提升加载速度：评论、帖子、个人主页优先显示本地缓存',
+      '页面内容自动同步，无需手动刷新',
+      '重做加载动画，不再出现一排灰色方块',
+      '修复偶尔自动退出登录的问题',
+    ],
+  },
+  {
+    version: '1.4.0',
+    date: '2026-11-22',
+    items: [
+      '一个账号默认只能在一台设备上登录',
+      '在新设备登录时，原设备会收到授权请求',
+      '确认过的设备下次登录不再重复请求',
+      '可以在设备管理里让其他设备下线',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2026-11-22',
+    items: [
+      '新增安卓 App，可安装到桌面全屏使用',
+      '新增开屏动画，启动不再白屏',
+      '支持侧滑返回上一级',
+      'App 版本自动跟随网站更新',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '2026-11-21',
+    items: [
+      '适配电脑：宽屏下使用左侧导航，内容更舒展',
+      '桌面端弹窗改为居中显示',
+      '手机端保持原有布局',
+      '成员页与账号打通，可直接进入成员的个人主页',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026-11-21',
+    items: [
+      '评论区重做：支持回复、楼中楼展示与折叠',
+      '评论可以点赞，被回复时会收到消息',
+      '评论改为更简洁的时间与排版样式',
+      '全站不再使用 S2 · E3 这类英文标记，改为中文标注',
+    ],
+  },
+  {
+    version: '1.0.9',
+    date: '2026-11-21',
+    items: [
+      '账号可以拥有多个称号，并自行选择展示',
+      '头像支持直接上传并裁剪',
+      '个人主页与成员页打通，可展示参演作品',
+      '新增消息中心，集中查看回复与关注',
+    ],
+  },
+]
+
+/**
+ * 把历次更新补进线上内容里，只做一次。
+ * 已经存在的版本以线上为准，不覆盖。
+ */
+export async function ensureChangelogSeed(db: DB): Promise<void> {
+  const done = await db
+    .prepare('SELECT value FROM settings WHERE key = ?')
+    .bind(CHANGELOG_KEY)
+    .first<{ value: string }>()
+  if (done) return
+
+  const latest = await db
+    .prepare('SELECT version, content FROM documents ORDER BY version DESC LIMIT 1')
+    .first<{ version: number; content: string }>()
+
+  if (latest) {
+    try {
+      const doc = JSON.parse(latest.content) as {
+        changelog?: Array<{ version: string; date: string; items: string[] }>
+      }
+      const existing = Array.isArray(doc.changelog) ? doc.changelog : []
+      const have = new Set(existing.map((e) => e.version))
+      const merged = [...existing]
+      for (const entry of CHANGELOG_SEED) {
+        if (!have.has(entry.version)) merged.push(entry)
+      }
+      merged.sort((a, b) => {
+        const byDate = (b.date ?? '').localeCompare(a.date ?? '')
+        if (byDate !== 0) return byDate
+        return b.version.localeCompare(a.version, undefined, { numeric: true })
+      })
+      doc.changelog = merged
+      const changed = merged.length !== existing.length
+      if (changed) {
+        await db
+          .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
+          .bind(JSON.stringify(doc), nowIso(), null)
+          .run()
+      }
+    } catch {
+      /* 内容坏了就跳过，不阻断启动 */
+    }
+  }
+
+  await db
+    .prepare(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    )
+    .bind(CHANGELOG_KEY, '1')
+    .run()
+}
 
 export async function ensureSuperadmin(db: DB): Promise<void> {
   const existing = await db

@@ -2,7 +2,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createRequire } from 'node:module'
 import { createNodeDb, type DB } from '../../server/db'
-import { ensureSuperadmin, handleApi, normaliseLegacyUids, type Env } from '../../server/app'
+import {
+  ensureChangelogSeed,
+  ensureSuperadmin,
+  handleApi,
+  normaliseLegacyUids,
+  type Env,
+} from '../../server/app'
 import { validContent } from '../fixtures'
 
 // 用 createRequire 加载，避免打包器把 node:sqlite 当普通依赖去解析
@@ -1424,5 +1430,48 @@ describe('论坛与关注（v1.6.0）', () => {
 
     const list = await call('GET', `/comments?targetType=post&targetId=${created.body.data.id}`)
     expect(list.body.data.comments).toHaveLength(1)
+  })
+})
+
+describe('更新日志自动补齐（v1.6.0）', () => {
+  it('线上内容缺少新版本时，会自动补进去', async () => {
+    const token = await bootstrapAdmin()
+    // 先发布一份只有旧日志的内容
+    const base = validContent()
+    const old = {
+      ...base,
+      changelog: [{ version: '1.0.0', date: '2026-11-20', items: ['第一版上线'] }],
+    }
+    await call('POST', '/admin/publish', { content: old }, token)
+
+    // 清掉标记，模拟升级后的第一次启动
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v16'").run()
+    await ensureChangelogSeed(env.db)
+
+    const res = await call('GET', '/content')
+    const changelog = (res.body as { changelog: Array<{ version: string }> }).changelog
+    const versions = changelog.map((c) => c.version)
+    expect(versions).toContain('1.6.0')
+    expect(versions).toContain('1.0.9')
+    expect(versions).toContain('1.0.0')
+  })
+
+  it('已有同版本时不重复添加', async () => {
+    const token = await bootstrapAdmin()
+    const base = validContent()
+    const mine = {
+      ...base,
+      changelog: [{ version: '1.6.0', date: '2026-11-22', items: ['我自己写的'] }],
+    }
+    await call('POST', '/admin/publish', { content: mine }, token)
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v16'").run()
+    await ensureChangelogSeed(env.db)
+
+    const res = await call('GET', '/content')
+    const changelog = (res.body as { changelog: Array<{ version: string; items: string[] }> })
+      .changelog
+    const entry = changelog.filter((c) => c.version === '1.6.0')
+    expect(entry).toHaveLength(1)
+    expect(entry[0].items[0]).toBe('我自己写的')
   })
 })
