@@ -3225,3 +3225,17 @@ select.input {
   clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%, 8px 50%);
   box-shadow: none;
 }
+
+/* 表单分区标题 */
+.form-section {
+  margin: 22px 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.form-section:first-of-type {
+  margin-top: 4px;
+}

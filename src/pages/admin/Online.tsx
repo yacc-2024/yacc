@@ -1024,6 +1024,8 @@ function UserForm({
         </>
       }
     >
+      <p className="form-section">基本信息</p>
+
       <div className="field" style={{ marginTop: 0 }}>
         <label className="field__label" htmlFor="user-uid">
           数字编号
@@ -1039,6 +1041,8 @@ function UserForm({
           可以强制改成任意编号（1–99999），不要求符合身份规则；称号可以单独定制。
         </p>
       </div>
+
+      <p className="form-section">身份与权限</p>
 
       {editableRole ? (
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
@@ -1118,6 +1122,8 @@ function UserForm({
         </div>
       ) : null}
 
+      <p className="form-section">关联关系</p>
+
       <div className="field">
         <label className="field__label" htmlFor="user-member">
           绑定成员页
@@ -1140,6 +1146,8 @@ function UserForm({
           绑定后，成员页里这个人点进去就是他的账号主页。
         </p>
       </div>
+
+      <p className="form-section">称号</p>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <p className="t-caption faint">称号框</p>
@@ -1175,6 +1183,9 @@ function UserForm({
               const value = titleDraft.trim()
               if (!value || titleList.includes(value)) return
               setTitleList((prev) => [...prev, value].slice(0, 10))
+              if (badgeStyle !== 'auto') {
+                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
+              }
               setTitleDraft('')
             }}
           />
@@ -1186,6 +1197,9 @@ function UserForm({
               const value = titleDraft.trim()
               if (!value || titleList.includes(value)) return
               setTitleList((prev) => [...prev, value].slice(0, 10))
+              if (badgeStyle !== 'auto') {
+                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
+              }
               setTitleDraft('')
             }}
           >
@@ -1239,6 +1253,8 @@ function UserForm({
           可以发多个，对方自己决定主页上展示哪几个（最多 3 个）。点称号可以删除。
         </p>
       </div>
+
+      <p className="form-section">昵称与安全</p>
 
       <div className="field">
         <label className="field__label" htmlFor="user-name">
