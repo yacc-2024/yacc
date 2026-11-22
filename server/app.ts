@@ -322,12 +322,12 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v16'
+const CHANGELOG_KEY = 'migrate:changelog-v17'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
   {
-    version: '1.6.0',
+    version: '1.0.15',
     date: '2026-11-22',
     items: [
       '新增 YACC 论坛：可以发帖、配图、点赞和评论',
@@ -338,7 +338,7 @@ const CHANGELOG_SEED = [
     ],
   },
   {
-    version: '1.5.0',
+    version: '1.0.14',
     date: '2026-11-22',
     items: [
       '大幅提升加载速度：评论、帖子、个人主页优先显示本地缓存',
@@ -348,7 +348,7 @@ const CHANGELOG_SEED = [
     ],
   },
   {
-    version: '1.4.0',
+    version: '1.0.13',
     date: '2026-11-22',
     items: [
       '一个账号默认只能在一台设备上登录',
@@ -358,7 +358,7 @@ const CHANGELOG_SEED = [
     ],
   },
   {
-    version: '1.3.0',
+    version: '1.0.12',
     date: '2026-11-22',
     items: [
       '新增安卓 App，可安装到桌面全屏使用',
@@ -368,7 +368,7 @@ const CHANGELOG_SEED = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.0.11',
     date: '2026-11-21',
     items: [
       '适配电脑：宽屏下使用左侧导航，内容更舒展',
@@ -378,7 +378,7 @@ const CHANGELOG_SEED = [
     ],
   },
   {
-    version: '1.1.0',
+    version: '1.0.10',
     date: '2026-11-21',
     items: [
       '评论区重做：支持回复、楼中楼展示与折叠',
@@ -419,7 +419,10 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
       const doc = JSON.parse(latest.content) as {
         changelog?: Array<{ version: string; date: string; items: string[] }>
       }
-      const existing = Array.isArray(doc.changelog) ? doc.changelog : []
+      const LEGACY = new Set(['1.6.0', '1.5.0', '1.4.0', '1.3.0', '1.2.0', '1.1.0', '1.0.9'])
+      const existing = (Array.isArray(doc.changelog) ? doc.changelog : []).filter(
+        (e) => !LEGACY.has(e.version),
+      )
       const have = new Set(existing.map((e) => e.version))
       const merged = [...existing]
       for (const entry of CHANGELOG_SEED) {

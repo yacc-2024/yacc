@@ -1445,13 +1445,13 @@ describe('更新日志自动补齐（v1.6.0）', () => {
     await call('POST', '/admin/publish', { content: old }, token)
 
     // 清掉标记，模拟升级后的第一次启动
-    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v16'").run()
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v17'").run()
     await ensureChangelogSeed(env.db)
 
     const res = await call('GET', '/content')
     const changelog = (res.body as { changelog: Array<{ version: string }> }).changelog
     const versions = changelog.map((c) => c.version)
-    expect(versions).toContain('1.6.0')
+    expect(versions).toContain('1.0.15')
     expect(versions).toContain('1.0.9')
     expect(versions).toContain('1.0.0')
   })
@@ -1461,16 +1461,16 @@ describe('更新日志自动补齐（v1.6.0）', () => {
     const base = validContent()
     const mine = {
       ...base,
-      changelog: [{ version: '1.6.0', date: '2026-11-22', items: ['我自己写的'] }],
+      changelog: [{ version: '1.0.15', date: '2026-11-22', items: ['我自己写的'] }],
     }
     await call('POST', '/admin/publish', { content: mine }, token)
-    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v16'").run()
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v17'").run()
     await ensureChangelogSeed(env.db)
 
     const res = await call('GET', '/content')
     const changelog = (res.body as { changelog: Array<{ version: string; items: string[] }> })
       .changelog
-    const entry = changelog.filter((c) => c.version === '1.6.0')
+    const entry = changelog.filter((c) => c.version === '1.0.15')
     expect(entry).toHaveLength(1)
     expect(entry[0].items[0]).toBe('我自己写的')
   })
