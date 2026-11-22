@@ -1445,7 +1445,7 @@ describe('更新日志自动补齐（v1.6.0）', () => {
     await call('POST', '/admin/publish', { content: old }, token)
 
     // 清掉标记，模拟升级后的第一次启动
-    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v17'").run()
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v18'").run()
     await ensureChangelogSeed(env.db)
 
     const res = await call('GET', '/content')
@@ -1464,7 +1464,7 @@ describe('更新日志自动补齐（v1.6.0）', () => {
       changelog: [{ version: '1.0.15', date: '2026-11-22', items: ['我自己写的'] }],
     }
     await call('POST', '/admin/publish', { content: mine }, token)
-    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v17'").run()
+    await env.db.prepare("DELETE FROM settings WHERE key = 'migrate:changelog-v18'").run()
     await ensureChangelogSeed(env.db)
 
     const res = await call('GET', '/content')

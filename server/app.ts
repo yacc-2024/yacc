@@ -322,7 +322,7 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v17'
+const CHANGELOG_KEY = 'migrate:changelog-v18'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
@@ -419,23 +419,28 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
       const doc = JSON.parse(latest.content) as {
         changelog?: Array<{ version: string; date: string; items: string[] }>
       }
-      const LEGACY = new Set(['1.6.0', '1.5.0', '1.4.0', '1.3.0', '1.2.0', '1.1.0', '1.0.9'])
-      const existing = (Array.isArray(doc.changelog) ? doc.changelog : []).filter(
-        (e) => !LEGACY.has(e.version),
-      )
-      const have = new Set(existing.map((e) => e.version))
-      const merged = [...existing]
-      for (const entry of CHANGELOG_SEED) {
-        if (!have.has(entry.version)) merged.push(entry)
+      // 旧编号去掉，同一版本只留一条，并按版本号从新到旧排
+      const LEGACY = new Set(['1.6.0', '1.5.0', '1.4.0', '1.3.0', '1.2.0', '1.1.0'])
+      const byVersion = new Map<string, { version: string; date: string; items: string[] }>()
+      for (const entry of Array.isArray(doc.changelog) ? doc.changelog : []) {
+        if (LEGACY.has(entry.version)) continue
+        if (!byVersion.has(entry.version)) byVersion.set(entry.version, entry)
       }
-      merged.sort((a, b) => {
-        const byDate = (b.date ?? '').localeCompare(a.date ?? '')
-        if (byDate !== 0) return byDate
-        return b.version.localeCompare(a.version, undefined, { numeric: true })
+      for (const entry of CHANGELOG_SEED) {
+        if (!byVersion.has(entry.version)) byVersion.set(entry.version, entry)
+      }
+      const originalJson = JSON.stringify(Array.isArray(doc.changelog) ? doc.changelog : [])
+      const merged = Array.from(byVersion.values()).sort((a, b) => {
+        const pa = a.version.split('.').map((n) => Number(n) || 0)
+        const pb = b.version.split('.').map((n) => Number(n) || 0)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+          const d = (pb[i] ?? 0) - (pa[i] ?? 0)
+          if (d !== 0) return d
+        }
+        return 0
       })
       doc.changelog = merged
-      const changed = merged.length !== existing.length
-      if (changed) {
+      if (JSON.stringify(merged) !== originalJson) {
         await db
           .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
           .bind(JSON.stringify(doc), nowIso(), null)
