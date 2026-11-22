@@ -90,6 +90,7 @@ export interface ForumPost {
   authorId: string
   badge?: string
   badgeKind?: 'admin' | 'crew' | 'member' | 'guest'
+  badgeStyle?: string | null
   label: string
   likes: number
   comments?: number
@@ -128,6 +129,7 @@ export interface SessionUser {
   titles?: string[]
   /** 自己选择展示的称号（最多 3 个） */
   shownTitles?: string[]
+  badgeStyle?: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: AdminPerm[]
@@ -274,6 +276,7 @@ export const api = {
     name?: string
     avatar?: string | null
     shownTitles?: string[]
+  badgeStyle?: string | null
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -368,6 +371,7 @@ export const api = {
         likes: number
         isFollowing: boolean
         isMe: boolean
+        badgeStyle: string | null
         userId: string
         postCount: number
         label: string
@@ -560,6 +564,7 @@ export const api = {
           label: string
           titles: string[]
           perms: string[]
+          badgeStyle: string | null
           memberId: string | null
           keyCode: string | null
           createdAt: string
@@ -582,6 +587,7 @@ export const api = {
         memberId?: string | null
         perms?: string[]
         role?: 'admin' | 'visitor'
+        badgeStyle?: string | null
       },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),

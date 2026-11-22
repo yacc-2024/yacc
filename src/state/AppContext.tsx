@@ -55,6 +55,7 @@ export interface SessionUser {
   avatar?: string | null
   titles?: string[]
   shownTitles?: string[]
+  badgeStyle?: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]

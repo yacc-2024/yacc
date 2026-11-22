@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   title TEXT,
   titles TEXT,
   shown_titles TEXT,
+  badge_style TEXT,
   member_id TEXT,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,

@@ -31,7 +31,11 @@ export function ForumCard({
           <span>
             <span className="post__name-row">
               <span className="post__name">{post.author}</span>
-              <Badge kind={(post.badgeKind as BadgeKind) ?? 'guest'} label={post.badge} />
+              <Badge
+                kind={(post.badgeKind as BadgeKind) ?? 'guest'}
+                style={post.badgeStyle}
+                label={post.badge}
+              />
             </span>
           </span>
         </Link>

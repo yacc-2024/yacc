@@ -52,6 +52,8 @@ export interface User {
   titles: string[]
   /** 自己选择展示的称号（最多 3 个） */
   shownTitles: string[]
+  /** 称号框样式，管理员指定 */
+  badgeStyle: string | null
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -66,6 +68,7 @@ interface UserRow {
   title: string | null
   titles: string | null
   shown_titles: string | null
+  badge_style: string | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -157,6 +160,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN title TEXT',
         'ALTER TABLE users ADD COLUMN titles TEXT',
         'ALTER TABLE users ADD COLUMN shown_titles TEXT',
+        'ALTER TABLE users ADD COLUMN badge_style TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
         'ALTER TABLE comments ADD COLUMN parent_id TEXT',
         'ALTER TABLE comments ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
@@ -205,6 +209,7 @@ function toUser(row: UserRow): User {
     avatar: row.avatar ?? null,
     titles: parseTitles(row.titles, row.title),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
+    badgeStyle: row.badge_style ?? null,
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -805,6 +810,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           })(),
           titles: parseTitles(row.titles, row.title),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
+          badgeStyle: row.badge_style ?? null,
           commentCount: Number(commentCount?.n ?? 0),
           followers: Number(followerCount?.n ?? 0),
           followingCount: Number(followingCount?.n ?? 0),
@@ -907,6 +913,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatar: null,
         titles: [],
         shownTitles: [],
+        badgeStyle: null,
         role,
         verified: verified === 1,
         perms: isAdminSignup ? adminPerms : [],
@@ -1223,6 +1230,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatar: null,
         titles: [],
         shownTitles: [],
+        badgeStyle: null,
         role: 'superadmin',
         verified: true,
         perms: ALL_PERMS,
@@ -1361,7 +1369,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const rows = await db
         .prepare(
           `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
-                  u.name AS author, u.avatar, u.uid, u.role, u.title, u.titles, u.shown_titles,
+                  u.name AS author, u.avatar, u.uid, u.role, u.badge_style,
+                  u.title, u.titles, u.shown_titles,
                   (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post'
                      AND c.target_id = p.id AND c.status = 'published') AS comments
@@ -1418,6 +1427,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           title: (r.title as string | null) ?? null,
           badge: shortBadge(r.role as string, r.uid as number | null),
           badgeKind: badgeKind(r.role as string, r.uid as number | null),
+          badgeStyle: (r.badge_style as string | null) ?? null,
           label:
             parseShown(
               r.shown_titles as string | null,
@@ -1522,6 +1532,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           authorId: row.user_id,
           badge: shortBadge(row.role as string, row.uid as number | null),
           badgeKind: badgeKind(row.role as string, row.uid as number | null),
+          badgeStyle: (row.badge_style as string | null) ?? null,
           label:
             parseShown(
               row.shown_titles as string | null,
@@ -2291,6 +2302,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           verified: r.verified === 1,
           label: (r.title as string | null) || describeUid(r.uid as number | null).label,
           perms: parsePerms(r.perms as string | null),
+          badgeStyle: (r.badge_style as string | null) ?? null,
           title: (r.title as string | null) ?? null,
           titles: parseTitles(r.titles as string | null, r.title as string | null),
           shownTitles: parseShown(
@@ -2368,6 +2380,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           )
           .run()
         void current
+      }
+
+      if (typeof body.badgeStyle === 'string' || body.badgeStyle === null) {
+        const allowed = ['auto', 'crew', 'member', 'vip', 'svip', 'gold']
+        const value = body.badgeStyle === null ? null : String(body.badgeStyle)
+        if (value !== null && !allowed.includes(value)) return fail('称号框不认识')
+        await db
+          .prepare('UPDATE users SET badge_style = ? WHERE id = ?')
+          .bind(value === 'auto' ? null : value, target.id)
+          .run()
       }
 
       if (body.memberId !== undefined) {

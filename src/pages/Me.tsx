@@ -73,7 +73,10 @@ export function Me() {
                   ID {formatUid(account.uid)}
                 </span>
                 <span className="title-row">
-                  <Badge kind={badgeKindOf(account.role, account.uid, account.verified)} />
+                  <Badge
+                    kind={badgeKindOf(account.role, account.uid, account.verified)}
+                    style={account.badgeStyle}
+                  />
                   {displayTitles(
                     account.uid,
                     account.role,

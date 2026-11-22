@@ -3,6 +3,7 @@ import { useApp } from '../../state/AppContext'
 import { NavBar, Segmented, EmptyState, useConfirm, Avatar, Sheet } from '../../components/ui'
 import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
 import { PERM_GROUPS, expandPerms } from '../../lib/perms'
+import { BADGE_STYLES } from '../../components/Badge'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { api, type AdminPerm } from '../../lib/api'
 import { formatDate } from '../../lib/format'
@@ -714,6 +715,7 @@ interface AdminUser {
   titles: string[]
   memberId: string | null
   perms: string[]
+  badgeStyle: string | null
   keyCode: string | null
   createdAt: string
 }
@@ -898,6 +900,7 @@ function UserForm({
   const [uid, setUid] = useState(user.uid)
   const [memberId, setMemberId] = useState(user.memberId ?? '')
   const [permList, setPermList] = useState<string[]>(user.perms ?? [])
+  const [badgeStyle, setBadgeStyle] = useState<string>(user.badgeStyle ?? 'auto')
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -921,6 +924,7 @@ function UserForm({
         memberId?: string | null
         perms?: string[]
         role?: 'visitor' | 'admin'
+        badgeStyle?: string
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
@@ -930,6 +934,7 @@ function UserForm({
         titleList.every((t, i) => t === (user.titles ?? [])[i])
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
+      if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
       if (editableRole && roleDraft !== user.role) {
         patch.role = roleDraft === 'admin' ? 'admin' : 'visitor'
       }
@@ -1091,6 +1096,24 @@ function UserForm({
         <p className="field__hint">
           绑定后，成员页里这个人点进去就是他的账号主页。
         </p>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">称号框</p>
+        <div className="chips" style={{ marginTop: 8 }}>
+          {BADGE_STYLES.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className="chip"
+              aria-pressed={badgeStyle === opt.value}
+              onClick={() => setBadgeStyle(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">决定这个名字旁边显示什么徽章，预览可以在论坛看到。</p>
       </div>
 
       <div className="field">

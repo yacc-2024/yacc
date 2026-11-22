@@ -1,6 +1,7 @@
-/** 身份徽章：论坛、主页、我的页共用同一套配色 */
+/** 身份 / 称号框：论坛、主页、我的页共用 */
 
 export type BadgeKind = 'admin' | 'crew' | 'member' | 'guest'
+export type BadgeStyle = 'auto' | 'crew' | 'member' | 'vip' | 'svip' | 'gold'
 
 export function badgeKindOf(
   role: string | undefined,
@@ -22,11 +23,39 @@ export function badgeLabelOf(kind: BadgeKind): string {
   return '普通访客'
 }
 
-export function Badge({ kind, label }: { kind: BadgeKind; label?: string }) {
+/** 后台可选的称号框 */
+export const BADGE_STYLES: Array<{ value: BadgeStyle; label: string }> = [
+  { value: 'auto', label: '跟随身份' },
+  { value: 'crew', label: '剧组认证' },
+  { value: 'member', label: '认证成员' },
+  { value: 'vip', label: 'VIP' },
+  { value: 'svip', label: 'SVIP' },
+  { value: 'gold', label: '金标' },
+]
+
+export function Badge({
+  kind,
+  style,
+  label,
+}: {
+  kind: BadgeKind
+  style?: string | null
+  label?: string
+}) {
+  const cls = style && style !== 'auto' ? style : kind
+  // 剧组认证：抖音式 蓝底 + 黄色 V
+  if (cls === 'crew') {
+    return (
+      <span className="badge-v">
+        <span className="badge-v__mark">V</span>
+        <span>{label ?? badgeLabelOf(kind)}</span>
+      </span>
+    )
+  }
   return (
-    <span className={`svip svip--${kind}`}>
-      {kind === 'admin' ? <span className="svip__star">★</span> : null}
-      {kind === 'crew' || kind === 'member' ? <span className="svip__check">✓</span> : null}
+    <span className={`svip svip--${cls}`}>
+      {cls === 'admin' ? <span className="svip__star">★</span> : null}
+      {cls === 'member' ? <span className="svip__check">✓</span> : null}
       {label ?? badgeLabelOf(kind)}
     </span>
   )

@@ -24,6 +24,7 @@ interface PublicUser {
   likes: number
   isFollowing: boolean
   isMe: boolean
+  badgeStyle: string | null
   label: string
   commentCount: number
 }
@@ -112,7 +113,10 @@ export function UserProfile() {
               <p className="dy-uid t-num">ID {user.uid}</p>
               {bio ? <p className="dy-bio">{bio}</p> : null}
               <span className="title-row" style={{ marginTop: 8 }}>
-                <Badge kind={badgeKindOf(user.role, user.rawUid, user.verified)} />
+                <Badge
+                  kind={badgeKindOf(user.role, user.rawUid, user.verified)}
+                  style={user.badgeStyle}
+                />
               </span>
             </div>
 

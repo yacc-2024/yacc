@@ -1614,3 +1614,44 @@ describe('协作冲突与动态（v2.0）', () => {
     expect(res.body.data.activity[0].userName).toBe('导演')
   })
 })
+
+describe('称号框（v2.1）', () => {
+  it('管理员可以给账号指定称号框，公开主页能看到', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '要称号框的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+
+    const res = await call('POST', `/admin/users/${id}`, { badgeStyle: 'svip' }, token)
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.badgeStyle).toBe('svip')
+  })
+
+  it('不认识的称号框会被拒绝', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '乱来的人')
+    const res = await call(
+      'POST',
+      `/admin/users/${reg.body.data.user.id}`,
+      { badgeStyle: 'whatever' },
+      token,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('auto 会清空自定义称号框', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '恢复默认')
+    const id = reg.body.data.user.id
+    await call('POST', `/admin/users/${id}`, { badgeStyle: 'vip' }, token)
+    await call('POST', `/admin/users/${id}`, { badgeStyle: 'auto' }, token)
+
+    const page = await call('GET', `/users/${reg.body.data.user.uid}`)
+    expect(page.body.data.user.badgeStyle).toBeNull()
+  })
+})
