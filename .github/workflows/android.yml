@@ -71,8 +71,14 @@ jobs:
           done
           # 安卓 8+ 用矢量前景，任何分辨率都不糊
           mkdir -p android/app/src/main/res/drawable
-          cp resources/android-icon/ic_launcher_foreground.xml \
-             android/app/src/main/res/drawable/ic_launcher_foreground.xml
+          cp resources/android-icon/ic_yacc_foreground.xml \
+             android/app/src/main/res/drawable/ic_yacc_foreground.xml
+          # 模板自带的 v24 前景会盖掉默认 drawable，这里一并替换掉
+          mkdir -p android/app/src/main/res/drawable-v24
+          cp resources/android-icon/ic_yacc_foreground.xml \
+             android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+          cp resources/android-icon/ic_yacc_foreground.xml \
+             android/app/src/main/res/drawable-v24/ic_yacc_foreground.xml
           cp resources/android-icon/ic_launcher_adaptive.xml \
              android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           cp resources/android-icon/ic_launcher_adaptive.xml \
