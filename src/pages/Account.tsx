@@ -185,20 +185,22 @@ function ProfileSettingsInner() {
 
   if (!account) return null
 
-  const dirty = name.trim() !== account.name || avatar.trim() !== (account.avatar ?? '')
+  const shownDiffers =
+    shown.length !== (account.shownTitles ?? []).length ||
+    shown.some((t) => !(account.shownTitles ?? []).includes(t))
+
+  const dirty =
+    name.trim() !== account.name ||
+    avatar.trim() !== (account.avatar ?? '') ||
+    shownDiffers
 
   const save = async () => {
     setBusy(true)
     try {
-      const shownChanged =
-        shown.length > 0 &&
-        (shown.length !== (account.shownTitles ?? []).length ||
-          shown.some((t) => !(account.shownTitles ?? []).includes(t)))
-
       await updateProfile({
         name: name.trim(),
         avatar: avatar.trim() ? avatar.trim() : null,
-        ...(shownChanged ? { shownTitles: shown } : {}),
+        ...(shownDiffers ? { shownTitles: shown } : {}),
       })
       toast('已保存')
     } catch (err) {
@@ -345,7 +347,7 @@ function ProfileSettingsInner() {
           type="button"
           className="btn btn--primary btn--block"
           style={{ marginTop: 20 }}
-          disabled={busy || !dirty}
+          disabled={busy || !dirty || ((account.titles?.length ?? 0) > 0 && shown.length === 0)}
           onClick={() => void save()}
         >
           {busy ? '保存中…' : dirty ? '保存' : '已保存'}
