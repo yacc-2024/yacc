@@ -1,5 +1,5 @@
 /* yacc service worker：外壳缓存优先，内容网络优先 */
-const VERSION = 'yacc-v2'
+const VERSION = 'yacc-v3'
 const SHELL_CACHE = `${VERSION}-shell`
 const DATA_CACHE = `${VERSION}-data`
 

@@ -79,15 +79,36 @@ jobs:
           cat > "$FILE" <<'JAVA'
           package com.yacc.crew;
 
+          import android.os.Bundle;
+          import android.webkit.WebView;
+          import androidx.activity.OnBackPressedCallback;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
             @Override
+            public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+
+              getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                  WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+                  if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                  } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                  }
+                }
+              });
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
             public void onBackPressed() {
-              if (this.bridge != null
-                  && this.bridge.getWebView() != null
-                  && this.bridge.getWebView().canGoBack()) {
-                this.bridge.getWebView().goBack();
+              WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+              if (webView != null && webView.canGoBack()) {
+                webView.goBack();
               } else {
                 super.onBackPressed();
               }
