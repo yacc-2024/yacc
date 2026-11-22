@@ -8,12 +8,12 @@ export const PERM_GROUPS: PermGroup[] = [
   {
     title: '内容',
     items: [
-      ['content:home', '主页'],
-      ['content:about', '关于页'],
-      ['content:members', '成员'],
-      ['content:works', '作品'],
+      ['content:home', '主页管理'],
+      ['content:about', '关于页面'],
+      ['content:members', '成员管理'],
+      ['content:works', '作品管理'],
       ['content:changelog', '更新日志'],
-      ['content:publish', '发布到线上'],
+      ['content:publish', '发布内容'],
     ],
   },
   {
@@ -22,7 +22,7 @@ export const PERM_GROUPS: PermGroup[] = [
       ['users:view', '查看账号'],
       ['users:edit', '编辑资料'],
       ['users:delete', '删除账号'],
-      ['users:uid', '改编号'],
+      ['users:uid', '修改编号'],
     ],
   },
   {

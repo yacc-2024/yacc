@@ -397,7 +397,34 @@ export const api = {
   likeComment: (id: string) =>
     call<{ liked: boolean; likes: number }>(`/comments/${id}/like`, { method: 'POST' }),
 
-  notifications: () =>
+  notifications: async () => {
+    type Inbox = {
+      notifications: Array<{
+        id: string
+        type: string
+        commentId: string | null
+        targetType: string | null
+        targetId: string | null
+        actorName: string
+        body: string
+        createdAt: string
+        read: boolean
+      }>
+      unread: number
+    }
+    const cached = readCache<Inbox>('notifications', 60_000)
+    if (cached) {
+      void call<Inbox>('/notifications')
+        .then((fresh) => writeCache('notifications', fresh))
+        .catch(() => {})
+      return cached
+    }
+    const fresh = await call<Inbox>('/notifications')
+    writeCache('notifications', fresh)
+    return fresh
+  },
+
+  notificationsUncached: () =>
     call<{
       notifications: Array<{
         id: string
@@ -532,6 +559,7 @@ export const api = {
         titles?: string[]
         memberId?: string | null
         perms?: string[]
+        role?: 'admin' | 'visitor'
       },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),

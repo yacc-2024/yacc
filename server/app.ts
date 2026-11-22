@@ -864,8 +864,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           const perms = (adminSpec.perms ?? []).filter((p): p is AdminPerm =>
             ALL_PERMS.includes(p as AdminPerm),
           )
-          adminPerms = perms.length ? perms : ['content']
-          spec = { kind: 'crew', role: 1, season: 9 }
+          adminPerms = perms.length ? perms : ['content:publish']
+          spec = { kind: 'guest' }
           verified = 1
           isAdminSignup = true
         } else {
@@ -2284,6 +2284,19 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .prepare('UPDATE users SET member_id = ? WHERE id = ?')
           .bind(next, target.id)
           .run()
+      }
+
+      if (typeof body.role === 'string') {
+        if (me!.role !== 'superadmin') return fail('只有总管理员能改身份', 403)
+        if (body.role === 'admin' || body.role === 'visitor') {
+          if (target.role === 'superadmin') return fail('不能修改总管理员的身份', 403)
+          await db
+            .prepare('UPDATE users SET role = ? WHERE id = ?')
+            .bind(body.role, target.id)
+            .run()
+        } else {
+          return fail('身份只能是 admin 或 visitor')
+        }
       }
 
       if (Array.isArray(body.perms)) {

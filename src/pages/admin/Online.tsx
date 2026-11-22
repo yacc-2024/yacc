@@ -898,8 +898,12 @@ function UserForm({
   const [uid, setUid] = useState(user.uid)
   const [memberId, setMemberId] = useState(user.memberId ?? '')
   const [permList, setPermList] = useState<string[]>(user.perms ?? [])
+  const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
+    user.role === 'admin' ? 'admin' : 'visitor',
+  )
   const isSuper = account?.role === 'superadmin'
-  const targetIsAdmin = user.role === 'admin'
+  const targetIsAdmin = roleDraft === 'admin'
+  const editableRole = isSuper && user.role !== 'superadmin'
   const [titleList, setTitleList] = useState<string[]>(user.titles ?? [])
   const [titleDraft, setTitleDraft] = useState('')
   const [password, setPassword] = useState('')
@@ -916,6 +920,7 @@ function UserForm({
         titles?: string[]
         memberId?: string | null
         perms?: string[]
+        role?: 'visitor' | 'admin'
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
       if (password.trim()) patch.password = password.trim()
@@ -925,7 +930,10 @@ function UserForm({
         titleList.every((t, i) => t === (user.titles ?? [])[i])
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
-      if (isSuper && targetIsAdmin && permList.join() !== (user.perms ?? []).join()) {
+      if (editableRole && roleDraft !== user.role) {
+        patch.role = roleDraft === 'admin' ? 'admin' : 'visitor'
+      }
+      if (isSuper && roleDraft === 'admin' && permList.join() !== (user.perms ?? []).join()) {
         patch.perms = permList
       }
 
@@ -1002,6 +1010,30 @@ function UserForm({
           可以强制改成任意编号（1–99999），不要求符合身份规则；称号可以单独定制。
         </p>
       </div>
+
+      {editableRole ? (
+        <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+          <p className="t-caption faint">账号身份</p>
+          <div className="chips" style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={roleDraft !== 'admin'}
+              onClick={() => setRoleDraft('visitor')}
+            >
+              普通账号
+            </button>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={roleDraft === 'admin'}
+              onClick={() => setRoleDraft('admin')}
+            >
+              管理员
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {isSuper && targetIsAdmin ? (
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>

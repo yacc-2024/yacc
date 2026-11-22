@@ -103,7 +103,7 @@ export function Me() {
             <ListRow
               icon="bell"
               title="消息"
-              sub={unread > 0 ? `${unread} 条未读` : '有人回复你时会出现在这里'}
+              sub={unread > 0 ? `${unread} 条未读` : undefined}
               to="/me/notifications"
             />
             <ListRow icon="bookmark" title="我的收藏" to="/me/favorites" />
