@@ -1,7 +1,17 @@
 /** 身份 / 称号框：论坛、主页、我的页共用 */
 
 export type BadgeKind = 'admin' | 'crew' | 'member' | 'guest'
-export type BadgeStyle = 'auto' | 'crew' | 'member' | 'vip' | 'svip' | 'gold'
+export type BadgeStyle =
+  | 'auto'
+  | 'crew'
+  | 'member'
+  | 'vip'
+  | 'svip'
+  | 'gold'
+  | 'emerald'
+  | 'silver'
+  | 'neon'
+  | 'rosy'
 
 export function badgeKindOf(
   role: string | undefined,
@@ -23,14 +33,18 @@ export function badgeLabelOf(kind: BadgeKind): string {
   return '普通访客'
 }
 
-/** 后台可选的称号框 */
+/** 后台可选的称号框（用外观描述命名） */
 export const BADGE_STYLES: Array<{ value: BadgeStyle; label: string }> = [
   { value: 'auto', label: '跟随身份' },
-  { value: 'crew', label: '剧组认证' },
-  { value: 'member', label: '认证成员' },
-  { value: 'vip', label: 'VIP' },
-  { value: 'svip', label: 'SVIP' },
-  { value: 'gold', label: '金标' },
+  { value: 'crew', label: '蓝底认证' },
+  { value: 'member', label: '金底认证' },
+  { value: 'vip', label: '紫粉渐变' },
+  { value: 'svip', label: '黑金六边' },
+  { value: 'gold', label: '金色丝带' },
+  { value: 'emerald', label: '翡翠渐变' },
+  { value: 'silver', label: '银灰渐变' },
+  { value: 'neon', label: '霓虹渐变' },
+  { value: 'rosy', label: '玫瑰渐变' },
 ]
 
 export function Badge({
@@ -48,12 +62,12 @@ export function Badge({
     return (
       <span className={`badge-v badge-v--${cls === 'crew' ? 'blue' : 'gold'}`}>
         <span className="badge-v__mark" aria-hidden="true">
-          <svg viewBox="0 0 12 12" width="9" height="9">
+          <svg viewBox="0 0 12 12" width="8" height="8">
             <path
-              d="M2.6 3.4 L6 8.2 L9.4 3.4"
+              d="M2.8 3.6 L6 8 L9.2 3.6"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />

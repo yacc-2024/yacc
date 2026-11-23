@@ -3170,9 +3170,9 @@ select.input {
 .badge-v {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   height: 18px;
-  padding: 0 8px 0 6px;
+  padding: 0 8px 0 3px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
@@ -3197,18 +3197,20 @@ select.input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
   line-height: 0;
-  background: none;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .badge-v--blue .badge-v__mark {
-  color: #ffffff;
+  color: #1667e0;
 }
 
 .badge-v--gold .badge-v__mark {
-  color: #5a3d00;
+  color: #b97a00;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 /* 不同形状的称号框 */
@@ -3238,4 +3240,31 @@ select.input {
 
 .form-section:first-of-type {
   margin-top: 4px;
+}
+
+
+/* 新增外观 */
+.svip--emerald {
+  background: linear-gradient(100deg, #b8ffd9 0%, #2fc98a 55%, #0f8f66 100%);
+  color: #06331f;
+  font-weight: 700;
+}
+
+.svip--silver {
+  background: linear-gradient(100deg, #f4f6f9 0%, #c2cad4 50%, #8b93a0 100%);
+  color: #23262b;
+  font-weight: 700;
+}
+
+.svip--neon {
+  background: linear-gradient(100deg, #7df9ff 0%, #4d8dff 50%, #8a5cff 100%);
+  color: #06121f;
+  font-weight: 700;
+  box-shadow: 0 1px 10px rgba(77, 141, 255, 0.5);
+}
+
+.svip--rosy {
+  background: linear-gradient(100deg, #ffd7c2 0%, #ff9a76 50%, #e06a4f 100%);
+  color: #4a1c10;
+  font-weight: 700;
 }

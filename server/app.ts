@@ -279,7 +279,17 @@ function parseTitles(raw: string | null | undefined, legacy: string | null): str
   return legacy ? [legacy] : []
 }
 
-const BADGE_STYLES = ['crew', 'member', 'vip', 'svip', 'gold']
+const BADGE_STYLES = [
+  'crew',
+  'member',
+  'vip',
+  'svip',
+  'gold',
+  'emerald',
+  'silver',
+  'neon',
+  'rosy',
+]
 
 function parseTitleStyles(raw: string | null | undefined): Record<string, string> {
   if (!raw) return {}
@@ -2418,7 +2428,18 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       }
 
       if (typeof body.badgeStyle === 'string' || body.badgeStyle === null) {
-        const allowed = ['auto', 'crew', 'member', 'vip', 'svip', 'gold']
+        const allowed = [
+          'auto',
+          'crew',
+          'member',
+          'vip',
+          'svip',
+          'gold',
+          'emerald',
+          'silver',
+          'neon',
+          'rosy',
+        ]
         const value = body.badgeStyle === null ? null : String(body.badgeStyle)
         if (value !== null && !allowed.includes(value)) return fail('称号框不认识')
         await db
