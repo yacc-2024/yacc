@@ -147,6 +147,9 @@ const fail = (error: string, status = 400) => json({ ok: false, error }, status)
 
 const schemas = new WeakMap<DB, Promise<void>>()
 
+/** 结构版本：每次加字段就改这里，改过之后老库会重新跑一遍补列 */
+const SCHEMA_VERSION = '2026-11-24'
+
 function ensureSchema(db: DB, createSuper = true): Promise<void> {
   let promise = schemas.get(db)
   if (!promise) {
@@ -157,6 +160,16 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
       for (const sql of statements) {
         await db.prepare(sql).run()
       }
+
+      // 结构已经升级过：跳过后面几十条 ALTER，冷启动秒开
+      const mark = await db
+        .prepare("SELECT value FROM settings WHERE key = 'schema_version'")
+        .first<{ value: string }>()
+      if (mark?.value === SCHEMA_VERSION) {
+        await ensureSuperadmin(db, createSuper)
+        return
+      }
+
       // 老库补列：新库这两条会报「duplicate column」，忽略
       for (const sql of [
         'ALTER TABLE sessions ADD COLUMN device TEXT',
@@ -189,6 +202,12 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
       await normaliseLegacyUids(db)
       await ensureSuperadmin(db, createSuper)
       await ensureChangelogSeed(db)
+      await db
+        .prepare(
+          "INSERT INTO settings (key, value) VALUES ('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        )
+        .bind(SCHEMA_VERSION)
+        .run()
     })().catch((err) => {
       schemas.delete(db)
       throw err
