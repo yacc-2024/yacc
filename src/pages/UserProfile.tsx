@@ -9,6 +9,15 @@ import { api, ApiError } from '../lib/api'
 import { formatDate, formatDuration } from '../lib/format'
 import { episodesOfSeason, findMember, findSeason } from '../lib/selectors'
 
+/** 等级分档：1–9 灰蓝、10–19 蓝、20–29 紫、30–39 橙、40+ 红 */
+function tierOf(level: number): number {
+  if (level >= 40) return 5
+  if (level >= 30) return 4
+  if (level >= 20) return 3
+  if (level >= 10) return 2
+  return 1
+}
+
 interface PublicUser {
   uid: string
   rawUid: number | null
@@ -124,18 +133,24 @@ export function UserProfile() {
               <p className="dy-name">{user.name}</p>
               <p className="dy-uid t-num">ID {user.uid}</p>
               <span className="title-row" style={{ marginTop: 8 }}>
-                <span className="lv">
-                  Lv.{user.level}
-                </span>
+                <span className={`lv lv--${tierOf(user.level)}`}>Lv.{user.level}</span>
                 <Badge
                   kind={badgeKindOf(user.role, user.rawUid, user.verified)}
                   style={user.badgeStyle}
                 />
               </span>
-              <p className="dy-sign">
-                {user.signature?.trim() || '这家伙很懒，什么也没留下...'}
-              </p>
-              {bio ? <p className="dy-bio">{bio}</p> : null}
+              <div className="dy-block">
+                <span className="dy-block__label">个性签名</span>
+                <p className="dy-sign">
+                  {user.signature?.trim() || '这家伙很懒，什么也没留下...'}
+                </p>
+              </div>
+              {bio ? (
+                <div className="dy-block">
+                  <span className="dy-block__label">个人简介</span>
+                  <p className="dy-bio">{bio}</p>
+                </div>
+              ) : null}
             </div>
 
             {!user.isMe ? (

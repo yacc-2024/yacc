@@ -305,6 +305,7 @@ export const api = {
     badgeStyle?: string | null
     titleStyles?: Record<string, string>
     signature?: string
+    hideBadge?: boolean
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -401,6 +402,7 @@ export const api = {
         followsMe: boolean
         isMe: boolean
         signature: string | null
+        hideBadge: boolean
         visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
         badgeStyle: string | null
         titleStyles: Record<string, string>

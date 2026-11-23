@@ -81,6 +81,7 @@ export function Me() {
                     titleStyles={account.titleStyles}
                     titles={account.titles}
                     shownTitles={account.shownTitles}
+                    hideBadge={account.hideBadge}
                   />
                 </span>
               </span>

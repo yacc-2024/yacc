@@ -56,6 +56,8 @@ export interface User {
   badgeStyle: string | null
   /** 个性签名 */
   signature: string | null
+  /** 是否隐藏身份徽章（只显示自己选的称号） */
+  hideBadge: boolean
   /** 每个称号单独的外观 */
   titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -74,6 +76,7 @@ interface UserRow {
   shown_titles: string | null
   badge_style: string | null
   signature: string | null
+  hide_badge: number | null
   title_styles: string | null
   member_id: string | null
   perms: string | null
@@ -168,6 +171,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN shown_titles TEXT',
         'ALTER TABLE users ADD COLUMN badge_style TEXT',
         'ALTER TABLE users ADD COLUMN signature TEXT',
+        'ALTER TABLE users ADD COLUMN hide_badge INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN title_styles TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
         'ALTER TABLE comments ADD COLUMN parent_id TEXT',
@@ -219,6 +223,7 @@ function toUser(row: UserRow): User {
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
     signature: row.signature ?? null,
+    hideBadge: Number(row.hide_badge ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
@@ -1013,6 +1018,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           isMe: viewer?.id === row.id,
           userId: row.id,
           signature: row.signature ?? null,
+    hideBadge: Number(row.hide_badge ?? 0) === 1,
           level: stats.level,
           points: stats.points,
           popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
@@ -1119,6 +1125,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         shownTitles: [],
         badgeStyle: null,
         signature: null,
+        hideBadge: false,
         titleStyles: {},
         role,
         verified: verified === 1,
@@ -1438,6 +1445,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         shownTitles: [],
         badgeStyle: null,
         signature: null,
+        hideBadge: false,
         titleStyles: {},
         role: 'superadmin',
         verified: true,
@@ -1488,6 +1496,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .first<{ id: string }>()
         if (taken) return fail('这个昵称已经有人用了', 409)
         nextName = name
+      }
+
+      if (typeof body.hideBadge === 'boolean') {
+        await db
+          .prepare('UPDATE users SET hide_badge = ? WHERE id = ?')
+          .bind(body.hideBadge ? 1 : 0, me.id)
+          .run()
       }
 
       if (typeof body.signature === 'string') {

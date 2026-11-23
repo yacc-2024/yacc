@@ -5,6 +5,7 @@ import { NavBar, EmptyState, Sheet } from '../components/ui'
 import { Comments } from '../components/Comments'
 import { Icon } from '../components/Icon'
 import { ForumCard } from '../components/ForumCard'
+import { PullToRefresh, Spinner } from '../components/PullToRefresh'
 import { api, type ForumPost } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 
@@ -83,6 +84,7 @@ export function Forum() {
         }
       />
       <div className="page__body">
+        <PullToRefresh onRefresh={load}>
         <Link to="/forum/new" className="post-cta">
           <span className="post-cta__icon">
             <Icon name="plus" size={18} />
@@ -95,9 +97,7 @@ export function Forum() {
         </Link>
 
         {loading ? (
-          <p className="t-caption faint" style={{ marginTop: 16 }}>
-            加载中…
-          </p>
+          <Spinner label="正在加载帖子" />
         ) : posts.length === 0 ? (
           <EmptyState icon="info" title="还没有人发帖" desc="点右上角发第一帖。" />
         ) : (
@@ -130,6 +130,7 @@ export function Forum() {
             />
           ))
         )}
+        </PullToRefresh>
       </div>
 
       <Sheet

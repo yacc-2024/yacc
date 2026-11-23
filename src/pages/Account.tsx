@@ -102,6 +102,7 @@ function SettingsHome() {
                 titleStyles={account.titleStyles}
                 titles={account.titles}
                 shownTitles={account.shownTitles}
+                hideBadge={account.hideBadge}
               />
             </span>
           </div>
@@ -178,6 +179,7 @@ function ProfileSettingsInner() {
   const [name, setName] = useState(account?.name ?? '')
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [signature, setSignature] = useState(account?.signature ?? '')
+  const [hideBadge, setHideBadge] = useState(account?.hideBadge ?? false)
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
@@ -279,6 +281,18 @@ function ProfileSettingsInner() {
           onChange={(e) => setSignature(e.target.value)}
         />
       </div>
+
+      <button
+        type="button"
+        className="between"
+        style={{ width: '100%', marginTop: 16, padding: '4px 2px' }}
+        onClick={() => setHideBadge((v) => !v)}
+      >
+        <span className="t-body">对外隐藏身份徽章</span>
+        <span className={`switch${hideBadge ? ' switch--on' : ''}`}>
+          <span className="switch__knob" />
+        </span>
+      </button>
 
       <div className="card" style={{ marginTop: 16 }}>
           <div className="between">

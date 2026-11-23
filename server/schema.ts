@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   shown_titles TEXT,
   badge_style TEXT,
   signature TEXT,
+  hide_badge INTEGER NOT NULL DEFAULT 0,
   title_styles TEXT,
   member_id TEXT,
   password_hash TEXT NOT NULL,
