@@ -109,11 +109,19 @@ export function TitleBadges({
   const shown = (shownTitles ?? []).filter((t) => !identityWords.has(t))
   const extra = shown.length > 0 ? shown : (titles ?? []).filter((t) => !identityWords.has(t)).slice(0, 1)
 
+  // 访客默认没有任何徽章；只有管理员明确给了他铭牌才显示
+  const showIdentity = kind !== 'guest' || Boolean(badgeStyle)
+
   return (
     <>
-      <Badge kind={kind} style={badgeStyle} />
+      {showIdentity ? <Badge kind={kind} style={badgeStyle} /> : null}
       {extra.map((t) => (
-        <Badge key={t} kind={kind} style={titleStyles?.[t] ?? badgeStyle} label={t} />
+        <Badge
+          key={t}
+          kind={kind}
+          style={titleStyles?.[t] ?? badgeStyle}
+          label={t}
+        />
       ))}
     </>
   )
