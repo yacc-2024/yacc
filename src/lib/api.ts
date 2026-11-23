@@ -351,7 +351,15 @@ export const api = {
 
   userContent: (uid: string) =>
     call<{
-      posts: Array<{ id: string; body: string; createdAt: string; pinned: boolean }>
+      posts: Array<{
+        id: string
+        body: string
+        createdAt: string
+        pinned: boolean
+        likes: number
+        commentCount: number
+        imageId: string | null
+      }>
       comments: Array<{
         id: string
         body: string

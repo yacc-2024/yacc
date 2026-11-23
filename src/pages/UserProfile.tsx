@@ -370,9 +370,14 @@ function ContentList({ userId }: { userId: string }) {
 
 
 function UserPosts({ userId }: { userId: string }) {
-  const [posts, setPosts] = useState<Array<{ id: string; body: string; createdAt: string }> | null>(
-    null,
-  )
+  const [posts, setPosts] = useState<Array<{
+    id: string
+    body: string
+    createdAt: string
+    likes: number
+    commentCount: number
+    imageId: string | null
+  }> | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -409,12 +414,15 @@ function UserPosts({ userId }: { userId: string }) {
   return (
     <div className="list" style={{ marginTop: 12 }}>
       {posts.map((p) => (
-        <Link key={p.id} to={`/forum/${p.id}`} className="list__row">
-          <span className="grow">
-            <span className="list__title" style={{ display: 'block' }}>
-              {p.body.slice(0, 40)}
+        <Link key={p.id} to={`/forum/${p.id}`} className="list__row profile-post">
+          {p.imageId ? (
+            <img className="profile-post__thumb" src={`/api/media/${p.imageId}`} alt="" loading="lazy" />
+          ) : null}
+          <span className="grow" style={{ minWidth: 0 }}>
+            <span className="profile-post__body">{p.body.slice(0, 60)}</span>
+            <span className="list__sub">
+              {formatDate(p.createdAt)} · 赞 {p.likes} · 评论 {p.commentCount}
             </span>
-            <span className="list__sub">{formatDate(p.createdAt)}</span>
           </span>
           <Icon name="chevron-right" size={16} />
         </Link>

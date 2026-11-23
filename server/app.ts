@@ -842,12 +842,24 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
       const posts = await db
         .prepare(
-          `SELECT id, body, created_at, pinned FROM posts
-           WHERE user_id = ? AND status = 'published'
-           ORDER BY created_at DESC LIMIT 50`,
+          `SELECT p.id, p.body, p.created_at, p.pinned,
+                  (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                  (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post' AND c.target_id = p.id AND c.status = 'published') AS comments,
+                  (SELECT i.id FROM post_images i WHERE i.post_id = p.id ORDER BY i.created_at LIMIT 1) AS image_id
+           FROM posts p
+           WHERE p.user_id = ? AND p.status = 'published'
+           ORDER BY p.created_at DESC LIMIT 50`,
         )
         .bind(target.id)
-        .all<{ id: string; body: string; created_at: string; pinned: number }>()
+        .all<{
+          id: string
+          body: string
+          created_at: string
+          pinned: number
+          likes: number
+          comments: number
+          image_id: string | null
+        }>()
 
       const comments = await db
         .prepare(
@@ -871,6 +883,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           body: p.body,
           createdAt: p.created_at,
           pinned: p.pinned === 1,
+          likes: Number(p.likes ?? 0),
+          commentCount: Number(p.comments ?? 0),
+          imageId: p.image_id ?? null,
         })),
         comments: comments.map((c) => ({
           id: c.id,
