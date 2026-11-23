@@ -18,7 +18,11 @@ export const ADMIN_CODE = 'TEST-ADMIN-CODE'
  * 这样测的是真实链路，不是假数据。
  */
 export function mountApi(): Env {
-  const env: Env = { db: createNodeDb(':memory:', DatabaseSync as never), adminCode: ADMIN_CODE }
+  const env: Env = {
+    db: createNodeDb(':memory:', DatabaseSync as never),
+    adminCode: ADMIN_CODE,
+    disableBootstrapSuper: '1',
+  }
 
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.toString()
