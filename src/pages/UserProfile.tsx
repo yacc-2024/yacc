@@ -4,6 +4,7 @@ import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet } from '../components/ui'
 import { Badge, badgeKindOf } from '../components/Badge'
 import { EpisodeRow } from '../components/media'
+import { Icon } from '../components/Icon'
 import { api, ApiError } from '../lib/api'
 import { formatDate, formatDuration } from '../lib/format'
 import { episodesOfSeason, findMember, findSeason } from '../lib/selectors'
@@ -24,6 +25,8 @@ interface PublicUser {
   likes: number
   isFollowing: boolean
   followsMe: boolean
+  signature: string | null
+  visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
   badgeStyle: string | null
   label: string
@@ -36,6 +39,7 @@ export function UserProfile() {
   const [user, setUser] = useState<PublicUser | null>(null)
   const [showAllWorks, setShowAllWorks] = useState(false)
   const [showContent, setShowContent] = useState(false)
+  const [tab, setTab] = useState<'profile' | 'posts'>('profile')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -118,6 +122,9 @@ export function UserProfile() {
                   style={user.badgeStyle}
                 />
               </span>
+              <p className="dy-sign">
+                {user.signature?.trim() || '这家伙很懒，什么也没留下...'}
+              </p>
               {bio ? <p className="dy-bio">{bio}</p> : null}
             </div>
 
@@ -150,7 +157,28 @@ export function UserProfile() {
             ) : null}
 
 
-            {works.length > 0 ? (
+            <div className="seg" style={{ marginTop: 20, marginBottom: 4 }}>
+              <button
+                type="button"
+                className="seg__item"
+                aria-selected={tab === 'profile'}
+                onClick={() => setTab('profile')}
+              >
+                资料
+              </button>
+              <button
+                type="button"
+                className="seg__item"
+                aria-selected={tab === 'posts'}
+                onClick={() => setTab('posts')}
+              >
+                帖子
+              </button>
+            </div>
+
+            {tab === 'posts' ? <UserPosts userId={user.userId} /> : null}
+
+            {tab === 'profile' && works.length > 0 ? (
               <section style={{ marginTop: 22 }}>
                 <h2 className="section__title" style={{ marginBottom: 8 }}>参演作品</h2>
                 {(showAllWorks ? works : works.slice(0, 3)).map((ep) => {
@@ -178,6 +206,7 @@ export function UserProfile() {
               </section>
             ) : null}
 
+            {tab === 'profile' ? (
             <div className="card" style={{ marginTop: 20 }}>
               <div className="between">
                 <span className="t-caption faint">加入时间</span>
@@ -205,6 +234,29 @@ export function UserProfile() {
                 </span>
               </div>
             </div>
+            ) : null}
+
+            {tab === 'profile' && user.isMe && user.visitors.length > 0 ? (
+              <section style={{ marginTop: 22 }}>
+                <h2 className="section__title" style={{ marginBottom: 8 }}>
+                  最近访客
+                </h2>
+                <div className="visitors">
+                  {user.visitors.map((v) => (
+                    <Link key={v.uid} to={`/u/${v.uid}`} className="visitor">
+                      {v.avatar ? (
+                        <img src={v.avatar} alt="" className="visitor__avatar" />
+                      ) : (
+                        <span className="visitor__avatar visitor__avatar--empty">
+                          {v.name.slice(0, 1)}
+                        </span>
+                      )}
+                      <span className="visitor__name">{v.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
           </>
         ) : (
@@ -275,6 +327,61 @@ function ContentList({ userId }: { userId: string }) {
             <span className="list__title" style={{ display: 'block' }}>评论</span>
             <span className="list__sub clamp-2" style={{ display: 'block' }}>{c.body}</span>
           </span>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+
+function UserPosts({ userId }: { userId: string }) {
+  const [posts, setPosts] = useState<Array<{ id: string; body: string; createdAt: string }> | null>(
+    null,
+  )
+
+  useEffect(() => {
+    let alive = true
+    void api
+      .userContent(userId)
+      .then((res) => {
+        if (alive) setPosts(res.posts)
+      })
+      .catch(() => {
+        if (alive) setPosts([])
+      })
+    return () => {
+      alive = false
+    }
+  }, [userId])
+
+  if (posts === null) {
+    return (
+      <p className="t-caption faint" style={{ marginTop: 20 }}>
+        加载中…
+      </p>
+    )
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="empty-block">
+        <Icon name="message" size={34} />
+        <p className="t-caption faint">还没有相关的帖子</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="list" style={{ marginTop: 12 }}>
+      {posts.map((p) => (
+        <Link key={p.id} to={`/forum/${p.id}`} className="list__row">
+          <span className="grow">
+            <span className="list__title" style={{ display: 'block' }}>
+              {p.body.slice(0, 40)}
+            </span>
+            <span className="list__sub">{formatDate(p.createdAt)}</span>
+          </span>
+          <Icon name="chevron-right" size={16} />
         </Link>
       ))}
     </div>

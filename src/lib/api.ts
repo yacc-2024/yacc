@@ -302,8 +302,9 @@ export const api = {
     name?: string
     avatar?: string | null
     shownTitles?: string[]
-  badgeStyle?: string | null
-  titleStyles?: Record<string, string>
+    badgeStyle?: string | null
+    titleStyles?: Record<string, string>
+    signature?: string
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -399,6 +400,8 @@ export const api = {
         isFollowing: boolean
         followsMe: boolean
         isMe: boolean
+        signature: string | null
+        visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
         badgeStyle: string | null
         titleStyles: Record<string, string>
         userId: string

@@ -177,6 +177,7 @@ function ProfileSettingsInner() {
   const { account, updateProfile, toast, mode } = useApp()
   const [name, setName] = useState(account?.name ?? '')
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
+  const [signature, setSignature] = useState(account?.signature ?? '')
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
@@ -191,6 +192,7 @@ function ProfileSettingsInner() {
   const dirty =
     name.trim() !== account.name ||
     avatar.trim() !== (account.avatar ?? '') ||
+    signature.trim() !== (account.signature ?? '') ||
     shownDiffers
 
   const save = async () => {
@@ -200,6 +202,7 @@ function ProfileSettingsInner() {
         name: name.trim(),
         avatar: avatar.trim() ? avatar.trim() : null,
         ...(shownDiffers ? { shownTitles: shown } : {}),
+        ...(signature.trim() !== (account.signature ?? '') ? { signature } : {}),
       })
       toast('已保存')
     } catch (err) {
@@ -263,7 +266,21 @@ function ProfileSettingsInner() {
           />
         </div>
 
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="field" style={{ marginTop: 16 }}>
+        <label className="field__label" htmlFor="pf-sign">
+          个性签名
+        </label>
+        <input
+          id="pf-sign"
+          className="input"
+          maxLength={60}
+          placeholder="这家伙很懒，什么也没留下..."
+          value={signature}
+          onChange={(e) => setSignature(e.target.value)}
+        />
+      </div>
+
+      <div className="card" style={{ marginTop: 16 }}>
           <div className="between">
             <div>
               <p className="t-caption faint">数字账号 ID</p>

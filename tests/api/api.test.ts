@@ -1655,3 +1655,31 @@ describe('称号框（v2.1）', () => {
     expect(page.body.data.user.badgeStyle).toBeNull()
   })
 })
+
+describe('签名与访客（v1.1）', () => {
+  it('可以保存个性签名并在主页看到', async () => {
+    const key = await makeKey(await bootstrapAdmin(), 'visitor')
+    const reg = await registerWithKey(key, '写签名的人')
+    const token = reg.body.data.token
+    const res = await call('POST', '/auth/profile', { signature: '今天也要好好拍' }, token)
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${reg.body.data.user.uid}`)
+    expect(page.body.data.user.signature).toBe('今天也要好好拍')
+  })
+
+  it('别人访问主页会留下访客记录，只有本人能看到', async () => {
+    const admin = await bootstrapAdmin()
+    const host = await registerWithKey(await makeKey(admin, 'visitor'), '被看的人')
+    const guest = await registerWithKey(await makeKey(admin, 'visitor'), '来串门的人')
+
+    await call('GET', `/users/${host.body.data.user.uid}`, undefined, guest.body.data.token)
+
+    const mine = await call('GET', `/users/${host.body.data.user.uid}`, undefined, host.body.data.token)
+    expect(mine.body.data.user.visitors.length).toBe(1)
+    expect(mine.body.data.user.visitors[0].name).toBe('来串门的人')
+
+    const other = await call('GET', `/users/${host.body.data.user.uid}`, undefined, guest.body.data.token)
+    expect(other.body.data.user.visitors.length).toBe(0)
+  })
+})

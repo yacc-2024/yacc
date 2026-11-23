@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   titles TEXT,
   shown_titles TEXT,
   badge_style TEXT,
+  signature TEXT,
   title_styles TEXT,
   member_id TEXT,
   password_hash TEXT NOT NULL,
@@ -103,6 +104,15 @@ CREATE TABLE IF NOT EXISTS post_likes (
   created_at TEXT NOT NULL,
   PRIMARY KEY (post_id, user_id)
 );
+
+CREATE TABLE IF NOT EXISTS profile_visits (
+  id TEXT PRIMARY KEY,
+  host_id TEXT NOT NULL,
+  visitor_id TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_visits_host ON profile_visits (host_id, created_at);
 
 CREATE TABLE IF NOT EXISTS activity (
   id TEXT PRIMARY KEY,

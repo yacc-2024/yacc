@@ -56,6 +56,7 @@ export interface SessionUser {
   titles?: string[]
   shownTitles?: string[]
   badgeStyle?: string | null
+  signature?: string | null
   titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
@@ -103,6 +104,7 @@ interface AppContextValue {
   updateProfile: (patch: {
     name?: string
     avatar?: string | null
+    signature?: string
     shownTitles?: string[]
   }) => Promise<void>
   changeMyPassword: (oldPassword: string, newPassword: string) => Promise<void>
@@ -530,11 +532,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateProfile = useCallback(
-    async (patch: { name?: string; avatar?: string | null; shownTitles?: string[] }) => {
+    async (patch: {
+      name?: string
+      avatar?: string | null
+      shownTitles?: string[]
+      signature?: string
+    }) => {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
         // 头像和称号分开提交，避免一次改动互相覆盖
         if (patch.shownTitles) await api.profile({ shownTitles: patch.shownTitles })
+        if (patch.signature !== undefined) await api.profile({ signature: patch.signature })
         const res = await api.profile({ name: patch.name, avatar: patch.avatar })
         cacheUser(res.user)
         setAccount(res.user)

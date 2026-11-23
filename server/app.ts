@@ -54,6 +54,8 @@ export interface User {
   shownTitles: string[]
   /** 称号框样式，管理员指定 */
   badgeStyle: string | null
+  /** 个性签名 */
+  signature: string | null
   /** 每个称号单独的外观 */
   titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -71,6 +73,7 @@ interface UserRow {
   titles: string | null
   shown_titles: string | null
   badge_style: string | null
+  signature: string | null
   title_styles: string | null
   member_id: string | null
   perms: string | null
@@ -164,6 +167,7 @@ function ensureSchema(db: DB): Promise<void> {
         'ALTER TABLE users ADD COLUMN titles TEXT',
         'ALTER TABLE users ADD COLUMN shown_titles TEXT',
         'ALTER TABLE users ADD COLUMN badge_style TEXT',
+        'ALTER TABLE users ADD COLUMN signature TEXT',
         'ALTER TABLE users ADD COLUMN title_styles TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
         'ALTER TABLE comments ADD COLUMN parent_id TEXT',
@@ -214,6 +218,7 @@ function toUser(row: UserRow): User {
     titles: parseTitles(row.titles, row.title),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
+    signature: row.signature ?? null,
     titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
@@ -861,6 +866,35 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .bind(row.id)
         .first<{ n: number }>()
       const viewer = await currentUser(db, request)
+      if (viewer && viewer.id !== row.id) {
+        const last = await db
+          .prepare(
+            'SELECT created_at FROM profile_visits WHERE host_id = ? AND visitor_id = ? ORDER BY created_at DESC LIMIT 1',
+          )
+          .bind(row.id, viewer.id)
+          .first<{ created_at: string }>()
+        const oneHour = 3600_000
+        if (!last || Date.now() - new Date(last.created_at).getTime() > oneHour) {
+          await db
+            .prepare('INSERT INTO profile_visits (id, host_id, visitor_id, created_at) VALUES (?, ?, ?, ?)')
+            .bind(randomHex(8), row.id, viewer.id, nowIso())
+            .run()
+        }
+      }
+      const isOwner = viewer?.id === row.id
+      const visitors = isOwner
+        ? await db
+            .prepare(
+              `SELECT v.created_at, u.uid, u.name, u.avatar
+               FROM profile_visits v JOIN users u ON u.id = v.visitor_id
+               WHERE v.host_id = ?
+               GROUP BY v.visitor_id
+               ORDER BY MAX(v.created_at) DESC
+               LIMIT 12`,
+            )
+            .bind(row.id)
+            .all<{ created_at: string; uid: number | null; name: string; avatar: string | null }>()
+        : []
       const isFollowing =
         viewer && viewer.id !== row.id
           ? Boolean(
@@ -887,7 +921,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           titles: parseTitles(row.titles, row.title),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
-    titleStyles: parseTitleStyles(row.title_styles),
+          titleStyles: parseTitleStyles(row.title_styles),
           commentCount: Number(commentCount?.n ?? 0),
           followers: Number(followerCount?.n ?? 0),
           followingCount: Number(followingCount?.n ?? 0),
@@ -903,6 +937,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             : false,
           isMe: viewer?.id === row.id,
           userId: row.id,
+          signature: row.signature ?? null,
+          visitors: visitors.map((v) => ({
+            uid: formatUid(v.uid),
+            name: v.name,
+            avatar: v.avatar ?? null,
+            at: v.created_at,
+          })),
           postCount: Number(postCount?.n ?? 0),
         },
       })
@@ -999,6 +1040,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         titles: [],
         shownTitles: [],
         badgeStyle: null,
+        signature: null,
         titleStyles: {},
         role,
         verified: verified === 1,
@@ -1317,6 +1359,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         titles: [],
         shownTitles: [],
         badgeStyle: null,
+        signature: null,
         titleStyles: {},
         role: 'superadmin',
         verified: true,
@@ -1367,6 +1410,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .first<{ id: string }>()
         if (taken) return fail('这个昵称已经有人用了', 409)
         nextName = name
+      }
+
+      if (typeof body.signature === 'string') {
+        const value = body.signature.trim().slice(0, 60)
+        await db
+          .prepare('UPDATE users SET signature = ? WHERE id = ?')
+          .bind(value || null, me.id)
+          .run()
       }
 
       if (Array.isArray(body.shownTitles)) {

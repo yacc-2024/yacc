@@ -3372,3 +3372,86 @@ select.input {
   color: var(--text-3);
   margin-top: 2px;
 }
+
+/* 签名 / 访客 / 分段控件 / 空状态 */
+.dy-sign {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.visitors {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.visitor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 56px;
+  flex: 0 0 56px;
+}
+
+.visitor__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--control-bg);
+}
+
+.visitor__avatar--empty {
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: var(--text-3);
+}
+
+.visitor__name {
+  font-size: 11px;
+  color: var(--text-3);
+  max-width: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seg {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--control-bg);
+}
+
+.seg__item {
+  flex: 1;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.seg__item[aria-selected="true"] {
+  background: var(--glass-surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 46px 0;
+  color: var(--text-3);
+}
