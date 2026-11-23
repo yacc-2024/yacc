@@ -26,6 +26,9 @@ interface PublicUser {
   isFollowing: boolean
   followsMe: boolean
   signature: string | null
+  level: number
+  points: number
+  popularity: number
   visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
   badgeStyle: string | null
@@ -110,6 +113,10 @@ export function UserProfile() {
                   <span className="dy-stat__num">{user.followers}</span>
                   <span className="dy-stat__label">粉丝</span>
                 </span>
+                <span className="dy-stat">
+                  <span className="dy-stat__num">{user.popularity}</span>
+                  <span className="dy-stat__label">人气</span>
+                </span>
               </div>
             </div>
 
@@ -117,6 +124,9 @@ export function UserProfile() {
               <p className="dy-name">{user.name}</p>
               <p className="dy-uid t-num">ID {user.uid}</p>
               <span className="title-row" style={{ marginTop: 8 }}>
+                <span className="lv">
+                  Lv.{user.level}
+                </span>
                 <Badge
                   kind={badgeKindOf(user.role, user.rawUid, user.verified)}
                   style={user.badgeStyle}

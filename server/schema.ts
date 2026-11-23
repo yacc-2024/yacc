@@ -105,6 +105,16 @@ CREATE TABLE IF NOT EXISTS post_likes (
   PRIMARY KEY (post_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS user_stats (
+  user_id TEXT PRIMARY KEY,
+  points INTEGER NOT NULL DEFAULT 0,
+  last_checkin TEXT,
+  streak INTEGER NOT NULL DEFAULT 0,
+  visits INTEGER NOT NULL DEFAULT 0,
+  gifts INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS profile_visits (
   id TEXT PRIMARY KEY,
   host_id TEXT NOT NULL,

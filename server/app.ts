@@ -284,6 +284,48 @@ function parseTitles(raw: string | null | undefined, legacy: string | null): str
   return legacy ? [legacy] : []
 }
 
+/** 行为积分（只有登录按天给，其余按次） */
+const POINT_RULES: Record<string, number> = {
+  login: 10,
+  post: 5,
+  comment: 3,
+  follow: 2,
+}
+
+/** 积分 → 等级：1 级 0 分，之后每级所需积分递增 */
+function levelOf(points: number): number {
+  return Math.floor(Math.sqrt(Math.max(0, points) / 40)) + 1
+}
+
+async function getStats(
+  db: DB,
+  userId: string,
+): Promise<{ points: number; level: number; visits: number; gifts: number }> {
+  const row = await db
+    .prepare('SELECT points, visits, gifts FROM user_stats WHERE user_id = ?')
+    .bind(userId)
+    .first<{ points: number; visits: number; gifts: number }>()
+  const points = Number(row?.points ?? 0)
+  return {
+    points,
+    level: levelOf(points),
+    visits: Number(row?.visits ?? 0),
+    gifts: Number(row?.gifts ?? 0),
+  }
+}
+
+async function awardPoints(db: DB, userId: string, kind: string): Promise<void> {
+  const delta = POINT_RULES[kind] ?? 0
+  if (!delta) return
+  await db
+    .prepare(
+      `INSERT INTO user_stats (user_id, points, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET points = points + ?, updated_at = ?`,
+    )
+    .bind(userId, delta, nowIso(), delta, nowIso())
+    .run()
+}
+
 const BADGE_STYLES = [
   'crew',
   'member',
@@ -661,6 +703,30 @@ async function readJson(request: Request): Promise<Record<string, unknown> | nul
 
 /* ---------------- 会话 ---------------- */
 
+/** 每天第一次登录 +10 分，连续登录天数累加 */
+async function touchCheckin(db: DB, userId: string): Promise<void> {
+  const today = new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10)
+  const row = await db
+    .prepare('SELECT last_checkin, streak FROM user_stats WHERE user_id = ?')
+    .bind(userId)
+    .first<{ last_checkin: string | null; streak: number }>()
+  if (row?.last_checkin === today) return
+  const yesterday = new Date(Date.now() + 8 * 3600_000 - 86400_000).toISOString().slice(0, 10)
+  const streak = row?.last_checkin === yesterday ? Number(row.streak) + 1 : 1
+  await db
+    .prepare(
+      `INSERT INTO user_stats (user_id, points, last_checkin, streak, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         points = points + ?,
+         last_checkin = ?,
+         streak = ?,
+         updated_at = ?`,
+    )
+    .bind(userId, POINT_RULES.login, today, streak, nowIso(), POINT_RULES.login, today, streak, nowIso())
+    .run()
+}
+
 async function createSession(db: DB, userId: string, device = '', deviceId = ''): Promise<string> {
   // 默认单设备：新会话建立时把旧会话作废（多设备授权走 login_requests）
   await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run()
@@ -673,6 +739,7 @@ async function createSession(db: DB, userId: string, device = '', deviceId = '')
     )
     .bind(tokenHash, userId, device, deviceId, nowIso(), expires)
     .run()
+  await touchCheckin(db, userId)
   return token
 }
 
@@ -879,8 +946,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             .prepare('INSERT INTO profile_visits (id, host_id, visitor_id, created_at) VALUES (?, ?, ?, ?)')
             .bind(randomHex(8), row.id, viewer.id, nowIso())
             .run()
+          await db
+            .prepare(
+              `INSERT INTO user_stats (user_id, visits, updated_at) VALUES (?, 1, ?)
+               ON CONFLICT(user_id) DO UPDATE SET visits = visits + 1, updated_at = ?`,
+            )
+            .bind(row.id, nowIso(), nowIso())
+            .run()
         }
       }
+      const stats = await getStats(db, row.id)
       const isOwner = viewer?.id === row.id
       const visitors = isOwner
         ? await db
@@ -938,6 +1013,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           isMe: viewer?.id === row.id,
           userId: row.id,
           signature: row.signature ?? null,
+          level: stats.level,
+          points: stats.points,
+          popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
           visitors: visitors.map((v) => ({
             uid: formatUid(v.uid),
             name: v.name,
@@ -1616,6 +1694,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .bind(randomHex(8), id, data, nowIso())
           .run()
       }
+      await awardPoints(db, me.id, 'post')
       return ok({ id })
     }
 
@@ -1800,6 +1879,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         )
         .bind(me.id, targetId, nowIso())
         .run()
+      await awardPoints(db, targetId, 'follow')
       await db
         .prepare(
           `INSERT INTO notifications (id, user_id, type, actor_name, body, created_at)
@@ -1950,6 +2030,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         )
         .bind(id, targetType, targetId, me.id, text, status, rootId, replyTo?.name ?? null, nowIso())
         .run()
+      await awardPoints(db, me.id, 'comment')
 
       // 回复通知：通知被回复的人（不通知自己）
       if (replyTo && replyTo.user_id !== me.id) {

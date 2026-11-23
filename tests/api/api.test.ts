@@ -1683,3 +1683,30 @@ describe('签名与访客（v1.1）', () => {
     expect(other.body.data.user.visitors.length).toBe(0)
   })
 })
+
+describe('等级与积分（v1.1）', () => {
+  it('登录后获得积分，主页显示等级', async () => {
+    const key = await makeKey(await bootstrapAdmin(), 'visitor')
+    const reg = await registerWithKey(key, '新来的')
+    const page = await call('GET', `/users/${reg.body.data.user.uid}`)
+    expect(page.body.data.user.level).toBeGreaterThanOrEqual(1)
+    expect(page.body.data.user.points).toBeGreaterThan(0)
+  })
+
+  it('发帖与评论会加分，人气随访客增长', async () => {
+    const admin = await bootstrapAdmin()
+    const a = await registerWithKey(await makeKey(admin, 'visitor'), '发帖的人')
+    const b = await registerWithKey(await makeKey(admin, 'visitor'), '围观的人')
+
+    await call('POST', '/posts', { body: '第一条帖子' }, a.body.data.token)
+    await call('POST', '/comments', { targetType: 'post', targetId: 'x', body: '评论一下' }, a.body.data.token)
+
+    const before = await call('GET', `/users/${a.body.data.user.uid}`)
+    const beforePoints = before.body.data.user.points
+
+    await call('GET', `/users/${a.body.data.user.uid}`, undefined, b.body.data.token)
+    const after = await call('GET', `/users/${a.body.data.user.uid}`)
+    expect(after.body.data.user.points).toBe(beforePoints)
+    expect(after.body.data.user.popularity).toBeGreaterThan(0)
+  })
+})

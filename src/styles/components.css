@@ -3455,3 +3455,31 @@ select.input {
   padding: 46px 0;
   color: var(--text-3);
 }
+
+/* 等级铭牌 */
+.lv {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #3a2a06;
+  background: linear-gradient(100deg, #f7e7b0 0%, #e9c86a 55%, #c9a233 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.lv::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 36%;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: svip-shine 3.6s ease-in-out infinite;
+}
