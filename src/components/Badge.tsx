@@ -85,3 +85,36 @@ export function Badge({
     </span>
   )
 }
+
+/** 身份徽章 + 自定义称号铭牌，统一由这里渲染，避免各页面不一致 */
+export function TitleBadges({
+  role,
+  uid,
+  verified,
+  badgeStyle,
+  titleStyles,
+  titles,
+  shownTitles,
+}: {
+  role: string | undefined
+  uid: number | null | undefined
+  verified?: boolean
+  badgeStyle?: string | null
+  titleStyles?: Record<string, string> | null
+  titles?: string[] | null
+  shownTitles?: string[] | null
+}) {
+  const kind = badgeKindOf(role, uid, verified)
+  const identityWords = new Set(['管理员', '剧组成员', '认证成员', '访问者', '普通访客', '访客'])
+  const shown = (shownTitles ?? []).filter((t) => !identityWords.has(t))
+  const extra = shown.length > 0 ? shown : (titles ?? []).filter((t) => !identityWords.has(t)).slice(0, 1)
+
+  return (
+    <>
+      <Badge kind={kind} style={badgeStyle} />
+      {extra.map((t) => (
+        <Badge key={t} kind={kind} style={titleStyles?.[t] ?? badgeStyle} label={t} />
+      ))}
+    </>
+  )
+}

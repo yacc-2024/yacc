@@ -5,8 +5,8 @@ import { Icon } from '../components/Icon'
 import { api } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 import { useCallback, useEffect, useState } from 'react'
-import { formatUid, displayTitles } from '../lib/uid'
-import { Badge, badgeKindOf } from '../components/Badge'
+import { formatUid } from '../lib/uid'
+import { TitleBadges } from '../components/Badge'
 
 export function Me() {
   const [unread, setUnread] = useState(0)
@@ -73,33 +73,15 @@ export function Me() {
                   ID {formatUid(account.uid)}
                 </span>
                 <span className="title-row">
-                  <Badge
-                    kind={badgeKindOf(account.role, account.uid, account.verified)}
-                    style={account.badgeStyle}
+                  <TitleBadges
+                    role={account.role}
+                    uid={account.uid}
+                    verified={account.verified}
+                    badgeStyle={account.badgeStyle}
+                    titleStyles={account.titleStyles}
+                    titles={account.titles}
+                    shownTitles={account.shownTitles}
                   />
-                  {displayTitles(
-                    account.uid,
-                    account.role,
-                    account.verified,
-                    account.titles,
-                    account.shownTitles,
-                  )
-                    .filter(
-                      (t) =>
-                        t !== '管理员' &&
-                        t !== '剧组成员' &&
-                        t !== '认证成员' &&
-                        t !== '普通访客' &&
-                        t !== '访客',
-                    )
-                    .map((t) => (
-                      <Badge
-                        key={t}
-                        kind={badgeKindOf(account.role, account.uid, account.verified)}
-                        style={account.titleStyles?.[t] ?? account.badgeStyle}
-                        label={t}
-                      />
-                    ))}
                 </span>
               </span>
             </Link>

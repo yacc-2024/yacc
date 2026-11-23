@@ -4,10 +4,10 @@ import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow, Segmented, useConfirm, Sheet } from '../components/ui'
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
-import { formatUid, displayTitles } from '../lib/uid'
+import { formatUid } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useInstall } from '../lib/pwa'
-import { Badge, badgeKindOf } from '../components/Badge'
+import { TitleBadges } from '../components/Badge'
 import { useRef } from 'react'
 import { AvatarCropper } from '../components/AvatarCropper'
 import {
@@ -94,20 +94,15 @@ function SettingsHome() {
               ID {formatUid(account.uid)}
             </p>
             <span className="title-row">
-              {displayTitles(
-                account.uid,
-                account.role,
-                account.verified,
-                account.titles,
-                account.shownTitles,
-              ).map((t) => (
-                <Badge
-                  key={t}
-                  kind={badgeKindOf(account.role, account.uid, account.verified)}
-                  style={account.titleStyles?.[t] ?? account.badgeStyle}
-                  label={t}
-                />
-              ))}
+              <TitleBadges
+                role={account.role}
+                uid={account.uid}
+                verified={account.verified}
+                badgeStyle={account.badgeStyle}
+                titleStyles={account.titleStyles}
+                titles={account.titles}
+                shownTitles={account.shownTitles}
+              />
             </span>
           </div>
         </div>
