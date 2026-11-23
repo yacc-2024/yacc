@@ -3119,8 +3119,16 @@ select.input {
   box-shadow: none;
 }
 
-.svip--guest::after {
+.svip--plain::after {
   display: none;
+}
+
+.svip--plain {
+  background: var(--control-bg);
+  color: var(--text-2);
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3193,6 +3201,19 @@ select.input {
   
 }
 
+.badge-v::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 36%;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: svip-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .badge-v__mark {
   display: inline-flex;
   align-items: center;
@@ -3204,11 +3225,37 @@ select.input {
   background: rgba(255, 255, 255, 0.95);
 }
 
-.badge-v--blue .badge-v__mark {
+.badge-v--blue .badge-v::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 36%;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: svip-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.badge-v__mark {
   color: #1667e0;
 }
 
-.badge-v--gold .badge-v__mark {
+.badge-v--gold .badge-v::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 36%;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: svip-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.badge-v__mark {
   color: #b97a00;
   background: rgba(255, 255, 255, 0.88);
 }

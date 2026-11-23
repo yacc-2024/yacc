@@ -12,6 +12,7 @@ export type BadgeStyle =
   | 'silver'
   | 'neon'
   | 'rosy'
+  | 'plain'
 
 export function badgeKindOf(
   role: string | undefined,
@@ -45,6 +46,7 @@ export const BADGE_STYLES: Array<{ value: BadgeStyle; label: string }> = [
   { value: 'silver', label: '银灰渐变' },
   { value: 'neon', label: '霓虹渐变' },
   { value: 'rosy', label: '玫瑰渐变' },
+  { value: 'plain', label: '普通铭牌' },
 ]
 
 export function Badge({

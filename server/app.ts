@@ -289,6 +289,7 @@ const BADGE_STYLES = [
   'silver',
   'neon',
   'rosy',
+  'plain',
 ]
 
 function parseTitleStyles(raw: string | null | undefined): Record<string, string> {
@@ -2484,6 +2485,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           'silver',
           'neon',
           'rosy',
+          'plain',
         ]
         const value = body.badgeStyle === null ? null : String(body.badgeStyle)
         if (value !== null && !allowed.includes(value)) return fail('铭牌样式不认识')
