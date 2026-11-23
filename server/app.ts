@@ -1900,7 +1900,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           `INSERT INTO notifications (id, user_id, type, actor_name, body, created_at)
            VALUES (?, ?, 'follow', ?, ?, ?)`,
         )
-        .bind(randomHex(8), targetId, me.name, '关注了你', nowIso())
+        .bind(randomHex(8), targetId, me.name, '关注了你，去打个招呼吧', nowIso())
         .run()
       return ok({ following: true })
     }
@@ -2152,7 +2152,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (!me) return fail('未登录', 401)
       const rows = await db
         .prepare(
-          `SELECT id, type, comment_id, target_type, target_id, actor_name, body, created_at, read_at
+          `SELECT id, type, comment_id, target_type, target_id, actor_name, body,
+                  category, created_at, read_at
            FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
         )
         .bind(me.id)
@@ -2164,11 +2165,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           target_id: string | null
           actor_name: string | null
           body: string | null
+          category: string | null
           created_at: string
           read_at: string | null
         }>()
       return ok({
         notifications: rows.map((r) => ({
+          category: r.category ?? 'social',
           id: r.id,
           type: r.type,
           commentId: r.comment_id,
@@ -2257,6 +2260,42 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         )
         .bind(targetType, targetId)
         .first<{ n: number }>()
+
+      // 点赞后给作者发通知（不通知自己）
+      if (!existing) {
+        let ownerId: string | null = null
+        if (targetType === 'post') {
+          const post = await db
+            .prepare('SELECT user_id FROM posts WHERE id = ?')
+            .bind(targetId)
+            .first<{ user_id: string }>()
+          ownerId = post?.user_id ?? null
+        } else if (targetType === 'comment') {
+          const row = await db
+            .prepare('SELECT user_id FROM comments WHERE id = ?')
+            .bind(targetId)
+            .first<{ user_id: string }>()
+          ownerId = row?.user_id ?? null
+        }
+        if (ownerId && ownerId !== me.id) {
+          await db
+            .prepare(
+              `INSERT INTO notifications (id, user_id, type, target_type, target_id, actor_name, body, category, created_at)
+               VALUES (?, ?, 'like', ?, ?, ?, ?, 'social', ?)`,
+            )
+            .bind(
+              randomHex(8),
+              ownerId,
+              targetType,
+              targetId,
+              me.name,
+              targetType === 'post' ? '赞了你的帖子' : '赞了你的评论',
+              nowIso(),
+            )
+            .run()
+        }
+      }
+
       return ok({ active: !existing, count: Number(countRow?.n ?? 0) })
     }
 
@@ -2614,6 +2653,24 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             target.id,
           )
           .run()
+
+        // 新称号通知
+        const added = list.filter((t) => !current.includes(t))
+        if (added.length > 0) {
+          await db
+            .prepare(
+              `INSERT INTO notifications (id, user_id, type, actor_name, body, category, created_at)
+               VALUES (?, ?, 'title', ?, ?, 'system', ?)`,
+            )
+            .bind(
+              randomHex(8),
+              target.id,
+              me!.name,
+              `恭喜获得新称号「${added[0]}」，去主页看看吧`,
+              nowIso(),
+            )
+            .run()
+        }
         void current
       }
 

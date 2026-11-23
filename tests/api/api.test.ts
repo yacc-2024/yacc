@@ -1710,3 +1710,38 @@ describe('等级与积分（v1.1）', () => {
     expect(after.body.data.user.popularity).toBeGreaterThan(0)
   })
 })
+
+describe('消息分类（v1.1）', () => {
+  it('点赞、关注、称号都会进消息，并带分类', async () => {
+    const admin = await bootstrapAdmin()
+    const author = await registerWithKey(await makeKey(admin, 'visitor'), '作者')
+    const fan = await registerWithKey(await makeKey(admin, 'visitor'), '粉丝')
+
+    const post = await call('POST', '/posts', { body: '来看看这个' }, author.body.data.token)
+    await call('POST', '/reactions/toggle', { targetType: 'post', targetId: post.body.data.id }, fan.body.data.token)
+    await call('POST', `/follows/${author.body.data.user.id}`, undefined, fan.body.data.token)
+    await call(
+      'POST',
+      `/admin/users/${author.body.data.user.id}`,
+      { titles: ['优秀'] },
+      admin,
+    )
+
+    const inbox = await call('GET', '/notifications', undefined, author.body.data.token)
+    const types = inbox.body.data.notifications.map((n: { type: string }) => n.type)
+    expect(types).toContain('like')
+    expect(types).toContain('follow')
+    expect(types).toContain('title')
+
+    const titleNote = inbox.body.data.notifications.find(
+      (n: { type: string }) => n.type === 'title',
+    )
+    expect(titleNote.category).toBe('system')
+
+    const likeNote = inbox.body.data.notifications.find(
+      (n: { type: string }) => n.type === 'like',
+    )
+    expect(likeNote.category).toBe('social')
+    expect(likeNote.body).toContain('赞了你的帖子')
+  })
+})

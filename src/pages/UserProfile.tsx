@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { NavBar, Avatar, EmptyState, Sheet } from '../components/ui'
+import { NavBar, Avatar, EmptyState, Sheet, useConfirm } from '../components/ui'
 import { Badge, badgeKindOf } from '../components/Badge'
 import { EpisodeRow } from '../components/media'
 import { Icon } from '../components/Icon'
@@ -53,6 +53,7 @@ export function UserProfile() {
   const [showContent, setShowContent] = useState(false)
   const [tab, setTab] = useState<'profile' | 'posts'>('profile')
   const [busy, setBusy] = useState(false)
+  const confirm = useConfirm()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -160,6 +161,15 @@ export function UserProfile() {
                 style={{ display: 'block', width: '100%', marginTop: 14, minHeight: 40 }}
                 disabled={busy}
                 onClick={async () => {
+                  if (user.isFollowing) {
+                    const yes = await confirm({
+                      title: '取消关注？',
+                      message: `取消关注后，TA 的新动态不会再优先出现。`,
+                      confirmText: '取消关注',
+                      danger: true,
+                    })
+                    if (!yes) return
+                  }
                   setBusy(true)
                   try {
                     const res = await api.follow(user.userId, user.isFollowing ? 'unfollow' : 'follow')

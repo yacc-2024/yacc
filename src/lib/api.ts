@@ -440,6 +440,7 @@ export const api = {
       notifications: Array<{
         id: string
         type: string
+        category?: string
         commentId: string | null
         targetType: string | null
         targetId: string | null
@@ -467,6 +468,7 @@ export const api = {
       notifications: Array<{
         id: string
         type: string
+        category?: string
         commentId: string | null
         targetType: string | null
         targetId: string | null

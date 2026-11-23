@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   target_id TEXT,
   actor_name TEXT,
   body TEXT,
+  category TEXT NOT NULL DEFAULT 'social',
   created_at TEXT NOT NULL,
   read_at TEXT
 );
