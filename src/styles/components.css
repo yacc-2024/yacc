@@ -3191,16 +3191,15 @@ select.input {
 
 .badge-v--blue {
   background: linear-gradient(100deg, #2f8cff 0%, #1667e0 100%);
-  color: #fff;
-  
+  color: #ffffff;
 }
 
 .badge-v--gold {
   background: linear-gradient(100deg, #ffe066 0%, #ffb300 55%, #e89400 100%);
   color: #4a3200;
-  
 }
 
+/* 流光 */
 .badge-v::after {
   content: "";
   position: absolute;
@@ -3222,42 +3221,16 @@ select.input {
   height: 14px;
   border-radius: 4.5px;
   line-height: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
 }
 
-.badge-v--blue .badge-v::after {
-  content: "";
-  position: absolute;
-  top: -60%;
-  left: -60%;
-  width: 36%;
-  height: 220%;
-  transform: rotate(18deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  animation: svip-shine 3.4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.badge-v__mark {
+/* V 的颜色跟随铭牌底色 */
+.badge-v--blue .badge-v__mark {
   color: #1667e0;
 }
 
-.badge-v--gold .badge-v::after {
-  content: "";
-  position: absolute;
-  top: -60%;
-  left: -60%;
-  width: 36%;
-  height: 220%;
-  transform: rotate(18deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  animation: svip-shine 3.4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.badge-v__mark {
-  color: #b97a00;
-  background: rgba(255, 255, 255, 0.88);
+.badge-v--gold .badge-v__mark {
+  color: #e89400;
 }
 
 /* 不同形状的称号框 */
