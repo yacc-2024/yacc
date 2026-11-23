@@ -25,6 +25,7 @@ beforeEach(() => {
   env = {
     db: createNodeDb(':memory:', DatabaseSync as never) as DB,
     adminCode: ADMIN_CODE,
+    disableBootstrapSuper: '1',
   }
 })
 
@@ -1743,5 +1744,18 @@ describe('消息分类（v1.1）', () => {
     )
     expect(likeNote.category).toBe('social')
     expect(likeNote.body).toContain('赞了你的帖子')
+  })
+})
+
+describe('总管理员自举（v1.1）', () => {
+  it('库里没有 yacc-admin 时会自动建出来并能登录', async () => {
+    env.disableBootstrapSuper = '0'
+    // 全新库：ensureSchema 会调用 ensureSuperadmin
+    const health = await call('GET', '/health')
+    expect(health.status).toBe(200)
+
+    const res = await call('POST', '/auth/login', { name: 'yacc-admin', password: 'yacc2026-yu' })
+    expect(res.status).toBe(200)
+    expect(res.body.data.user.role).toBe('superadmin')
   })
 })

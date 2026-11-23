@@ -21,6 +21,8 @@ export interface Env {
   db: DB
   /** 首次创建管理员用的口令，部署时用 secret 注入 */
   adminCode: string
+  /** 测试环境可以把自动建总管理员关掉 */
+  disableBootstrapSuper?: string
 }
 
 export type AdminPerm =
@@ -145,7 +147,7 @@ const fail = (error: string, status = 400) => json({ ok: false, error }, status)
 
 const schemas = new WeakMap<DB, Promise<void>>()
 
-function ensureSchema(db: DB): Promise<void> {
+function ensureSchema(db: DB, createSuper = true): Promise<void> {
   let promise = schemas.get(db)
   if (!promise) {
     const statements = SCHEMA_SQL.split(';')
@@ -185,7 +187,7 @@ function ensureSchema(db: DB): Promise<void> {
         }
       }
       await normaliseLegacyUids(db)
-      await ensureSuperadmin(db)
+      await ensureSuperadmin(db, createSuper)
       await ensureChangelogSeed(db)
     })().catch((err) => {
       schemas.delete(db)
@@ -647,17 +649,17 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
     .run()
 }
 
-export async function ensureSuperadmin(db: DB): Promise<void> {
-  const existing = await db
-    .prepare("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1")
-    .first<{ id: string }>()
-  if (existing) {
-    // 已经有总管理员了，但仍要把 yacc-admin 补成总管理员（用户明确指定）
-    const named = await db
-      .prepare("SELECT id, role FROM users WHERE name = ? COLLATE NOCASE")
-      .bind('yacc-admin')
-      .first<{ id: string; role: string }>()
-    if (named && named.role !== 'superadmin') {
+/** 首次启动时总管理员的初始密码（登录后请尽快修改） */
+const DEFAULT_SUPER_PASSWORD = 'yacc2026-yu'
+
+export async function ensureSuperadmin(db: DB, create = true): Promise<void> {
+  const named = await db
+    .prepare("SELECT id, role FROM users WHERE name = ? COLLATE NOCASE")
+    .bind('yacc-admin')
+    .first<{ id: string; role: string }>()
+
+  if (named) {
+    if (named.role !== 'superadmin') {
       await db
         .prepare("UPDATE users SET role = 'superadmin', perms = NULL WHERE id = ?")
         .bind(named.id)
@@ -666,20 +668,17 @@ export async function ensureSuperadmin(db: DB): Promise<void> {
     return
   }
 
-  const named = await db
-    .prepare("SELECT id FROM users WHERE name = ? COLLATE NOCASE")
-    .bind('yacc-admin')
-    .first<{ id: string }>()
-  const target =
-    named ??
-    (await db
-      .prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1")
-      .first<{ id: string }>())
-
-  if (!target) return
+  // 没有 yacc-admin 就补建一个，保证随时能进后台
+  if (!create) return
+  const salt = randomHex(16)
+  const passwordHash = await hashPassword(DEFAULT_SUPER_PASSWORD, salt)
+  const uid = await allocateUid(db, { kind: 'guest' })
   await db
-    .prepare("UPDATE users SET role = 'superadmin', perms = NULL WHERE id = ?")
-    .bind(target.id)
+    .prepare(
+      `INSERT INTO users (id, uid, name, password_hash, salt, role, perms, verified, created_at, signup_ip)
+       VALUES (?, ?, ?, ?, ?, 'superadmin', NULL, 1, ?, 'bootstrap')`,
+    )
+    .bind(randomHex(8), uid, 'yacc-admin', passwordHash, salt, nowIso())
     .run()
 }
 
@@ -794,7 +793,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
 
 async function handleApiInner(request: Request, env: Env): Promise<Response> {
   const db = env.db
-  await ensureSchema(db)
+  await ensureSchema(db, env.disableBootstrapSuper !== '1')
 
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api/, '') || '/'
