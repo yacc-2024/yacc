@@ -846,7 +846,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
                   (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post' AND c.target_id = p.id AND c.status = 'published') AS comments,
                   (SELECT i.id FROM post_images i WHERE i.post_id = p.id ORDER BY i.created_at LIMIT 1) AS image_id
            FROM posts p
-           WHERE p.user_id = ? AND p.status = 'published'
+           WHERE p.user_id = ? AND (p.status IS NULL OR p.status = 'published')
            ORDER BY p.created_at DESC LIMIT 50`,
         )
         .bind(target.id)
@@ -864,7 +864,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare(
           `SELECT c.id, c.body, c.created_at, c.target_type, c.target_id
            FROM comments c
-           WHERE c.user_id = ? AND c.status = 'published'
+           WHERE c.user_id = ? AND (c.status IS NULL OR c.status = 'published')
            ORDER BY c.created_at DESC LIMIT 50`,
         )
         .bind(target.id)
@@ -926,31 +926,33 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .first<UserRow>()
       if (!row) return fail('找不到这个账号', 404)
       const summary = describeUid(row.uid)
-      const commentCount = await db
-        .prepare("SELECT COUNT(*) AS n FROM comments WHERE user_id = ? AND status = 'published'")
-        .bind(row.id)
-        .first<{ n: number }>()
-      const followerCount = await db
-        .prepare('SELECT COUNT(*) AS n FROM follows WHERE followee_id = ?')
-        .bind(row.id)
-        .first<{ n: number }>()
-      const followingCount = await db
-        .prepare('SELECT COUNT(*) AS n FROM follows WHERE follower_id = ?')
-        .bind(row.id)
-        .first<{ n: number }>()
-      const likeCount = await db
+
+      // 一次查询拿到全部计数，减少往返
+      const counts = await db
         .prepare(
           `SELECT
-             (SELECT COUNT(*) FROM post_likes l JOIN posts p ON p.id = l.post_id WHERE p.user_id = ?)
-           + (SELECT COUNT(*) FROM reactions r JOIN comments c ON c.id = r.target_id
-                WHERE r.target_type = 'comment' AND c.user_id = ?) AS n`,
+             (SELECT COUNT(*) FROM comments WHERE user_id = ?1 AND (status IS NULL OR status = 'published')) AS comments,
+             (SELECT COUNT(*) FROM follows WHERE followee_id = ?1) AS followers,
+             (SELECT COUNT(*) FROM follows WHERE follower_id = ?1) AS following,
+             (SELECT COUNT(*) FROM posts WHERE user_id = ?1 AND (status IS NULL OR status = 'published')) AS posts,
+             (SELECT COUNT(*) FROM post_likes l JOIN posts p ON p.id = l.post_id WHERE p.user_id = ?1)
+               + (SELECT COUNT(*) FROM reactions r JOIN comments c ON c.id = r.target_id
+                    WHERE r.target_type = 'comment' AND c.user_id = ?1) AS likes`,
         )
-        .bind(row.id, row.id)
-        .first<{ n: number }>()
-      const postCount = await db
-        .prepare("SELECT COUNT(*) AS n FROM posts WHERE user_id = ? AND status = 'published'")
         .bind(row.id)
-        .first<{ n: number }>()
+        .first<{
+          comments: number
+          followers: number
+          following: number
+          posts: number
+          likes: number
+        }>()
+      const commentCount = { n: Number(counts?.comments ?? 0) }
+      const followerCount = { n: Number(counts?.followers ?? 0) }
+      const followingCount = { n: Number(counts?.following ?? 0) }
+      const postCount = { n: Number(counts?.posts ?? 0) }
+      const likeCount = { n: Number(counts?.likes ?? 0) }
+
       const viewer = await currentUser(db, request)
       if (viewer && viewer.id !== row.id) {
         const last = await db

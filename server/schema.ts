@@ -124,6 +124,9 @@ CREATE TABLE IF NOT EXISTS profile_visits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_visits_host ON profile_visits (host_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_posts_user ON posts (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_comments_user ON comments (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_post_images_post ON post_images (post_id);
 
 CREATE TABLE IF NOT EXISTS activity (
   id TEXT PRIMARY KEY,
@@ -168,6 +171,8 @@ CREATE TABLE IF NOT EXISTS reactions (
   created_at TEXT NOT NULL,
   PRIMARY KEY (user_id, target_type, target_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_reactions_target ON reactions (target_type, target_id);
 
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,

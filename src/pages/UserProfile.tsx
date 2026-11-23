@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet, useConfirm } from '../components/ui'
 import { Badge, badgeKindOf } from '../components/Badge'
+import { Spinner } from '../components/PullToRefresh'
 import { EpisodeRow } from '../components/media'
 import { Icon } from '../components/Icon'
 import { api, ApiError } from '../lib/api'
@@ -395,11 +396,7 @@ function UserPosts({ userId }: { userId: string }) {
   }, [userId])
 
   if (posts === null) {
-    return (
-      <p className="t-caption faint" style={{ marginTop: 20 }}>
-        加载中…
-      </p>
-    )
+    return <Spinner label="正在加载帖子" />
   }
 
   if (posts.length === 0) {
