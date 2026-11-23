@@ -1565,7 +1565,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const row = await db
         .prepare(
           `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
-                  u.name AS author, u.avatar, u.uid, u.title, u.titles, u.shown_titles
+                  u.name AS author, u.avatar, u.uid, u.role, u.badge_style,
+                  u.title, u.titles, u.shown_titles
            FROM posts p JOIN users u ON u.id = p.user_id
            WHERE p.id = ? AND p.status = 'published'`,
         )

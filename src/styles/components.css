@@ -3268,3 +3268,44 @@ select.input {
   color: #4a1c10;
   font-weight: 700;
 }
+
+/* 论坛帖子头部：长名字省略，铭牌不换行 */
+.post__head {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.post__who {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.post__who > span {
+  min-width: 0;
+  display: block;
+}
+
+.post__name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.post__name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post__name-row .svip,
+.post__name-row .badge-v {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
