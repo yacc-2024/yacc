@@ -111,13 +111,13 @@ export function UserProfile() {
             <div className="dy-info">
               <p className="dy-name">{user.name}</p>
               <p className="dy-uid t-num">ID {user.uid}</p>
-              {bio ? <p className="dy-bio">{bio}</p> : null}
               <span className="title-row" style={{ marginTop: 8 }}>
                 <Badge
                   kind={badgeKindOf(user.role, user.rawUid, user.verified)}
                   style={user.badgeStyle}
                 />
               </span>
+              {bio ? <p className="dy-bio">{bio}</p> : null}
             </div>
 
             {!user.isMe ? (
