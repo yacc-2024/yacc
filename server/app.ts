@@ -893,6 +893,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           followingCount: Number(followingCount?.n ?? 0),
           likes: Number(likeCount?.n ?? 0),
           isFollowing,
+          followsMe: viewer
+            ? Boolean(
+                await db
+                  .prepare('SELECT 1 AS x FROM follows WHERE follower_id = ? AND followee_id = ?')
+                  .bind(row.id, viewer.id)
+                  .first<{ x: number }>(),
+              )
+            : false,
           isMe: viewer?.id === row.id,
           userId: row.id,
           postCount: Number(postCount?.n ?? 0),

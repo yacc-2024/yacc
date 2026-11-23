@@ -23,6 +23,7 @@ interface PublicUser {
   followingCount: number
   likes: number
   isFollowing: boolean
+  followsMe: boolean
   isMe: boolean
   badgeStyle: string | null
   label: string
@@ -140,7 +141,11 @@ export function UserProfile() {
                   }
                 }}
               >
-                {user.isFollowing ? '已关注' : '关注'}
+                {user.isFollowing && user.followsMe
+                  ? '互相关注'
+                  : user.isFollowing
+                    ? '已关注'
+                    : '关注'}
               </button>
             ) : null}
 

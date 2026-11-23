@@ -397,6 +397,7 @@ export const api = {
         followingCount: number
         likes: number
         isFollowing: boolean
+        followsMe: boolean
         isMe: boolean
         badgeStyle: string | null
         titleStyles: Record<string, string>

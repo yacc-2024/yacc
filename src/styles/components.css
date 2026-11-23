@@ -3329,3 +3329,46 @@ select.input {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/* 论坛发帖入口 */
+.post-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.post-cta:active {
+  transform: scale(0.985);
+}
+
+.post-cta__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-weak);
+  color: var(--accent);
+  flex: 0 0 34px;
+}
+
+.post-cta__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.post-cta__sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}

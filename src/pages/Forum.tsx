@@ -83,6 +83,17 @@ export function Forum() {
         }
       />
       <div className="page__body">
+        <Link to="/forum/new" className="post-cta">
+          <span className="post-cta__icon">
+            <Icon name="plus" size={18} />
+          </span>
+          <span className="grow">
+            <span className="post-cta__title">说点什么…</span>
+            <span className="post-cta__sub">发帖、配图，和剧组聊聊</span>
+          </span>
+          <Icon name="chevron-right" size={16} />
+        </Link>
+
         {loading ? (
           <p className="t-caption faint" style={{ marginTop: 16 }}>
             加载中…
