@@ -62,12 +62,17 @@ export function Badge({
     return (
       <span className={`badge-v badge-v--${cls === 'crew' ? 'blue' : 'gold'}`}>
         <span className="badge-v__mark" aria-hidden="true">
-          <svg viewBox="0 0 12 12" width="9" height="9">
+          <svg
+            viewBox="0 0 12 12"
+            width="10"
+            height="10"
+            style={{ transform: 'skewX(-14deg)', transformOrigin: 'center' }}
+          >
             <path
-              d="M3.1 3.2 L6 8.6 L8.9 3.2"
+              d="M3 3 L6 9 L9 3"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.9"
+              strokeWidth="2.4"
               strokeLinecap="butt"
               strokeLinejoin="miter"
             />
