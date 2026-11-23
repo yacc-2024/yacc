@@ -33,7 +33,7 @@ export function badgeLabelOf(kind: BadgeKind): string {
   return '普通访客'
 }
 
-/** 后台可选的称号框（用外观描述命名） */
+/** 后台可选的铭牌（用外观描述命名） */
 export const BADGE_STYLES: Array<{ value: BadgeStyle; label: string }> = [
   { value: 'auto', label: '跟随身份' },
   { value: 'crew', label: '蓝底认证' },

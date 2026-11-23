@@ -413,10 +413,54 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v18'
+const CHANGELOG_KEY = 'migrate:changelog-v19'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
+  {
+    version: '1.0.20',
+    date: '2026-11-23',
+    items: [
+      '全新的铭牌外观：可分别挑选不同风格的称号铭牌',
+      '认证徽章区分蓝底（剧组）与金底（学校认证）',
+      '铭牌带有细腻流光，VIP 与 SVIP 各有专属造型',
+    ],
+  },
+  {
+    version: '1.0.19',
+    date: '2026-11-23',
+    items: [
+      '再次提升加载速度：本地缓存自动清理，长期使用不卡顿',
+      '内容与消息的刷新更省电，切回前台才更新',
+    ],
+  },
+  {
+    version: '1.0.18',
+    date: '2026-11-23',
+    items: [
+      '新的开屏动画：深色底 + 白色标识，进入更顺滑',
+      '网页图标、手机主屏图标统一为同一枚标识',
+      '安卓版支持侧滑返回上一级',
+    ],
+  },
+  {
+    version: '1.0.17',
+    date: '2026-11-22',
+    items: [
+      '称号可以添加多个，并各自选择展示的外观',
+      '个人主页新增关注、粉丝与获赞',
+      '被关注时会收到消息提醒',
+    ],
+  },
+  {
+    version: '1.0.16',
+    date: '2026-11-22',
+    items: [
+      '论坛上线：可以发帖、配图、点赞与评论',
+      '帖子支持楼中楼回复，评论可直接在列表里展开',
+      '首页新增论坛入口，只展示最新动态',
+    ],
+  },
   {
     version: '1.0.15',
     date: '2026-11-22',
@@ -2441,7 +2485,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           'rosy',
         ]
         const value = body.badgeStyle === null ? null : String(body.badgeStyle)
-        if (value !== null && !allowed.includes(value)) return fail('称号框不认识')
+        if (value !== null && !allowed.includes(value)) return fail('铭牌样式不认识')
         await db
           .prepare('UPDATE users SET badge_style = ? WHERE id = ?')
           .bind(value === 'auto' ? null : value, target.id)

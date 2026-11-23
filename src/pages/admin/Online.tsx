@@ -1150,7 +1150,7 @@ function UserForm({
       <p className="form-section">称号</p>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <p className="t-caption faint">称号框</p>
+        <p className="t-caption faint">铭牌</p>
         <div className="chips" style={{ marginTop: 8 }}>
           {BADGE_STYLES.map((opt) => (
             <button

@@ -7,6 +7,7 @@ import { formatDate } from '../lib/format'
 import { formatUid, displayTitles } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useInstall } from '../lib/pwa'
+import { Badge, badgeKindOf } from '../components/Badge'
 import { useRef } from 'react'
 import { AvatarCropper } from '../components/AvatarCropper'
 import {
@@ -100,9 +101,12 @@ function SettingsHome() {
                 account.titles,
                 account.shownTitles,
               ).map((t) => (
-                <span key={t} className="title-chip">
-                  {t}
-                </span>
+                <Badge
+                  key={t}
+                  kind={badgeKindOf(account.role, account.uid, account.verified)}
+                  style={account.titleStyles?.[t] ?? account.badgeStyle}
+                  label={t}
+                />
               ))}
             </span>
           </div>
