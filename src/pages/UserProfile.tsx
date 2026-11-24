@@ -113,7 +113,7 @@ export function UserProfile() {
   return (
     <>
       <NavBar title="用户主页" back />
-      <div className="page__body">
+      <div className={`page__body profile-skin profile-skin--${user?.profileStyle ?? 'normal'}`}>
         {user ? (
           <>
             <div className="dy-head">
