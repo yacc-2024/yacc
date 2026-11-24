@@ -6,6 +6,7 @@ import { useApp } from '../state/AppContext'
 const ITEMS: Array<{ to: string; label: string; icon: IconName }> = [
   { to: '/', label: '主页', icon: 'home' },
   { to: '/members', label: '成员', icon: 'users' },
+  { to: '/forum', label: '论坛', icon: 'message' },
   { to: '/works', label: '作品', icon: 'film' },
   { to: '/me', label: '我的', icon: 'person' },
 ]
