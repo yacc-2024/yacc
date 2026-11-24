@@ -109,7 +109,13 @@ function SettingsHome() {
         </div>
 
         <div className="list">
-          <ListRow icon="person" title="个人资料" sub="头像、昵称" to="/me/settings/profile" />
+          <ListRow
+            icon="person"
+            title="个人资料"
+            sub="头像、昵称、签名"
+            to={`/u/${account.uid}`}
+          />
+          <ListRow icon="edit" title="编辑资料" sub="改头像、昵称与签名" to="/me/settings/profile" />
           <ListRow icon="lock" title="修改密码" sub="旧密码 + 新密码" to="/me/settings/password" />
           <ListRow
             icon="gear"

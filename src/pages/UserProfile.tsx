@@ -84,7 +84,17 @@ export function UserProfile() {
   if (mode !== 'online') {
     return (
       <>
-        <NavBar title="用户主页" back />
+        <NavBar
+        title="用户主页"
+        back
+        action={
+          user?.isMe ? (
+            <Link to="/me/settings/profile" className="nav__action" aria-label="编辑资料">
+              <Icon name="edit" size={20} />
+            </Link>
+          ) : null
+        }
+      />
         <EmptyState icon="person" title="离线模式没有用户主页" desc="连上服务器后再看。" />
       </>
     )

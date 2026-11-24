@@ -3619,8 +3619,17 @@ select.input {
 /* 铃铛跟随大标题缩放、上移 */
 .nav__action {
   transform-origin: right center;
-  transform: translateY(calc((1 - var(--p)) * 22px)) scale(calc(1 + (1 - var(--p)) * 0.22));
+  /* 随大标题收缩：字号大时下移到标题中线，收缩时回到栏内右上角 */
+  transform: translateY(calc((1 - var(--p)) * 18px)) scale(calc(1 + (1 - var(--p)) * 0.18));
   transition: transform 60ms linear;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: 8px;
+}
+
+.nav__large .t-title1 {
+  line-height: 1.1;
 }
 
 /* tab 上的发帖大圆钮 */
@@ -4028,4 +4037,34 @@ select.input {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 堆叠轮播 */
+.deck {
+  position: relative;
+  padding-top: 8px;
+}
+
+.deck__stage {
+  position: relative;
+  height: 210px;
+  touch-action: pan-y;
+}
+
+.deck__card {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.deck__card .poster {
+  width: 100%;
+  height: 190px;
+}
+
+.deck__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
 }

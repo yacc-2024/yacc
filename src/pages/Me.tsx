@@ -60,7 +60,7 @@ export function Me() {
         <div className="page__body">
           <div className="row gap-3" style={{ marginTop: 8, marginBottom: 20 }}>
             <Link
-              to="/me/settings/profile"
+              to={`/u/${account.uid}`}
               className="me-head"
               aria-label="编辑个人资料"
             >

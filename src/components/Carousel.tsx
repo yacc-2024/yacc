@@ -9,49 +9,79 @@ export type CarouselItem = {
   cover?: string | null
 }
 
-/** 推荐轮播：横向吸附滚动 + 指示点 + 自动播放 */
+/** 堆叠式轮播：后面的卡片从后面叠上来 */
 export function Carousel({ items }: { items: CarouselItem[] }) {
-  const ref = useRef<HTMLDivElement>(null)
   const [index, setIndex] = useState(0)
+  const [drag, setDrag] = useState(0)
+  const startX = useRef<number | null>(null)
+  const count = items.length
 
   useEffect(() => {
-    const el = ref.current
-    if (!el || items.length < 2) return
-    const onScroll = () => {
-      const w = el.clientWidth
-      if (!w) return
-      setIndex(Math.round(el.scrollLeft / w))
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
-  }, [items.length])
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || items.length < 2) return
+    if (count < 2) return
     const timer = window.setInterval(() => {
-      const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % items.length
-      el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
+      setIndex((i) => (i + 1) % count)
     }, 4200)
     return () => window.clearInterval(timer)
-  }, [items.length])
+  }, [count])
+
+  const onStart = (e: React.PointerEvent) => {
+    startX.current = e.clientX
+  }
+  const onMove = (e: React.PointerEvent) => {
+    if (startX.current === null) return
+    setDrag(e.clientX - startX.current)
+  }
+  const onEnd = () => {
+    if (Math.abs(drag) > 60) {
+      setIndex((i) => (i + (drag < 0 ? 1 : count - 1)) % count)
+    }
+    startX.current = null
+    setDrag(0)
+  }
 
   return (
-    <div className="carousel">
-      <div className="carousel__track" ref={ref}>
-        {items.map((f) => (
-          <div className="carousel__slide" key={f.key}>
-            <PosterCard
-              to={f.to}
-              title={f.title}
-              badge={f.badge ?? ''}
-              cover={f.cover ?? ''}
-            />
-          </div>
-        ))}
+    <div className="deck">
+      <div
+        className="deck__stage"
+        onPointerDown={onStart}
+        onPointerMove={onMove}
+        onPointerUp={onEnd}
+        onPointerCancel={onEnd}
+      >
+        {items.map((f, i) => {
+          const offset = (i - index + count) % count
+          const depth = offset > 2 ? 3 : offset
+          return (
+            <div
+              key={f.key}
+              className="deck__card"
+              style={{
+                zIndex: count - depth,
+                transform: `translateY(${depth * 10}px) scale(${1 - depth * 0.05}) rotate(${
+                  depth * -1.2
+                }deg) translateX(${drag * (depth === 0 ? 1 : 0.2)}px)`,
+                opacity: depth > 2 ? 0 : 1,
+                transition:
+                  startX.current === null
+                    ? 'transform 420ms cubic-bezier(.22,1,.36,1), opacity 300ms ease'
+                    : 'none',
+              }}
+              onClick={() => {
+                if (Math.abs(drag) < 6) setIndex(i)
+              }}
+            >
+              <PosterCard
+                to={f.to}
+                title={f.title}
+                badge={f.badge ?? ''}
+                cover={f.cover ?? ''}
+              />
+            </div>
+          )
+        })}
       </div>
-      {items.length > 1 ? (
-        <div className="carousel__dots">
+      {count > 1 ? (
+        <div className="deck__dots">
           {items.map((f, i) => (
             <button
               key={f.key}
@@ -59,10 +89,7 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
               className="carousel__dot"
               aria-selected={i === index}
               aria-label={`第 ${i + 1} 个推荐`}
-              onClick={() => {
-                const el = ref.current
-                if (el) el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
-              }}
+              onClick={() => setIndex(i)}
             />
           ))}
         </div>
@@ -70,4 +97,3 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
     </div>
   )
 }
-
