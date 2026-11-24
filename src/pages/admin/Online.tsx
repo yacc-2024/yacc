@@ -734,6 +734,8 @@ interface AdminUser {
   memberId: string | null
   perms: string[]
   badgeStyle: string | null
+  avatarFrame: string | null
+  sponsorUntil: string | null
   titleStyles: Record<string, string>
   keyCode: string | null
   createdAt: string
@@ -921,6 +923,9 @@ function UserForm({
   const [permList, setPermList] = useState<string[]>(user.perms ?? [])
   const [badgeStyle, setBadgeStyle] = useState<string>(user.badgeStyle ?? 'auto')
   const [titleStyles, setTitleStyles] = useState<Record<string, string>>(user.titleStyles ?? {})
+  const [sponsorDays, setSponsorDays] = useState('30')
+  const [pointDelta, setPointDelta] = useState('100')
+  const [frame, setFrame] = useState(user.avatarFrame ?? '')
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -945,6 +950,7 @@ function UserForm({
         perms?: string[]
         role?: 'visitor' | 'admin'
         badgeStyle?: string
+        avatarFrame?: string | null
         titleStyles?: Record<string, string>
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
@@ -956,6 +962,7 @@ function UserForm({
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
       if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
+      if (frame !== (user.avatarFrame ?? '')) patch.avatarFrame = frame || null
       if (JSON.stringify(titleStyles) !== JSON.stringify(user.titleStyles ?? {})) {
         patch.titleStyles = titleStyles
       }
@@ -1145,6 +1152,118 @@ function UserForm({
         <p className="field__hint">
           绑定后，成员页里这个人点进去就是他的账号主页。
         </p>
+      </div>
+
+      <p className="form-section">发放</p>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">头像框</p>
+        <div className="chips" style={{ marginTop: 8 }}>
+          {[
+            ['', '无'],
+            ['ring-gold', '金色'],
+            ['ring-neon', '霓虹'],
+            ['ring-silver', '银灰'],
+          ].map(([v, l]) => (
+            <button
+              key={v || 'none'}
+              type="button"
+              className="chip"
+              aria-pressed={frame === v}
+              onClick={() => setFrame(v)}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">赞助</p>
+        <p className="field__hint" style={{ marginTop: 4 }}>
+          {user.sponsorUntil ? `当前有效期至 ${user.sponsorUntil.slice(0, 10)}` : '还不是赞助者'}
+        </p>
+        <div className="row gap-2" style={{ marginTop: 10 }}>
+          <input
+            className="input"
+            style={{ flex: 1 }}
+            type="number"
+            aria-label="赞助天数"
+            value={sponsorDays}
+            onChange={(e) => setSponsorDays(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={async () => {
+              try {
+                await api.adminSponsor(user.id, Number(sponsorDays) || 30)
+                toast('已发放赞助')
+              } catch (err) {
+                toast(err instanceof Error ? err.message : '发放失败', 'error')
+              }
+            }}
+          >
+            发放
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={async () => {
+              try {
+                await api.adminSponsor(user.id, 0, true)
+                toast('已取消赞助')
+              } catch (err) {
+                toast(err instanceof Error ? err.message : '取消失败', 'error')
+              }
+            }}
+          >
+            取消
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">发放积分</p>
+        <div className="row gap-2" style={{ marginTop: 10 }}>
+          <input
+            className="input"
+            style={{ flex: 1 }}
+            type="number"
+            aria-label="积分数量"
+            value={pointDelta}
+            onChange={(e) => setPointDelta(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={async () => {
+              try {
+                await api.adminPoints(user.id, Number(pointDelta) || 0, false)
+                toast('已发放积分')
+              } catch (err) {
+                toast(err instanceof Error ? err.message : '发放失败', 'error')
+              }
+            }}
+          >
+            普通积分
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={async () => {
+              try {
+                await api.adminPoints(user.id, Number(pointDelta) || 0, true)
+                toast('已发放会员积分')
+              } catch (err) {
+                toast(err instanceof Error ? err.message : '发放失败', 'error')
+              }
+            }}
+          >
+            会员积分
+          </button>
+        </div>
+        <p className="field__hint">会员积分决定高级/顶级主页外观。</p>
       </div>
 
       <p className="form-section">称号</p>

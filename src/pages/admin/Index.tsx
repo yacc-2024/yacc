@@ -25,6 +25,8 @@ export function AdminIndex() {
       <DirtyBanner />
       <div className="page__body">
         <div className="list" style={{ marginTop: 8 }}>
+          <p className="form-section">内容</p>
+
           {can('content:home') ? (
           <ListRow
             icon="home"
@@ -65,6 +67,8 @@ export function AdminIndex() {
             to="/admin/changelog"
           />
           ) : null}
+          <p className="form-section">社区与商城</p>
+
           {can('content:publish') ? (
             <ListRow
               icon="clock"
@@ -82,6 +86,8 @@ export function AdminIndex() {
             />
           ) : null}
 
+          <p className="form-section">发布与数据</p>
+
           {can('content:publish') ? (
             <ListRow
               icon="download"
@@ -90,6 +96,8 @@ export function AdminIndex() {
               to="/admin/data"
             />
           ) : null}
+          <p className="form-section">账号与审核</p>
+
           {mode === 'online' && (can('users:view') || can('keys:issue')) ? (
             <ListRow
               icon="users"

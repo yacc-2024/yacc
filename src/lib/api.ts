@@ -414,6 +414,18 @@ export const api = {
   equipItem: (purchaseId: string) =>
     call<{ equipped: string }>('/store/equip', { method: 'POST', body: { purchaseId } }),
 
+  adminSponsor: (userId: string, days: number, revoke = false) =>
+    call<{ sponsorUntil: string | null }>('/admin/sponsor', {
+      method: 'POST',
+      body: revoke ? { userId, revoke: true } : { userId, days },
+    }),
+
+  adminPoints: (userId: string, amount: number, member: boolean) =>
+    call<Record<string, never>>('/admin/points', {
+      method: 'POST',
+      body: { userId, amount, member },
+    }),
+
   adminTasks: () => api.admin.tasks(),
 
   saveTask: (payload: Record<string, unknown>) => api.admin.saveTask(payload),

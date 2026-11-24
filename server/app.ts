@@ -3021,6 +3021,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
 
+      if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {
+        const value = body.avatarFrame === null ? null : String(body.avatarFrame)
+        const allowed = [null, 'ring-gold', 'ring-neon', 'ring-silver']
+        if (!allowed.includes(value)) return fail('头像框不认识')
+        await db
+          .prepare('UPDATE users SET avatar_frame = ? WHERE id = ?')
+          .bind(value, target.id)
+          .run()
+      }
+
       if (typeof body.badgeStyle === 'string' || body.badgeStyle === null) {
         const allowed = [
           'auto',
