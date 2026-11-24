@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, SectionHead, Avatar } from '../components/ui'
-import { PosterCard } from '../components/media'
+import { Carousel } from '../components/Carousel'
 import { Icon } from '../components/Icon'
 import { api, type ForumPost } from '../lib/api'
 import { DirtyBanner } from '../components/DirtyBanner'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { EventSheet } from '../components/detailSheets'
+import { Sheet } from '../components/ui'
 import {
   formatDateBlock,
-  formatShortDate,
   formatDateTime,
+  formatShortDate,
   sortAnnouncements,
   sortEvents,
   eventStatus,
@@ -26,6 +27,7 @@ export function Home() {
   const { content, account, mode } = useApp()
   const c = content!
   const [posts, setPosts] = useState<ForumPost[]>(homePostsCache ?? [])
+  const [newsOpen, setNewsOpen] = useState(false)
 
   useEffect(() => {
     if (mode !== 'online') return
@@ -46,7 +48,28 @@ export function Home() {
 
   const featured = featuredItems(c)
   const sortedNews = sortAnnouncements(c.announcements)
-  const headline = sortedNews[0] ?? null
+  const latestNewsDate = sortedNews[0]?.date ?? ''
+
+  // 首次进入或有新公告时弹出
+  useEffect(() => {
+    if (!latestNewsDate) return
+    let seen = ''
+    try {
+      seen = localStorage.getItem('yacc:news-seen') ?? ''
+    } catch {
+      seen = ''
+    }
+    if (seen !== latestNewsDate) setNewsOpen(true)
+  }, [latestNewsDate])
+
+  const closeNews = () => {
+    setNewsOpen(false)
+    try {
+      localStorage.setItem('yacc:news-seen', latestNewsDate)
+    } catch {
+      /* 忽略 */
+    }
+  }
   const unread = hasUnreadNews(sortedNews[0]?.date ?? '')
   const events = sortEvents(c.events).slice(0, 2)
 
@@ -88,6 +111,13 @@ export function Home() {
           </span>
         </Link>
 
+        {featured.length > 0 ? (
+          <section className="section section--top">
+            <SectionHead title="最新推荐" />
+            <Carousel items={featured} />
+          </section>
+        ) : null}
+
         <Link to="/about" className="figures" aria-label="查看数据与来源">
           {c.about.figures.slice(0, 3).map((f) => (
             <div className="figure" key={f.label}>
@@ -97,41 +127,8 @@ export function Home() {
           ))}
         </Link>
 
-        {headline ? (
-          <Link to="/news" className="notice" aria-label={`公告：${headline.title}`}>
-            <span className="notice__head">
-              <span className="notice__icon" aria-hidden="true">
-                <Icon name="bell" size={14} />
-              </span>
-              <span className="notice__tag">{headline.pinned ? '置顶公告' : '最新公告'}</span>
-              <span className="grow" />
-              <span className="t-tag faint t-num">{formatShortDate(headline.date)}</span>
-            </span>
-            <span className="notice__title clamp-1">{headline.title}</span>
-            <span className="notice__sub clamp-2">{headline.body}</span>
-            <span className="notice__more">
-              查看全部公告
-              <Icon name="chevron-right" size={13} />
-            </span>
-          </Link>
-        ) : null}
 
-        {featured.length > 0 ? (
-          <section className="section">
-            <SectionHead title="最新推荐" />
-            <div className="hscroll">
-              {featured.map((f) => (
-                <PosterCard
-                  key={f.key}
-                  to={f.to}
-                  title={f.title}
-                  badge={f.badge}
-                  cover={f.cover}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+
 
 
         {events.length > 0 ? (
@@ -238,6 +235,21 @@ export function Home() {
         </footer>
         </PullToRefresh>
       </div>
+
+      <Sheet open={newsOpen} title="公告" onClose={closeNews}>
+        <div className="news-popup">
+          {sortedNews.slice(0, 3).map((n) => (
+            <div key={n.id} className="news-popup__item">
+              <span className="news-popup__date">{formatShortDate(n.date)}</span>
+              <p className="news-popup__title">{n.title}</p>
+              <p className="news-popup__body">{n.body}</p>
+            </div>
+          ))}
+          <Link to="/news" className="btn btn--primary" onClick={closeNews}>
+            查看全部公告
+          </Link>
+        </div>
+      </Sheet>
 
       <EventSheet item={evt} onClose={() => setEvt(null)} />
     </>

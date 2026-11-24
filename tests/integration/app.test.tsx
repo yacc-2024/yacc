@@ -17,7 +17,8 @@ describe('主页', () => {
     expect(screen.getByText('12.8%')).toBeInTheDocument()
     expect(screen.getByText('41%')).toBeInTheDocument()
     expect(screen.getByText('78.5%')).toBeInTheDocument()
-    expect(screen.getByText('第二季第三集已上线')).toBeInTheDocument()
+    // 公告改为进入后弹出
+    expect(await screen.findByText('第二季第三集已上线')).toBeInTheDocument()
     expect(screen.getByText(/北京师范大学天津静海实验学校/)).toBeInTheDocument()
   })
 
