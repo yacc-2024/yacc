@@ -85,16 +85,6 @@ export function Forum() {
       />
       <div className="page__body">
         <PullToRefresh onRefresh={load}>
-        <Link to="/forum/new" className="post-cta">
-          <span className="post-cta__icon">
-            <Icon name="plus" size={18} />
-          </span>
-          <span className="grow">
-            <span className="post-cta__title">说点什么…</span>
-            <span className="post-cta__sub">发帖、配图，和剧组聊聊</span>
-          </span>
-          <Icon name="chevron-right" size={16} />
-        </Link>
 
         {loading ? (
           <Spinner label="正在加载帖子" />

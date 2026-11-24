@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Icon, type IconName } from './Icon'
 
 /* ---------------- TabBar ---------------- */
@@ -24,20 +24,38 @@ const TABS: Array<{ to: string; label: string; icon: IconName }> = [
 ]
 
 export function TabBar() {
+  const navigate = useNavigate()
+  const location = useLocation()
   return (
     <nav className="tabbar" aria-label="主导航">
-      {TABS.map((t) => (
-        <NavLink
-          key={t.to}
-          to={t.to}
-          end={t.to === '/'}
-          className="tabbar__item"
-          aria-label={t.label}
-        >
-          <Icon name={t.icon} size={24} />
-          <span className="tabbar__label">{t.label}</span>
-        </NavLink>
-      ))}
+      {TABS.map((t) => {
+        const active = t.to === '/' ? location.pathname === '/' : location.pathname.startsWith(t.to)
+        const compose = t.to === '/forum' && active
+        return (
+          <NavLink
+            key={t.to}
+            to={t.to}
+            end={t.to === '/'}
+            className="tabbar__item"
+            aria-label={compose ? '发帖' : t.label}
+            onClick={(e) => {
+              if (compose) {
+                e.preventDefault()
+                navigate('/forum/new')
+              }
+            }}
+          >
+            {compose ? (
+              <span className="tabbar__compose">
+                <Icon name="plus" size={22} />
+              </span>
+            ) : (
+              <Icon name={t.icon} size={24} />
+            )}
+            <span className="tabbar__label">{compose ? '发帖' : t.label}</span>
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
@@ -113,7 +131,7 @@ export function NavBar({ title, back, large, sub, action, brand }: NavBarProps) 
           <span className="nav__small">{title}</span>
         )}
         <div className="grow" />
-        {action}
+        {action ? <div className="nav__action">{action}</div> : null}
       </div>
       {large ? (
         <div className="nav__large">

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet, useConfirm } from '../components/ui'
-import { Badge, badgeKindOf } from '../components/Badge'
+import { TitleBadges } from '../components/Badge'
 import { Spinner } from '../components/PullToRefresh'
 import { EpisodeRow } from '../components/media'
 import { Icon } from '../components/Icon'
@@ -39,6 +39,10 @@ interface PublicUser {
   level: number
   points: number
   popularity: number
+  titles: string[]
+  shownTitles: string[]
+  titleStyles: Record<string, string>
+  hideBadge: boolean
   visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
   badgeStyle: string | null
@@ -131,35 +135,11 @@ export function UserProfile() {
               </div>
             </div>
 
-            <div className="dy-info">
-              <p className="dy-name">{user.name}</p>
-              <p className="dy-uid t-num">ID {user.uid}</p>
-              <span className="title-row" style={{ marginTop: 8 }}>
-                <span className={`lv lv--${tierOf(user.level)}`}>Lv.{user.level}</span>
-                <Badge
-                  kind={badgeKindOf(user.role, user.rawUid, user.verified)}
-                  style={user.badgeStyle}
-                />
-              </span>
-              <div className="dy-block">
-                <span className="dy-block__label">个性签名</span>
-                <p className="dy-sign">
-                  {user.signature?.trim() || '这家伙很懒，什么也没留下...'}
-                </p>
-              </div>
-              {bio ? (
-                <div className="dy-block">
-                  <span className="dy-block__label">个人简介</span>
-                  <p className="dy-bio">{bio}</p>
-                </div>
-              ) : null}
-            </div>
-
             {!user.isMe ? (
               <button
                 type="button"
                 className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
-                style={{ display: 'block', width: '100%', marginTop: 14, minHeight: 40 }}
+                style={{ display: 'block', width: '100%', marginTop: 16, minHeight: 40 }}
                 disabled={busy}
                 onClick={async () => {
                   if (user.isFollowing) {
@@ -191,6 +171,37 @@ export function UserProfile() {
                     : '关注'}
               </button>
             ) : null}
+
+            <div className="dy-info">
+              <p className="dy-name">{user.name}</p>
+              <p className="dy-uid t-num">ID {user.uid}</p>
+              <span className="title-row" style={{ marginTop: 8 }}>
+                <span className={`lv lv--${tierOf(user.level)}`}>Lv.{user.level}</span>
+                <TitleBadges
+                  role={user.role}
+                  uid={user.rawUid}
+                  verified={user.verified}
+                  badgeStyle={user.badgeStyle}
+                  titleStyles={user.titleStyles}
+                  titles={user.titles}
+                  shownTitles={user.shownTitles}
+                  hideBadge={user.hideBadge}
+                />
+              </span>
+              <div className="dy-block">
+                <span className="dy-block__label">个性签名</span>
+                <p className="dy-sign">
+                  {user.signature?.trim() || '这家伙很懒，什么也没留下...'}
+                </p>
+              </div>
+              {bio ? (
+                <div className="dy-block">
+                  <span className="dy-block__label">个人简介</span>
+                  <p className="dy-bio">{bio}</p>
+                </div>
+              ) : null}
+            </div>
+
 
 
             <div className="seg" style={{ marginTop: 20, marginBottom: 4 }}>

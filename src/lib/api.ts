@@ -375,10 +375,21 @@ export const api = {
   follow: (userId: string, action: 'follow' | 'unfollow') =>
     call<{ following: boolean }>(`/follows/${userId}`, { method: 'POST', body: { action } }),
 
-  memberLinks: () =>
-    call<{
+  memberLinks: async () => {
+    type Links = {
       links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
-    }>('/members/links'),
+    }
+    const cached = readCache<Links>('member-links', 10 * 60_000)
+    if (cached) {
+      void call<Links>('/members/links')
+        .then((fresh) => writeCache('member-links', fresh))
+        .catch(() => {})
+      return cached
+    }
+    const fresh = await call<Links>('/members/links')
+    writeCache('member-links', fresh)
+    return fresh
+  },
 
   userProfile: async (uid: string) => {
     const key = `profile:${uid}`

@@ -3615,3 +3615,30 @@ select.input {
     max-width: 880px;
   }
 }
+
+/* 铃铛跟随大标题缩放、上移 */
+.nav__action {
+  transform-origin: right center;
+  transform: translateY(calc((1 - var(--p)) * 22px)) scale(calc(1 + (1 - var(--p)) * 0.22));
+  transition: transform 60ms linear;
+}
+
+/* tab 上的发帖大圆钮 */
+.tabbar__compose {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(77, 189, 245, 0.5);
+  animation: compose-in 220ms var(--ease);
+}
+
+@keyframes compose-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
