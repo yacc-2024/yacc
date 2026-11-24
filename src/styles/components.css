@@ -4112,3 +4112,45 @@ select.input {
     height: 240px;
   }
 }
+
+/* 商品样式选择预览 */
+.perm-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.perm-preview__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+}
+
+.perm-preview__item[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-weak);
+}
+
+.product-preview {
+  margin-top: 8px;
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.store-card__art--frame,
+.store-card__art--badge {
+  display: grid;
+  place-items: center;
+  background: var(--control-bg);
+}
+
+.store-card__art--frame .avatar {
+  margin: 0 auto;
+}

@@ -3,6 +3,7 @@ import { useApp } from '../state/AppContext'
 import { NavBar, useConfirm } from '../components/ui'
 import { Spinner } from '../components/PullToRefresh'
 import { api } from '../lib/api'
+import { Badge } from '../components/Badge'
 import { formatDate } from '../lib/format'
 
 type Product = {
@@ -14,6 +15,7 @@ type Product = {
   kind: string
   value: string | null
   durationDays: number
+  image: string | null
 }
 
 type Item = {
@@ -105,7 +107,21 @@ export function Store() {
                 disabled={busy}
                 onClick={() => void buy(p)}
               >
-                <span className={`store-card__art store-card__art--${p.kind}`} />
+                {p.image ? (
+                  <img className="store-card__art" src={p.image} alt="" loading="lazy" />
+                ) : p.kind === 'avatar_frame' && p.value ? (
+                  <span className="store-card__art store-card__art--frame">
+                    <span className={`avatar avatar--56 avatar--frame avatar--frame-${p.value}`}>
+                      <span aria-hidden="true">Y</span>
+                    </span>
+                  </span>
+                ) : p.kind === 'nameplate' && p.value ? (
+                  <span className="store-card__art store-card__art--badge">
+                    <Badge kind="member" style={p.value} label={p.title} />
+                  </span>
+                ) : (
+                  <span className="store-card__art" />
+                )}
                 <span className="store-card__title">{p.title}</span>
                 <span className="store-card__desc">{p.description}</span>
                 <span className="store-card__price">

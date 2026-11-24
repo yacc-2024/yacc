@@ -398,6 +398,7 @@ export const api = {
         kind: string
         value: string | null
         durationDays: number
+        image: string | null
       }>
       mine: Array<{
         id: string
@@ -621,6 +622,7 @@ export const api = {
           durationDays: number
           active: boolean
           sort: number
+          image: string | null
         }>
       }>('/admin/products'),
 

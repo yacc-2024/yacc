@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../state/AppContext'
 import { NavBar, Sheet, useConfirm } from '../../components/ui'
 import { api } from '../../lib/api'
+import { BADGE_STYLES, Badge } from '../../components/Badge'
 
 type Product = {
   id: string
@@ -14,6 +15,7 @@ type Product = {
   durationDays: number
   active: boolean
   sort: number
+  image: string | null
 }
 
 const EMPTY: Product = {
@@ -27,6 +29,7 @@ const EMPTY: Product = {
   durationDays: 7,
   active: true,
   sort: 0,
+  image: null,
 }
 
 export function ProductsAdmin() {
@@ -62,6 +65,7 @@ export function ProductsAdmin() {
         durationDays: p.durationDays,
         active: p.active,
         sort: p.sort,
+        image: p.image,
       })
       toast('已保存')
       setEditing(null)
@@ -258,6 +262,91 @@ export function ProductsAdmin() {
                 ))}
               </div>
             </div>
+            {editing.kind === 'nameplate' ? (
+              <div className="field">
+                <span className="field__label">选择铭牌样式</span>
+                <div className="perm-preview">
+                  {BADGE_STYLES.filter((v) => v.value !== 'auto').map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className="perm-preview__item"
+                      aria-pressed={editing.value === opt.value}
+                      onClick={() => setEditing({ ...editing, value: opt.value })}
+                    >
+                      <Badge kind="member" style={opt.value} label={opt.label} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {editing.kind === 'avatar_frame' ? (
+              <div className="field">
+                <span className="field__label">选择头像框</span>
+                <div className="perm-preview">
+                  {[
+                    ['ring-gold', '金色'],
+                    ['ring-neon', '霓虹'],
+                    ['ring-silver', '银灰'],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className="perm-preview__item"
+                      aria-pressed={editing.value === value}
+                      onClick={() => setEditing({ ...editing, value })}
+                    >
+                      <span className={`avatar avatar--32 avatar--frame avatar--frame-${value}`}>
+                        <span aria-hidden="true">Y</span>
+                      </span>
+                      <span className="t-tag faint">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {editing.kind === 'custom' ? (
+              <>
+                <div className="field">
+                  <label className="field__label" htmlFor="p-value">
+                    内容说明
+                  </label>
+                  <input
+                    id="p-value"
+                    className="input"
+                    value={editing.value ?? ''}
+                    onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field__label" htmlFor="p-image">
+                    附图（可选）
+                  </label>
+                  <input
+                    id="p-image"
+                    className="input"
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = () =>
+                        setEditing((prev) =>
+                          prev ? { ...prev, image: String(reader.result) } : prev,
+                        )
+                      reader.readAsDataURL(file)
+                    }}
+                  />
+                  {editing.image ? (
+                    <img src={editing.image} alt="" className="product-preview" />
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+
             <div className="field">
               <label className="field__label" htmlFor="p-days">
                 有效天数（0 表示永久）

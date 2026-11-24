@@ -207,6 +207,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN profile_style TEXT',
         'ALTER TABLE users ADD COLUMN skin_vip INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN skin_svip INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE products ADD COLUMN image TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -545,10 +546,46 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v19'
+const CHANGELOG_KEY = 'migrate:changelog-v20'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
+  {
+    version: '1.1.4',
+    date: '2026-11-24',
+    items: [
+      '首页推荐改为叠卡式轮播，一张张翻过去',
+      '公告改为进站弹出，看过之后不再打扰',
+      '调整了文字排版，长标题不再被卡片边框裁掉',
+    ],
+  },
+  {
+    version: '1.1.3',
+    date: '2026-11-24',
+    items: [
+      '成员页可以给支持的伙伴打赏「赞助」标识',
+      '个人主页新增赞助者身份展示',
+      '主页外观可以在账号设置里挑选',
+    ],
+  },
+  {
+    version: '1.1.2',
+    date: '2026-11-24',
+    items: [
+      '新增积分商城：可用积分兑换铭牌与头像框',
+      '每日登录、首次发帖、首次看片都会获得积分',
+      '头像可以套上金色、霓虹或银灰头像框',
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: '2026-11-24',
+    items: [
+      '修复了桌面端导航缺少论坛入口的问题',
+      '首页铃铛会跟随标题大小变化，滚动更顺',
+      '论坛的加号会随页面状态变为发帖按钮',
+    ],
+  },
   {
     version: '1.0.20',
     date: '2026-11-23',
@@ -2499,7 +2536,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (!me) return fail('未登录', 401)
       const products = await db
         .prepare(
-          `SELECT id, title, description, price, currency, kind, value, duration_days
+          `SELECT id, title, description, price, currency, kind, value, duration_days, image
            FROM products WHERE active = 1 ORDER BY sort ASC, price ASC`,
         )
         .all<{
@@ -2511,6 +2548,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           kind: string
           value: string | null
           duration_days: number
+          image: string | null
         }>()
       const mine = await db
         .prepare(
@@ -2545,6 +2583,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           kind: p.kind,
           value: p.value,
           durationDays: p.duration_days,
+          image: p.image ?? null,
         })),
         mine: mine.map((m) => ({
           id: m.id,
@@ -3176,7 +3215,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (denied) return denied
       const rows = await db
         .prepare(
-          `SELECT id, title, description, price, currency, kind, value, duration_days, active, sort
+          `SELECT id, title, description, price, currency, kind, value, duration_days, active, sort, image
            FROM products ORDER BY active DESC, sort ASC, price ASC`,
         )
         .all<Record<string, unknown>>()
@@ -3192,6 +3231,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           durationDays: Number(r.duration_days ?? 0),
           active: Number(r.active ?? 1) === 1,
           sort: Number(r.sort ?? 0),
+          image: (r.image as string | null) ?? null,
         })),
       })
     }
@@ -3214,17 +3254,18 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         Math.max(0, numberOf(body.durationDays, 0)),
         body.active === false ? 0 : 1,
         numberOf(body.sort, 0),
+        body.image ? String(body.image) : null,
       ] as const
       await db
         .prepare(
-          `INSERT INTO products (id, title, description, price, currency, kind, value, duration_days, active, sort, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO products (id, title, description, price, currency, kind, value, duration_days, active, sort, image, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title, description = excluded.description,
              price = excluded.price, currency = excluded.currency,
              kind = excluded.kind, value = excluded.value,
              duration_days = excluded.duration_days, active = excluded.active,
-             sort = excluded.sort`,
+             sort = excluded.sort, image = excluded.image`,
         )
         .bind(id, ...values, nowIso())
         .run()
