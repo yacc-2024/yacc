@@ -3721,3 +3721,88 @@ select.input {
   font-weight: 700;
   color: var(--accent);
 }
+
+/* 赞助者卡片 */
+.sponsor-card {
+  position: relative;
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(120deg, #2a2118 0%, #4a3a22 45%, #8a6a2f 100%);
+  color: #ffe9c0;
+  box-shadow: 0 6px 24px rgba(138, 106, 47, 0.35);
+}
+
+.sponsor-card::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 34%;
+  height: 220%;
+  transform: rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 232, 176, 0.75), transparent);
+  animation: svip-shine 4.2s ease-in-out infinite;
+}
+
+.sponsor-card__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 225, 160, 0.2);
+  border: 1px solid rgba(255, 225, 160, 0.45);
+}
+
+.sponsor-card__text {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sponsor-card__until {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* 成员页赞助者 */
+.sponsor-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.sponsor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, rgba(255, 233, 192, 0.9), rgba(240, 200, 120, 0.75));
+  color: #5a3d0a;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 10px rgba(200, 160, 70, 0.28);
+}
+
+.sponsor-chip__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  font-size: 11px;
+}
+
+.sponsor-chip__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

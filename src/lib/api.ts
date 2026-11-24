@@ -375,6 +375,11 @@ export const api = {
   follow: (userId: string, action: 'follow' | 'unfollow') =>
     call<{ following: boolean }>(`/follows/${userId}`, { method: 'POST', body: { action } }),
 
+  sponsors: () =>
+    call<{
+      sponsors: Array<{ uid: string; name: string; avatar: string | null; until: string }>
+    }>('/sponsors'),
+
   store: () =>
     call<{
       points: number
@@ -451,6 +456,9 @@ export const api = {
         likes: number
         isFollowing: boolean
         followsMe: boolean
+        isSponsor: boolean
+        sponsorUntil: string | null
+        profileStyle: string | null
         isMe: boolean
         signature: string | null
         hideBadge: boolean

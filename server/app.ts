@@ -62,6 +62,10 @@ export interface User {
   hideBadge: boolean
   /** 头像框 */
   avatarFrame: string | null
+  /** 赞助到期时间（null 表示不是赞助者） */
+  sponsorUntil: string | null
+  /** 主页外观：normal / sponsor */
+  profileStyle: string | null
   /** 每个称号单独的外观 */
   titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -83,6 +87,8 @@ interface UserRow {
   hide_badge: number | null
   title_styles: string | null
   avatar_frame: string | null
+  sponsor_until: string | null
+  profile_style: string | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -192,6 +198,8 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN hide_badge INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN title_styles TEXT',
         'ALTER TABLE users ADD COLUMN avatar_frame TEXT',
+        'ALTER TABLE users ADD COLUMN sponsor_until TEXT',
+        'ALTER TABLE users ADD COLUMN profile_style TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -253,6 +261,8 @@ function toUser(row: UserRow): User {
     signature: row.signature ?? null,
     hideBadge: Number(row.hide_badge ?? 0) === 1,
     avatarFrame: row.avatar_frame ?? null,
+    sponsorUntil: row.sponsor_until ?? null,
+    profileStyle: row.profile_style ?? null,
     titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
@@ -1018,6 +1028,25 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       })
     }
 
+    if (path === '/sponsors' && method === 'GET') {
+      const rows = await db
+        .prepare(
+          `SELECT uid, name, avatar, sponsor_until FROM users
+           WHERE sponsor_until IS NOT NULL AND sponsor_until > ?
+           ORDER BY sponsor_until DESC LIMIT 100`,
+        )
+        .bind(nowIso())
+        .all<{ uid: number | null; name: string; avatar: string | null; sponsor_until: string }>()
+      return ok({
+        sponsors: rows.map((r) => ({
+          uid: formatUid(r.uid),
+          name: r.name,
+          avatar: r.avatar ?? null,
+          until: r.sponsor_until,
+        })),
+      })
+    }
+
     /* ---------- 公开：用户主页 ---------- */
 
     const userPage = /^\/users\/(\d{1,6})$/.exec(path)
@@ -1139,6 +1168,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           signature: row.signature ?? null,
     hideBadge: Number(row.hide_badge ?? 0) === 1,
     avatarFrame: row.avatar_frame ?? null,
+    sponsorUntil: row.sponsor_until ?? null,
+    profileStyle: row.profile_style ?? null,
           level: stats.level,
           points: stats.points,
           popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
@@ -1247,6 +1278,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         signature: null,
         hideBadge: false,
         avatarFrame: null,
+        sponsorUntil: null,
+        profileStyle: null,
         titleStyles: {},
         role,
         verified: verified === 1,
@@ -1568,6 +1601,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         signature: null,
         hideBadge: false,
         avatarFrame: null,
+        sponsorUntil: null,
+        profileStyle: null,
         titleStyles: {},
         role: 'superadmin',
         verified: true,
@@ -3103,6 +3138,36 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (denied) return denied
       await db.prepare('DELETE FROM products WHERE id = ?').bind(removeProduct[1]).run()
       return ok({})
+    }
+
+    if (path === '/admin/sponsor' && method === 'POST') {
+      const denied = need('users:edit')
+      if (denied) return denied
+      const body = await readJson(request)
+      const userId = String(body?.userId ?? '')
+      if (!userId) return fail('参数不对')
+      if (body?.revoke === true) {
+        await db
+          .prepare('UPDATE users SET sponsor_until = NULL WHERE id = ?')
+          .bind(userId)
+          .run()
+        return ok({ sponsorUntil: null })
+      }
+      const days = Math.max(1, Math.min(3650, numberOf(body?.days, 30)))
+      const row = await db
+        .prepare('SELECT sponsor_until FROM users WHERE id = ?')
+        .bind(userId)
+        .first<{ sponsor_until: string | null }>()
+      const base =
+        row?.sponsor_until && new Date(row.sponsor_until).getTime() > Date.now()
+          ? new Date(row.sponsor_until).getTime()
+          : Date.now()
+      const until = new Date(base + days * 86400_000).toISOString()
+      await db
+        .prepare('UPDATE users SET sponsor_until = ? WHERE id = ?')
+        .bind(until, userId)
+        .run()
+      return ok({ sponsorUntil: until })
     }
 
     if (path === '/admin/points' && method === 'POST') {

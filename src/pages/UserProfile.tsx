@@ -43,6 +43,9 @@ interface PublicUser {
   shownTitles: string[]
   titleStyles: Record<string, string>
   hideBadge: boolean
+  isSponsor: boolean
+  sponsorUntil: string | null
+  profileStyle: string | null
   visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
   badgeStyle: string | null
@@ -170,6 +173,20 @@ export function UserProfile() {
                     ? '已关注'
                     : '关注'}
               </button>
+            ) : null}
+
+            {user.isSponsor ? (
+              <div className="sponsor-card">
+                <span className="sponsor-card__badge">赞助者</span>
+                <p className="sponsor-card__text">
+                  感谢 {user.name} 对 YACC 创作组的支持
+                </p>
+                {user.sponsorUntil ? (
+                  <p className="sponsor-card__until">
+                    赞助有效期至 {formatDate(user.sponsorUntil)}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="dy-info">
