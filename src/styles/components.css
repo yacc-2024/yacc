@@ -4154,3 +4154,67 @@ select.input {
 .store-card__art--frame .avatar {
   margin: 0 auto;
 }
+
+/* 轮播卡片：标题叠在图上，避免与下方内容挤在一起 */
+.deck__card .poster {
+  width: 100%;
+  position: relative;
+}
+
+.deck__card .poster__media {
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 20px;
+}
+
+.deck__card .poster__media::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 55%;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+
+.deck__card .poster__title {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  z-index: 2;
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.deck__card .poster__badge {
+  z-index: 2;
+}
+
+/* 后台：给文字留出圆角安全区 */
+.card {
+  padding: max(var(--s-5), 16px);
+}
+
+.list__row {
+  padding-inline: max(var(--s-5), 16px);
+}
+
+.form-section {
+  padding-inline: 4px;
+}
+
+.list__title,
+.list__sub {
+  padding-right: 2px;
+}
+
+/* 轮播：角标移到左上，标题留在左下，互不遮挡 */
+.deck__card .poster__badge {
+  top: 10px;
+  left: 10px;
+  bottom: auto;
+  right: auto;
+}
