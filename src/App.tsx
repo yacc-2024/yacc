@@ -37,6 +37,7 @@ import {
   AppearanceSettings,
   Version,
 } from './pages/Account'
+import { Store } from './pages/Store'
 import { AdminIndex } from './pages/admin/Index'
 import { HomeEdit, AboutEdit } from './pages/admin/ContentEdit'
 import { MembersAdmin } from './pages/admin/MembersAdmin'
@@ -176,6 +177,7 @@ export function App() {
         <Route path="forum/:id" element={<PostDetail />} />
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
+        <Route path="me/store" element={<Store />} />
         <Route path="me/settings" element={<Settings />} />
         <Route path="me/settings/profile" element={<ProfileSettings />} />
         <Route path="me/settings/password" element={<PasswordSettings />} />

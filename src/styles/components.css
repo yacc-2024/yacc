@@ -3642,3 +3642,82 @@ select.input {
     opacity: 0;
   }
 }
+
+/* 积分商城 */
+.store-wallet {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.store-wallet__item {
+  flex: 1;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(140deg, rgba(77, 189, 245, 0.18), rgba(138, 92, 255, 0.14));
+  border: 1px solid var(--glass-border);
+}
+
+.store-wallet__num {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.store-wallet__label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  text-align: left;
+  box-shadow: var(--shadow-card);
+}
+
+.store-card:active {
+  transform: scale(0.98);
+}
+
+.store-card__art {
+  height: 64px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  background: linear-gradient(120deg, #dff1ff, #bfe0ff);
+}
+
+.store-card__art--avatar_frame {
+  background: linear-gradient(120deg, #ffe9b8, #ffc46b);
+}
+
+.store-card__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.store-card__desc {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.store-card__price {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}

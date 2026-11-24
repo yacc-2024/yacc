@@ -174,6 +174,41 @@ CREATE TABLE IF NOT EXISTS reactions (
 
 CREATE INDEX IF NOT EXISTS idx_reactions_target ON reactions (target_type, target_id);
 
+CREATE TABLE IF NOT EXISTS point_tasks (
+  kind TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  points INTEGER NOT NULL DEFAULT 0,
+  daily_limit INTEGER NOT NULL DEFAULT 1,
+  active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  price INTEGER NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'points',
+  kind TEXT NOT NULL DEFAULT 'nameplate',
+  value TEXT,
+  duration_days INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  sort INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  value TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_purchases_user ON purchases (user_id, created_at);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

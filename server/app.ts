@@ -60,6 +60,8 @@ export interface User {
   signature: string | null
   /** 是否隐藏身份徽章（只显示自己选的称号） */
   hideBadge: boolean
+  /** 头像框 */
+  avatarFrame: string | null
   /** 每个称号单独的外观 */
   titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -80,6 +82,7 @@ interface UserRow {
   signature: string | null
   hide_badge: number | null
   title_styles: string | null
+  avatar_frame: string | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -188,6 +191,9 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN signature TEXT',
         'ALTER TABLE users ADD COLUMN hide_badge INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN title_styles TEXT',
+        'ALTER TABLE users ADD COLUMN avatar_frame TEXT',
+        'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
         'ALTER TABLE comments ADD COLUMN parent_id TEXT',
         'ALTER TABLE comments ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
@@ -202,6 +208,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
       await normaliseLegacyUids(db)
       await ensureSuperadmin(db, createSuper)
       await ensureChangelogSeed(db)
+      await ensureStoreSeed(db)
       await db
         .prepare(
           "INSERT INTO settings (key, value) VALUES ('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -245,6 +252,7 @@ function toUser(row: UserRow): User {
     badgeStyle: row.badge_style ?? null,
     signature: row.signature ?? null,
     hideBadge: Number(row.hide_badge ?? 0) === 1,
+    avatarFrame: row.avatar_frame ?? null,
     titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
@@ -341,15 +349,46 @@ async function getStats(
 }
 
 async function awardPoints(db: DB, userId: string, kind: string): Promise<void> {
-  const delta = POINT_RULES[kind] ?? 0
-  if (!delta) return
+  const task = await db
+    .prepare('SELECT points, daily_limit, active FROM point_tasks WHERE kind = ?')
+    .bind(kind)
+    .first<{ points: number; daily_limit: number; active: number }>()
+  const delta = numberOf(task?.points, POINT_RULES[kind] ?? 0)
+  if (!delta || Number(task?.active ?? 1) !== 1) return
+
+  // 每日次数限制
+  const today = new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10)
+  const row = await db
+    .prepare('SELECT daily_kinds FROM user_stats WHERE user_id = ?')
+    .bind(userId)
+    .first<{ daily_kinds: string | null }>()
+  let daily: Record<string, number> = {}
+  try {
+    const parsed = JSON.parse(row?.daily_kinds ?? '{}') as Record<string, unknown>
+    if (parsed.__date === today) {
+      daily = parsed as Record<string, number>
+    }
+  } catch {
+    daily = {}
+  }
+  const limit = numberOf(task?.daily_limit, 1)
+  const used = numberOf(daily[kind], 0)
+  if (limit > 0 && used >= limit) return
+  daily[kind] = used + 1
+  ;(daily as unknown as { __date: string }).__date = today
+
   await db
     .prepare(
-      `INSERT INTO user_stats (user_id, points, updated_at) VALUES (?, ?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET points = points + ?, updated_at = ?`,
+      `INSERT INTO user_stats (user_id, points, daily_kinds, updated_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET points = points + ?, daily_kinds = ?, updated_at = ?`,
     )
-    .bind(userId, delta, nowIso(), delta, nowIso())
+    .bind(userId, delta, JSON.stringify(daily), nowIso(), delta, JSON.stringify(daily), nowIso())
     .run()
+}
+
+function numberOf(value: unknown, fallback: number): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
 }
 
 const BADGE_STYLES = [
@@ -670,6 +709,51 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
 
 /** 首次启动时总管理员的初始密码（登录后请尽快修改） */
 const DEFAULT_SUPER_PASSWORD = 'yacc2026-yu'
+
+
+/** 默认任务与商品（只在新库补一次） */
+async function ensureStoreSeed(db: DB): Promise<void> {
+  const mark = await db
+    .prepare("SELECT value FROM settings WHERE key = 'store_seed'")
+    .first<{ value: string }>()
+  if (mark?.value === '1') return
+
+  const tasks: Array<[string, string, number, number]> = [
+    ['login', '每日签到', 10, 1],
+    ['post', '发表帖子', 5, 3],
+    ['comment', '发表评论', 3, 5],
+    ['follow', '被关注', 2, 10],
+  ]
+  for (const [kind, title, points, limit] of tasks) {
+    await db
+      .prepare(
+        `INSERT INTO point_tasks (kind, title, points, daily_limit, active)
+         VALUES (?, ?, ?, ?, 1) ON CONFLICT(kind) DO NOTHING`,
+      )
+      .bind(kind, title, points, limit)
+      .run()
+  }
+
+  const products: Array<[string, string, string, number, string, string, number]> = [
+    ['p-name-7', '专属铭牌 7 天', '任选一款铭牌，展示 7 天', 120, 'nameplate', 'vip', 7],
+    ['p-name-30', '专属铭牌 30 天', '任选一款铭牌，展示 30 天', 400, 'nameplate', 'vip', 30],
+    ['p-frame-7', '头像框 7 天', '头像外圈装饰，展示 7 天', 100, 'avatar_frame', 'ring-gold', 7],
+    ['p-frame-30', '头像框 30 天', '头像外圈装饰，展示 30 天', 320, 'avatar_frame', 'ring-gold', 30],
+  ]
+  for (const [id, title, desc, price, kind, value, days] of products) {
+    await db
+      .prepare(
+        `INSERT INTO products (id, title, description, price, currency, kind, value, duration_days, active, sort, created_at)
+         VALUES (?, ?, ?, ?, 'points', ?, ?, ?, 1, 0, ?) ON CONFLICT(id) DO NOTHING`,
+      )
+      .bind(id, title, desc, price, kind, value, days, nowIso())
+      .run()
+  }
+
+  await db
+    .prepare("INSERT INTO settings (key, value) VALUES ('store_seed', '1') ON CONFLICT(key) DO UPDATE SET value = '1'")
+    .run()
+}
 
 export async function ensureSuperadmin(db: DB, create = true): Promise<void> {
   const named = await db
@@ -1054,6 +1138,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           userId: row.id,
           signature: row.signature ?? null,
     hideBadge: Number(row.hide_badge ?? 0) === 1,
+    avatarFrame: row.avatar_frame ?? null,
           level: stats.level,
           points: stats.points,
           popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
@@ -1161,6 +1246,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         badgeStyle: null,
         signature: null,
         hideBadge: false,
+        avatarFrame: null,
         titleStyles: {},
         role,
         verified: verified === 1,
@@ -1481,6 +1567,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         badgeStyle: null,
         signature: null,
         hideBadge: false,
+        avatarFrame: null,
         titleStyles: {},
         role: 'superadmin',
         verified: true,
@@ -2334,6 +2421,155 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       return ok({ active: !existing, count: Number(countRow?.n ?? 0) })
     }
 
+    /* ---------- 积分商城 ---------- */
+
+    if (path === '/store' && method === 'GET') {
+      if (!me) return fail('未登录', 401)
+      const products = await db
+        .prepare(
+          `SELECT id, title, description, price, currency, kind, value, duration_days
+           FROM products WHERE active = 1 ORDER BY sort ASC, price ASC`,
+        )
+        .all<{
+          id: string
+          title: string
+          description: string | null
+          price: number
+          currency: string
+          kind: string
+          value: string | null
+          duration_days: number
+        }>()
+      const mine = await db
+        .prepare(
+          `SELECT id, product_id, title, kind, value, created_at, expires_at
+           FROM purchases WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)
+           ORDER BY created_at DESC LIMIT 50`,
+        )
+        .bind(me.id, nowIso())
+        .all<{
+          id: string
+          product_id: string
+          title: string
+          kind: string
+          value: string | null
+          created_at: string
+          expires_at: string | null
+        }>()
+      const stat = await db
+        .prepare('SELECT points, member_points FROM user_stats WHERE user_id = ?')
+        .bind(me.id)
+        .first<{ points: number; member_points: number }>()
+
+      return ok({
+        points: numberOf(stat?.points, 0),
+        memberPoints: numberOf(stat?.member_points, 0),
+        products: products.map((p) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description ?? '',
+          price: p.price,
+          currency: p.currency,
+          kind: p.kind,
+          value: p.value,
+          durationDays: p.duration_days,
+        })),
+        mine: mine.map((m) => ({
+          id: m.id,
+          productId: m.product_id,
+          title: m.title,
+          kind: m.kind,
+          value: m.value,
+          createdAt: m.created_at,
+          expiresAt: m.expires_at,
+        })),
+        equipped: { avatarFrame: me.avatarFrame ?? null, badgeStyle: me.badgeStyle ?? null },
+      })
+    }
+
+    if (path === '/store/buy' && method === 'POST') {
+      if (!me) return fail('未登录', 401)
+      const body = await readJson(request)
+      const productId = String(body?.productId ?? '')
+      const product = await db
+        .prepare('SELECT * FROM products WHERE id = ? AND active = 1')
+        .bind(productId)
+        .first<{
+          id: string
+          title: string
+          price: number
+          currency: string
+          kind: string
+          value: string | null
+          duration_days: number
+        }>()
+      if (!product) return fail('这个商品已经下架了', 404)
+
+      const stat = await db
+        .prepare('SELECT points, member_points FROM user_stats WHERE user_id = ?')
+        .bind(me.id)
+        .first<{ points: number; member_points: number }>()
+      const balance =
+        product.currency === 'member'
+          ? numberOf(stat?.member_points, 0)
+          : numberOf(stat?.points, 0)
+      if (balance < product.price) {
+        return fail(product.currency === 'member' ? '会员积分不够' : '积分不够', 400)
+      }
+
+      const column = product.currency === 'member' ? 'member_points' : 'points'
+      await db
+        .prepare(
+          `UPDATE user_stats SET ${column} = ${column} - ?, updated_at = ? WHERE user_id = ?`,
+        )
+        .bind(product.price, nowIso(), me.id)
+        .run()
+
+      const id = randomHex(8)
+      const expires =
+        product.duration_days > 0
+          ? new Date(Date.now() + product.duration_days * 86400_000).toISOString()
+          : null
+      await db
+        .prepare(
+          `INSERT INTO purchases (id, user_id, product_id, title, kind, value, created_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(id, me.id, product.id, product.title, product.kind, product.value, nowIso(), expires)
+        .run()
+
+      return ok({ id, balance: balance - product.price })
+    }
+
+    if (path === '/store/equip' && method === 'POST') {
+      if (!me) return fail('未登录', 401)
+      const body = await readJson(request)
+      const purchaseId = String(body?.purchaseId ?? '')
+      const purchase = await db
+        .prepare('SELECT * FROM purchases WHERE id = ? AND user_id = ?')
+        .bind(purchaseId, me.id)
+        .first<{ kind: string; value: string | null; expires_at: string | null }>()
+      if (!purchase) return fail('找不到这个物品', 404)
+      if (purchase.expires_at && new Date(purchase.expires_at).getTime() < Date.now()) {
+        return fail('这个物品已经过期了', 400)
+      }
+      if (purchase.kind === 'avatar_frame') {
+        await db
+          .prepare('UPDATE users SET avatar_frame = ? WHERE id = ?')
+          .bind(purchase.value, me.id)
+          .run()
+        return ok({ equipped: 'avatarFrame' })
+      }
+      if (purchase.kind === 'nameplate') {
+        await db
+          .prepare('UPDATE users SET badge_style = ? WHERE id = ?')
+          .bind(purchase.value, me.id)
+          .run()
+        return ok({ equipped: 'badgeStyle' })
+      }
+      return fail('这个物品不能装备')
+    }
+
     /* ---------- 管理端 ---------- */
 
     const isAdmin = me?.role === 'admin' || me?.role === 'superadmin'
@@ -2787,6 +3023,110 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
       return ok()
+    }
+
+    if (path === '/admin/products' && method === 'GET') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const rows = await db
+        .prepare(
+          `SELECT id, title, description, price, currency, kind, value, duration_days, active, sort
+           FROM products ORDER BY active DESC, sort ASC, price ASC`,
+        )
+        .all<Record<string, unknown>>()
+      return ok({
+        products: rows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description ?? '',
+          price: Number(r.price ?? 0),
+          currency: r.currency,
+          kind: r.kind,
+          value: r.value,
+          durationDays: Number(r.duration_days ?? 0),
+          active: Number(r.active ?? 1) === 1,
+          sort: Number(r.sort ?? 0),
+        })),
+      })
+    }
+
+    if (path === '/admin/products' && method === 'POST') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const body = await readJson(request)
+      if (!body) return fail('请求格式不对')
+      const title = String(body.title ?? '').trim().slice(0, 40)
+      if (!title) return fail('商品名不能为空')
+      const id = String(body.id ?? '').trim() || randomHex(6)
+      const values = [
+        title,
+        String(body.description ?? '').slice(0, 120),
+        Math.max(0, numberOf(body.price, 0)),
+        body.currency === 'member' ? 'member' : 'points',
+        String(body.kind ?? 'nameplate'),
+        body.value ? String(body.value) : null,
+        Math.max(0, numberOf(body.durationDays, 0)),
+        body.active === false ? 0 : 1,
+        numberOf(body.sort, 0),
+      ] as const
+      await db
+        .prepare(
+          `INSERT INTO products (id, title, description, price, currency, kind, value, duration_days, active, sort, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             title = excluded.title, description = excluded.description,
+             price = excluded.price, currency = excluded.currency,
+             kind = excluded.kind, value = excluded.value,
+             duration_days = excluded.duration_days, active = excluded.active,
+             sort = excluded.sort`,
+        )
+        .bind(id, ...values, nowIso())
+        .run()
+      return ok({ id })
+    }
+
+    if (path === '/admin/products/batch' && method === 'POST') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const body = await readJson(request)
+      const ids = Array.isArray(body?.ids) ? (body!.ids as unknown[]).map(String) : []
+      const active = body?.active === true ? 1 : 0
+      for (const id of ids) {
+        await db.prepare('UPDATE products SET active = ? WHERE id = ?').bind(active, id).run()
+      }
+      return ok({ count: ids.length })
+    }
+
+    const removeProduct = /^\/admin\/products\/([a-z0-9]+)$/.exec(path)
+    if (removeProduct && method === 'DELETE') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      await db.prepare('DELETE FROM products WHERE id = ?').bind(removeProduct[1]).run()
+      return ok({})
+    }
+
+    if (path === '/admin/points' && method === 'POST') {
+      const denied = need('users:edit')
+      if (denied) return denied
+      const body = await readJson(request)
+      const userId = String(body?.userId ?? '')
+      const amount = numberOf(body?.amount, 0)
+      const member = body?.member === true
+      if (!userId || !amount) return fail('参数不对')
+      const column = member ? 'member_points' : 'points'
+      await db
+        .prepare(
+          `INSERT INTO user_stats (user_id, points, member_points, updated_at)
+           VALUES (?, 0, 0, ?)
+           ON CONFLICT(user_id) DO NOTHING`,
+        )
+        .bind(userId, nowIso())
+        .run()
+      await db
+        .prepare(`UPDATE user_stats SET ${column} = ${column} + ?, updated_at = ? WHERE user_id = ?`)
+        .bind(amount, nowIso(), userId)
+        .run()
+      return ok({})
     }
 
     const deleteUser = /^\/admin\/users\/([a-z0-9]+)$/.exec(path)

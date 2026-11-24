@@ -375,6 +375,38 @@ export const api = {
   follow: (userId: string, action: 'follow' | 'unfollow') =>
     call<{ following: boolean }>(`/follows/${userId}`, { method: 'POST', body: { action } }),
 
+  store: () =>
+    call<{
+      points: number
+      memberPoints: number
+      products: Array<{
+        id: string
+        title: string
+        description: string
+        price: number
+        currency: string
+        kind: string
+        value: string | null
+        durationDays: number
+      }>
+      mine: Array<{
+        id: string
+        productId: string
+        title: string
+        kind: string
+        value: string | null
+        createdAt: string
+        expiresAt: string | null
+      }>
+      equipped: { avatarFrame: string | null; badgeStyle: string | null }
+    }>('/store'),
+
+  buyProduct: (productId: string) =>
+    call<{ id: string; balance: number }>('/store/buy', { method: 'POST', body: { productId } }),
+
+  equipItem: (purchaseId: string) =>
+    call<{ equipped: string }>('/store/equip', { method: 'POST', body: { purchaseId } }),
+
   memberLinks: async () => {
     type Links = {
       links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
