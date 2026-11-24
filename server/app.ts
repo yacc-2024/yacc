@@ -3090,6 +3090,55 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       return ok()
     }
 
+    if (path === '/admin/tasks' && method === 'GET') {
+      const denied = need('users:edit')
+      if (denied) return denied
+      const rows = await db
+        .prepare('SELECT kind, title, points, daily_limit, active FROM point_tasks ORDER BY kind')
+        .all<{
+          kind: string
+          title: string
+          points: number
+          daily_limit: number
+          active: number
+        }>()
+      return ok({
+        tasks: rows.map((r) => ({
+          kind: r.kind,
+          title: r.title,
+          points: Number(r.points),
+          dailyLimit: Number(r.daily_limit),
+          active: Number(r.active) === 1,
+        })),
+      })
+    }
+
+    if (path === '/admin/tasks' && method === 'POST') {
+      const denied = need('users:edit')
+      if (denied) return denied
+      const body = await readJson(request)
+      const kind = String(body?.kind ?? '').trim()
+      if (!kind) return fail('参数不对')
+      const title = String(body?.title ?? kind).slice(0, 20)
+      await db
+        .prepare(
+          `INSERT INTO point_tasks (kind, title, points, daily_limit, active)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(kind) DO UPDATE SET
+             title = excluded.title, points = excluded.points,
+             daily_limit = excluded.daily_limit, active = excluded.active`,
+        )
+        .bind(
+          kind,
+          title,
+          Math.max(0, numberOf(body?.points, 0)),
+          Math.max(0, numberOf(body?.dailyLimit, 1)),
+          body?.active === false ? 0 : 1,
+        )
+        .run()
+      return ok({})
+    }
+
     if (path === '/admin/products' && method === 'GET') {
       const denied = need('content:publish')
       if (denied) return denied

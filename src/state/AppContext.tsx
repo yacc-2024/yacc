@@ -58,6 +58,7 @@ export interface SessionUser {
   badgeStyle?: string | null
   signature?: string | null
   hideBadge?: boolean
+  avatarFrame?: string | null
   profileStyle?: string
   titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -540,6 +541,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shownTitles?: string[]
       signature?: string
       hideBadge?: boolean
+  avatarFrame?: string | null
   profileStyle?: string
     }) => {
       if (!account) throw new Error('未登录')

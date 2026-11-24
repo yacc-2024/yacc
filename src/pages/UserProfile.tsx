@@ -45,6 +45,7 @@ interface PublicUser {
   hideBadge: boolean
   isSponsor: boolean
   sponsorUntil: string | null
+  avatarFrame: string | null
   profileStyle: string | null
   visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
@@ -117,7 +118,7 @@ export function UserProfile() {
         {user ? (
           <>
             <div className="dy-head">
-              <Avatar name={user.name} src={user.avatar} size={88} />
+              <Avatar name={user.name} src={user.avatar} size={88} frame={user.avatarFrame} />
               <div className="dy-stats">
                 <span className="dy-stat">
                   <span className="dy-stat__num">{user.likes}</span>

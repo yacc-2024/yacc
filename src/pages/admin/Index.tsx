@@ -67,6 +67,14 @@ export function AdminIndex() {
           ) : null}
           {can('content:publish') ? (
             <ListRow
+              icon="clock"
+              title="积分任务"
+              sub="每个行为给多少分"
+              to="/admin/tasks"
+            />
+          ) : null}
+          {can('content:publish') ? (
+            <ListRow
               icon="check"
               title="商品管理"
               sub="积分商城的商品与上下架"

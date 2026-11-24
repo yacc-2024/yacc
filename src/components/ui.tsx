@@ -237,14 +237,19 @@ export function Avatar({
   name,
   src,
   size = 32,
+  frame,
 }: {
   name: string
   src?: string | null
   size?: 88 | 56 | 32
+  frame?: string | null
 }) {
   const initial = (name || '?').trim().slice(0, 1).toUpperCase()
   return (
-    <span className={`avatar avatar--${size}`} style={{ background: src ? undefined : avatarTint(name) }}>
+    <span
+      className={`avatar avatar--${size}${frame ? ` avatar--frame avatar--frame-${frame}` : ''}`}
+      style={{ background: src ? undefined : avatarTint(name) }}
+    >
       {src ? <img src={src} alt={name} loading="lazy" /> : <span aria-hidden="true">{initial}</span>}
     </span>
   )

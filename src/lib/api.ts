@@ -306,6 +306,7 @@ export const api = {
     titleStyles?: Record<string, string>
     signature?: string
     hideBadge?: boolean
+  avatarFrame?: string | null
     profileStyle?: string
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
@@ -412,6 +413,10 @@ export const api = {
 
   equipItem: (purchaseId: string) =>
     call<{ equipped: string }>('/store/equip', { method: 'POST', body: { purchaseId } }),
+
+  adminTasks: () => api.admin.tasks(),
+
+  saveTask: (payload: Record<string, unknown>) => api.admin.saveTask(payload),
 
   adminProducts: () => api.admin.products(),
 
@@ -574,6 +579,20 @@ export const api = {
   settings: () => call<{ moderation: string }>('/settings'),
 
   admin: {
+    tasks: () =>
+      call<{
+        tasks: Array<{
+          kind: string
+          title: string
+          points: number
+          dailyLimit: number
+          active: boolean
+        }>
+      }>('/admin/tasks'),
+
+    saveTask: (payload: Record<string, unknown>) =>
+      call<Record<string, never>>('/admin/tasks', { method: 'POST', body: payload }),
+
     products: () =>
       call<{
         products: Array<{
