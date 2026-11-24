@@ -59,6 +59,9 @@ export interface SessionUser {
   signature?: string | null
   hideBadge?: boolean
   avatarFrame?: string | null
+  sponsorUntil?: string | null
+  skinVip?: boolean
+  skinSvip?: boolean
   profileStyle?: string
   titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -542,6 +545,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signature?: string
       hideBadge?: boolean
   avatarFrame?: string | null
+  sponsorUntil?: string | null
+  skinVip?: boolean
+  skinSvip?: boolean
   profileStyle?: string
     }) => {
       if (!account) throw new Error('未登录')

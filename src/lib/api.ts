@@ -307,6 +307,9 @@ export const api = {
     signature?: string
     hideBadge?: boolean
   avatarFrame?: string | null
+  sponsorUntil?: string | null
+  skinVip?: boolean
+  skinSvip?: boolean
     profileStyle?: string
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),

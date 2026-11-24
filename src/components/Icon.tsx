@@ -28,6 +28,7 @@ export type IconName =
   | 'upload'
   | 'lock'
   | 'message'
+  | 'coin'
 
 interface Props extends SVGProps<SVGSVGElement> {
   name: IconName
@@ -129,6 +130,12 @@ const paths: Record<IconName, JSX.Element> = {
     <path d="M4.5 6.2A2.7 2.7 0 0 1 7.2 3.5h9.6a2.7 2.7 0 0 1 2.7 2.7v7.1a2.7 2.7 0 0 1-2.7 2.7H10l-4 3.4v-3.4a2.7 2.7 0 0 1-1.5-2.4Z" />
   ),
   close: <path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6" />,
+  coin: (
+    <>
+      <circle cx="12" cy="12" r="8.2" />
+      <path d="M9.2 8.6 12 12.6l2.8-4M12 12.6v4.2" />
+    </>
+  ),
   edit: (
     <>
       <path d="M4.8 19.2h4l10-10a2.2 2.2 0 0 0-3.1-3.1l-10 10v3.1Z" />

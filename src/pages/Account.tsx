@@ -294,9 +294,11 @@ function ProfileSettingsInner() {
         <div className="chips" style={{ marginTop: 10 }}>
           {[
             ['normal', '普通'],
-            ['sponsor', '赞助'],
-            ['vip', '高级'],
-            ['svip', '顶级'],
+            ...(account?.sponsorUntil && account.sponsorUntil > new Date().toISOString()
+              ? [['sponsor', '赞助'] as const]
+              : []),
+            ...(account?.skinVip ? [['vip', '高级'] as const] : []),
+            ...(account?.skinSvip ? [['svip', '顶级'] as const] : []),
           ].map(([value, label]) => (
             <button
               key={value}
@@ -309,7 +311,7 @@ function ProfileSettingsInner() {
             </button>
           ))}
         </div>
-        <p className="field__hint">赞助外观需要赞助身份，高级/顶级需要会员积分。</p>
+        <p className="field__hint">外观由管理员发放后才能选择。</p>
       </div>
 
       <button

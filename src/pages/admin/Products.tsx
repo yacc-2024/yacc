@@ -244,6 +244,7 @@ export function ProductsAdmin() {
                 {[
                   ['nameplate', '铭牌'],
                   ['avatar_frame', '头像框'],
+                  ['custom', '自定义'],
                 ].map(([v, l]) => (
                   <button
                     key={v}

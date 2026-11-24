@@ -95,7 +95,7 @@ export function Me() {
               sub={unread > 0 ? `${unread} 条未读` : undefined}
               to="/me/notifications"
             />
-            <ListRow icon="check" title="积分商城" sub="兑换铭牌与头像框" to="/me/store" />
+            <ListRow icon="coin" title="积分商城" to="/me/store" />
             <ListRow icon="bookmark" title="我的收藏" to="/me/favorites" />
             <ListRow icon="clock" title="观看历史" to="/me/history" />
             <ListRow icon="gear" title="账号设置" to="/me/settings" />

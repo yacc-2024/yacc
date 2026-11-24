@@ -64,8 +64,11 @@ export interface User {
   avatarFrame: string | null
   /** 赞助到期时间（null 表示不是赞助者） */
   sponsorUntil: string | null
-  /** 主页外观：normal / sponsor */
+  /** 主页外观：normal / sponsor / vip / svip */
   profileStyle: string | null
+  /** 管理员发放的高级/顶级外观 */
+  skinVip: boolean
+  skinSvip: boolean
   /** 每个称号单独的外观 */
   titleStyles: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
@@ -89,6 +92,8 @@ interface UserRow {
   avatar_frame: string | null
   sponsor_until: string | null
   profile_style: string | null
+  skin_vip: number | null
+  skin_svip: number | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -200,6 +205,8 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN avatar_frame TEXT',
         'ALTER TABLE users ADD COLUMN sponsor_until TEXT',
         'ALTER TABLE users ADD COLUMN profile_style TEXT',
+        'ALTER TABLE users ADD COLUMN skin_vip INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN skin_svip INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -263,6 +270,8 @@ function toUser(row: UserRow): User {
     avatarFrame: row.avatar_frame ?? null,
     sponsorUntil: row.sponsor_until ?? null,
     profileStyle: row.profile_style ?? null,
+    skinVip: Number(row.skin_vip ?? 0) === 1,
+    skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
     role:
       row.role === 'superadmin'
@@ -729,10 +738,10 @@ async function ensureStoreSeed(db: DB): Promise<void> {
   if (mark?.value === '1') return
 
   const tasks: Array<[string, string, number, number]> = [
-    ['login', '每日签到', 10, 1],
-    ['post', '发表帖子', 5, 3],
+    ['login', '每日登录', 10, 1],
+    ['post', '每日首次发帖', 5, 1],
+    ['browse', '每日首次浏览作品', 3, 1],
     ['comment', '发表评论', 3, 5],
-    ['follow', '被关注', 2, 10],
   ]
   for (const [kind, title, points, limit] of tasks) {
     await db
@@ -1170,6 +1179,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     avatarFrame: row.avatar_frame ?? null,
     sponsorUntil: row.sponsor_until ?? null,
     profileStyle: row.profile_style ?? null,
+    skinVip: Number(row.skin_vip ?? 0) === 1,
+    skinSvip: Number(row.skin_svip ?? 0) === 1,
           level: stats.level,
           points: stats.points,
           popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
@@ -1280,6 +1291,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         sponsorUntil: null,
         profileStyle: null,
+        skinVip: false,
+        skinSvip: false,
         titleStyles: {},
         role,
         verified: verified === 1,
@@ -1603,6 +1616,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         sponsorUntil: null,
         profileStyle: null,
+        skinVip: false,
+        skinSvip: false,
         titleStyles: {},
         role: 'superadmin',
         verified: true,
@@ -1676,16 +1691,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             return fail('赞助者才能使用这套外观', 403)
           }
         }
-        if (style === 'vip' || style === 'svip') {
-          const stat = await db
-            .prepare('SELECT member_points FROM user_stats WHERE user_id = ?')
-            .bind(me.id)
-            .first<{ member_points: number }>()
-          const need = style === 'svip' ? 2000 : 500
-          if (numberOf(stat?.member_points, 0) < need) {
-            return fail(`会员积分需要达到 ${need}`, 403)
-          }
-        }
+        if (style === 'vip' && !me.skinVip) return fail('还没有获得这套外观', 403)
+        if (style === 'svip' && !me.skinSvip) return fail('还没有获得这套外观', 403)
         await db
           .prepare('UPDATE users SET profile_style = ? WHERE id = ?')
           .bind(style === 'normal' ? null : style, me.id)
@@ -3019,6 +3026,21 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .prepare('UPDATE users SET title_styles = ? WHERE id = ?')
           .bind(JSON.stringify(clean), target.id)
           .run()
+      }
+
+      if (body.skinVip !== undefined || body.skinSvip !== undefined) {
+        if (body.skinVip !== undefined) {
+          await db
+            .prepare('UPDATE users SET skin_vip = ? WHERE id = ?')
+            .bind(body.skinVip ? 1 : 0, target.id)
+            .run()
+        }
+        if (body.skinSvip !== undefined) {
+          await db
+            .prepare('UPDATE users SET skin_svip = ? WHERE id = ?')
+            .bind(body.skinSvip ? 1 : 0, target.id)
+            .run()
+        }
       }
 
       if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {
