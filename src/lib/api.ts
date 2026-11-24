@@ -413,6 +413,14 @@ export const api = {
   equipItem: (purchaseId: string) =>
     call<{ equipped: string }>('/store/equip', { method: 'POST', body: { purchaseId } }),
 
+  adminProducts: () => api.admin.products(),
+
+  saveProduct: (payload: Record<string, unknown>) => api.admin.saveProduct(payload),
+
+  deleteProduct: (id: string) => api.admin.deleteProduct(id),
+
+  batchProducts: (ids: string[], active: boolean) => api.admin.batchProducts(ids, active),
+
   memberLinks: async () => {
     type Links = {
       links: Array<{ memberId: string; uid: string; name: string; avatar: string | null }>
@@ -566,6 +574,31 @@ export const api = {
   settings: () => call<{ moderation: string }>('/settings'),
 
   admin: {
+    products: () =>
+      call<{
+        products: Array<{
+          id: string
+          title: string
+          description: string
+          price: number
+          currency: string
+          kind: string
+          value: string | null
+          durationDays: number
+          active: boolean
+          sort: number
+        }>
+      }>('/admin/products'),
+
+    saveProduct: (payload: Record<string, unknown>) =>
+      call<{ id: string }>('/admin/products', { method: 'POST', body: payload }),
+
+    deleteProduct: (id: string) =>
+      call<Record<string, never>>(`/admin/products/${id}`, { method: 'DELETE' }),
+
+    batchProducts: (ids: string[], active: boolean) =>
+      call<{ count: number }>('/admin/products/batch', { method: 'POST', body: { ids, active } }),
+
     versions: () =>
       call<{
         versions: Array<{ version: number; publishedAt: string; publisher: string; size: number }>

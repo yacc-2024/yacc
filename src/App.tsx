@@ -38,6 +38,7 @@ import {
   Version,
 } from './pages/Account'
 import { Store } from './pages/Store'
+import { ProductsAdmin } from './pages/admin/Products'
 import { AdminIndex } from './pages/admin/Index'
 import { HomeEdit, AboutEdit } from './pages/admin/ContentEdit'
 import { MembersAdmin } from './pages/admin/MembersAdmin'
@@ -185,6 +186,7 @@ export function App() {
         <Route path="me/version" element={<Version />} />
 
         <Route path="admin" element={<RequireAdmin><AdminIndex /></RequireAdmin>} />
+        <Route path="admin/products" element={<RequireAdmin><ProductsAdmin /></RequireAdmin>} />
         <Route path="admin/home" element={<RequireAdmin><HomeEdit /></RequireAdmin>} />
         <Route path="admin/about" element={<RequireAdmin><AboutEdit /></RequireAdmin>} />
         <Route

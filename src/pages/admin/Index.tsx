@@ -67,6 +67,15 @@ export function AdminIndex() {
           ) : null}
           {can('content:publish') ? (
             <ListRow
+              icon="check"
+              title="商品管理"
+              sub="积分商城的商品与上下架"
+              to="/admin/products"
+            />
+          ) : null}
+
+          {can('content:publish') ? (
+            <ListRow
               icon="download"
               title="数据管理"
               sub={mode === 'online' ? '发布到线上、备份、导入' : '导出、导入、发布'}
