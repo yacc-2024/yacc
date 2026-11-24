@@ -306,11 +306,8 @@ export const api = {
     titleStyles?: Record<string, string>
     signature?: string
     hideBadge?: boolean
-  avatarFrame?: string | null
-  sponsorUntil?: string | null
-  skinVip?: boolean
-  skinSvip?: boolean
     profileStyle?: string
+    avatarFrame?: string | null
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -437,6 +434,8 @@ export const api = {
   adminProducts: () => api.admin.products(),
 
   saveProduct: (payload: Record<string, unknown>) => api.admin.saveProduct(payload),
+
+  setProductActive: (id: string, active: boolean) => api.admin.setProductActive(id, active),
 
   deleteProduct: (id: string) => api.admin.deleteProduct(id),
 
@@ -628,6 +627,12 @@ export const api = {
 
     saveProduct: (payload: Record<string, unknown>) =>
       call<{ id: string }>('/admin/products', { method: 'POST', body: payload }),
+
+    setProductActive: (id: string, active: boolean) =>
+      call<Record<string, never>>(`/admin/products/${id}`, {
+        method: 'POST',
+        body: { active },
+      }),
 
     deleteProduct: (id: string) =>
       call<Record<string, never>>(`/admin/products/${id}`, { method: 'DELETE' }),

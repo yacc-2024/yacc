@@ -1714,6 +1714,17 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
 
+      if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {
+        const value = body.avatarFrame === null ? null : String(body.avatarFrame)
+        if (value !== null && !['ring-gold', 'ring-neon', 'ring-silver'].includes(value)) {
+          return fail('头像框不认识')
+        }
+        await db
+          .prepare('UPDATE users SET avatar_frame = ? WHERE id = ?')
+          .bind(value, me.id)
+          .run()
+      }
+
       if (typeof body.profileStyle === 'string') {
         const style = body.profileStyle
         if (!['normal', 'sponsor', 'vip', 'svip'].includes(style)) {
@@ -3282,6 +3293,18 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         await db.prepare('UPDATE products SET active = ? WHERE id = ?').bind(active, id).run()
       }
       return ok({ count: ids.length })
+    }
+
+    const toggleProduct = /^\/admin\/products\/([a-z0-9]+)$/.exec(path)
+    if (toggleProduct && method === 'POST') {
+      const denied = need('content:publish')
+      if (denied) return denied
+      const body = await readJson(request)
+      await db
+        .prepare('UPDATE products SET active = ? WHERE id = ?')
+        .bind(body?.active === false ? 0 : 1, toggleProduct[1])
+        .run()
+      return ok({})
     }
 
     const removeProduct = /^\/admin\/products\/([a-z0-9]+)$/.exec(path)

@@ -153,6 +153,21 @@ export function ProductsAdmin() {
                 type="button"
                 className="linklike"
                 onClick={async () => {
+                  try {
+                    await api.setProductActive(p.id, !p.active)
+                    await load()
+                    toast(p.active ? '已下架' : '已上架')
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : '操作失败', 'error')
+                  }
+                }}
+              >
+                {p.active ? '下架' : '上架'}
+              </button>
+              <button
+                type="button"
+                className="linklike"
+                onClick={async () => {
                   const ok = await confirm({
                     title: `删除「${p.title}」？`,
                     message: '删除后已兑换的记录还在，但商品不再出现。',

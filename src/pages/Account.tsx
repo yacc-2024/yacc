@@ -187,6 +187,7 @@ function ProfileSettingsInner() {
   const [signature, setSignature] = useState(account?.signature ?? '')
   const [hideBadge, setHideBadge] = useState(account?.hideBadge ?? false)
   const [style, setStyle] = useState(account?.profileStyle ?? 'normal')
+  const [frame, setFrame] = useState(account?.avatarFrame ?? '')
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
@@ -287,6 +288,28 @@ function ProfileSettingsInner() {
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
         />
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 16 }}>
+        <p className="t-caption faint">头像框</p>
+        <div className="chips" style={{ marginTop: 10 }}>
+          {[
+            ['', '无'],
+            ['ring-gold', '金色'],
+            ['ring-neon', '霓虹'],
+            ['ring-silver', '银灰'],
+          ].map(([value, label]) => (
+            <button
+              key={value || 'none'}
+              type="button"
+              className="chip"
+              aria-pressed={frame === value}
+              onClick={() => setFrame(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 16 }}>

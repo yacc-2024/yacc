@@ -557,6 +557,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (patch.signature !== undefined) await api.profile({ signature: patch.signature })
         if (patch.hideBadge !== undefined) await api.profile({ hideBadge: patch.hideBadge })
         if (patch.profileStyle !== undefined) await api.profile({ profileStyle: patch.profileStyle })
+        if (patch.avatarFrame !== undefined) await api.profile({ avatarFrame: patch.avatarFrame })
         const res = await api.profile({ name: patch.name, avatar: patch.avatar })
         cacheUser(res.user)
         setAccount(res.user)
