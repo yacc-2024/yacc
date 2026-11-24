@@ -3806,3 +3806,71 @@ select.input {
   height: 100%;
   object-fit: cover;
 }
+
+/* ============================================================
+   主页皮肤：普通 / 赞助 / 高级 / 顶级
+   ============================================================ */
+.profile-skin--sponsor .dy-head,
+.profile-skin--vip .dy-head,
+.profile-skin--svip .dy-head {
+  border-radius: 22px;
+  padding: 18px;
+  margin-top: 12px;
+}
+
+.profile-skin--sponsor .dy-head {
+  background: linear-gradient(130deg, #241c12 0%, #3d2f1a 55%, #6b5324 100%);
+  color: #ffe9c0;
+  box-shadow: 0 8px 30px rgba(120, 90, 35, 0.35);
+}
+
+.profile-skin--vip .dy-head {
+  background: linear-gradient(130deg, #1b1630 0%, #33245c 55%, #6b3fb0 100%);
+  color: #efe4ff;
+  box-shadow: 0 8px 30px rgba(107, 63, 176, 0.35);
+}
+
+.profile-skin--svip .dy-head {
+  background: linear-gradient(130deg, #0d0d10 0%, #2b2114 45%, #a37d26 100%);
+  color: #ffeec2;
+  box-shadow: 0 10px 34px rgba(163, 125, 38, 0.45);
+}
+
+.profile-skin--svip .dy-head::after,
+.profile-skin--vip .dy-head::after,
+.profile-skin--sponsor .dy-head::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.16), transparent 60%);
+}
+
+.profile-skin--sponsor .dy-head,
+.profile-skin--vip .dy-head,
+.profile-skin--svip .dy-head {
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-skin--sponsor .dy-name,
+.profile-skin--vip .dy-name,
+.profile-skin--svip .dy-name {
+  color: inherit;
+}
+
+.profile-skin--sponsor .dy-uid,
+.profile-skin--vip .dy-uid,
+.profile-skin--svip .dy-uid,
+.profile-skin--sponsor .dy-stat__label,
+.profile-skin--vip .dy-stat__label,
+.profile-skin--svip .dy-stat__label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.profile-skin--sponsor .dy-stat__num,
+.profile-skin--vip .dy-stat__num,
+.profile-skin--svip .dy-stat__num {
+  color: #fff;
+}

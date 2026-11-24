@@ -180,6 +180,7 @@ function ProfileSettingsInner() {
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [signature, setSignature] = useState(account?.signature ?? '')
   const [hideBadge, setHideBadge] = useState(account?.hideBadge ?? false)
+  const [style, setStyle] = useState(account?.profileStyle ?? 'normal')
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
@@ -280,6 +281,29 @@ function ProfileSettingsInner() {
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
         />
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 16 }}>
+        <p className="t-caption faint">主页外观</p>
+        <div className="chips" style={{ marginTop: 10 }}>
+          {[
+            ['normal', '普通'],
+            ['sponsor', '赞助'],
+            ['vip', '高级'],
+            ['svip', '顶级'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className="chip"
+              aria-pressed={style === value}
+              onClick={() => setStyle(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">赞助外观需要赞助身份，高级/顶级需要会员积分。</p>
       </div>
 
       <button

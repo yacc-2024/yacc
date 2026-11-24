@@ -1662,6 +1662,36 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
 
+      if (typeof body.profileStyle === 'string') {
+        const style = body.profileStyle
+        if (!['normal', 'sponsor', 'vip', 'svip'].includes(style)) {
+          return fail('没有这个主页外观')
+        }
+        if (style === 'sponsor') {
+          const row = await db
+            .prepare('SELECT sponsor_until FROM users WHERE id = ?')
+            .bind(me.id)
+            .first<{ sponsor_until: string | null }>()
+          if (!row?.sponsor_until || row.sponsor_until <= nowIso()) {
+            return fail('赞助者才能使用这套外观', 403)
+          }
+        }
+        if (style === 'vip' || style === 'svip') {
+          const stat = await db
+            .prepare('SELECT member_points FROM user_stats WHERE user_id = ?')
+            .bind(me.id)
+            .first<{ member_points: number }>()
+          const need = style === 'svip' ? 2000 : 500
+          if (numberOf(stat?.member_points, 0) < need) {
+            return fail(`会员积分需要达到 ${need}`, 403)
+          }
+        }
+        await db
+          .prepare('UPDATE users SET profile_style = ? WHERE id = ?')
+          .bind(style === 'normal' ? null : style, me.id)
+          .run()
+      }
+
       if (typeof body.signature === 'string') {
         const value = body.signature.trim().slice(0, 60)
         await db

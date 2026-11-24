@@ -306,6 +306,7 @@ export const api = {
     titleStyles?: Record<string, string>
     signature?: string
     hideBadge?: boolean
+    profileStyle?: string
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 

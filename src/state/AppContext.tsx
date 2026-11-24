@@ -58,6 +58,7 @@ export interface SessionUser {
   badgeStyle?: string | null
   signature?: string | null
   hideBadge?: boolean
+  profileStyle?: string
   titleStyles?: Record<string, string>
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
@@ -539,6 +540,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shownTitles?: string[]
       signature?: string
       hideBadge?: boolean
+  profileStyle?: string
     }) => {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
@@ -546,6 +548,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (patch.shownTitles) await api.profile({ shownTitles: patch.shownTitles })
         if (patch.signature !== undefined) await api.profile({ signature: patch.signature })
         if (patch.hideBadge !== undefined) await api.profile({ hideBadge: patch.hideBadge })
+        if (patch.profileStyle !== undefined) await api.profile({ profileStyle: patch.profileStyle })
         const res = await api.profile({ name: patch.name, avatar: patch.avatar })
         cacheUser(res.user)
         setAccount(res.user)
