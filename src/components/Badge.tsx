@@ -102,7 +102,6 @@ export function TitleBadges({
   titleStyles,
   titles,
   shownTitles,
-  hideBadge,
 }: {
   role: string | undefined
   uid: number | null | undefined
@@ -111,24 +110,18 @@ export function TitleBadges({
   titleStyles?: Record<string, string> | null
   titles?: string[] | null
   shownTitles?: string[] | null
-  hideBadge?: boolean
 }) {
   const kind = badgeKindOf(role, uid, verified)
-  const identityWords = new Set(['管理员', '剧组成员', '认证成员', '访问者', '普通访客', '访客'])
-  const shown = (shownTitles ?? []).filter((t) => !identityWords.has(t))
-  const extra = shown.length > 0 ? shown : (titles ?? []).filter((t) => !identityWords.has(t)).slice(0, 1)
-
-  // 访客默认没有任何徽章；只有管理员明确给了他铭牌才显示
-  const showIdentity = !hideBadge && (kind !== 'guest' || Boolean(badgeStyle))
+  const shown = (shownTitles ?? []).filter((t) => typeof t === 'string' && t.trim())
+  const list = shown.length > 0 ? shown : (titles ?? []).slice(0, 1)
 
   return (
     <>
-      {showIdentity ? <Badge kind={kind} style={badgeStyle} /> : null}
-      {extra.map((t) => (
+      {list.map((t) => (
         <Badge
           key={t}
           kind={kind}
-          style={titleStyles?.[t] ?? badgeStyle}
+          style={titleStyles?.[t] ?? (badgeStyle ?? null)}
           label={t}
         />
       ))}

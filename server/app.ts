@@ -225,6 +225,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
       await ensureSuperadmin(db, createSuper)
       await ensureChangelogSeed(db)
       await ensureStoreSeed(db)
+      await ensureIdentityTitles(db)
       await db
         .prepare(
           "INSERT INTO settings (key, value) VALUES ('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -263,7 +264,15 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
-    titles: parseTitles(row.titles, row.title),
+    titles: (() => {
+      const list = parseTitles(row.titles, row.title)
+      if (list.length > 0) return list
+      const code = formatUid(row.uid)
+      if (row.role === 'admin' || row.role === 'superadmin') return ['管理员']
+      if (code.startsWith('1')) return ['剧组成员']
+      if (code.startsWith('2')) return ['认证成员']
+      return []
+    })(),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
     signature: row.signature ?? null,
@@ -768,6 +777,63 @@ const DEFAULT_SUPER_PASSWORD = 'yacc2026-yu'
 
 
 /** 默认任务与商品（只在新库补一次） */
+/** 老账号补上身份称号（只跑一次） */
+async function ensureIdentityTitles(db: DB): Promise<void> {
+  const mark = await db
+    .prepare("SELECT value FROM settings WHERE key = 'identity_titles'")
+    .first<{ value: string }>()
+  if (mark?.value === '1') return
+
+  const rows = await db
+    .prepare('SELECT id, uid, role, titles, shown_titles FROM users')
+    .all<{
+      id: string
+      uid: number | null
+      role: string
+      titles: string | null
+      shown_titles: string | null
+    }>()
+
+  for (const row of rows) {
+    const code = formatUid(row.uid)
+    const identity =
+      row.role === 'admin' || row.role === 'superadmin'
+        ? '管理员'
+        : code.startsWith('1')
+          ? '剧组成员'
+          : code.startsWith('2')
+            ? '认证成员'
+            : null
+    if (!identity) continue
+    let titles: string[] = []
+    try {
+      titles = row.titles ? (JSON.parse(row.titles) as string[]) : []
+    } catch {
+      titles = []
+    }
+    if (titles.includes(identity)) continue
+    const next = [...titles, identity]
+    let shown: string[] = []
+    try {
+      shown = row.shown_titles ? (JSON.parse(row.shown_titles) as string[]) : []
+    } catch {
+      shown = []
+    }
+    await db
+      .prepare('UPDATE users SET titles = ?, shown_titles = ? WHERE id = ?')
+      .bind(
+        JSON.stringify(next),
+        JSON.stringify(shown.length > 0 ? shown : [identity]),
+        row.id,
+      )
+      .run()
+  }
+
+  await db
+    .prepare("INSERT INTO settings (key, value) VALUES ('identity_titles', '1') ON CONFLICT(key) DO UPDATE SET value = '1'")
+    .run()
+}
+
 async function ensureStoreSeed(db: DB): Promise<void> {
   const mark = await db
     .prepare("SELECT value FROM settings WHERE key = 'store_seed'")
@@ -1189,10 +1255,21 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           memberSince: row.created_at,
           memberId: row.member_id ?? null,
           label: (() => {
-            const shown = parseShown(row.shown_titles, row.titles, row.title)
+            const IDENTITY = ['管理员', '剧组成员', '认证成员']
+            const shown = parseShown(row.shown_titles, row.titles, row.title).filter(
+              (t) => !IDENTITY.includes(t),
+            )
             return shown.length ? shown.join(' · ') : summary.label
           })(),
-          titles: parseTitles(row.titles, row.title),
+          titles: (() => {
+      const list = parseTitles(row.titles, row.title)
+      if (list.length > 0) return list
+      const code = formatUid(row.uid)
+      if (row.role === 'admin' || row.role === 'superadmin') return ['管理员']
+      if (code.startsWith('1')) return ['剧组成员']
+      if (code.startsWith('2')) return ['认证成员']
+      return []
+    })(),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
@@ -1360,6 +1437,22 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .prepare('UPDATE activation_keys SET used_by = ?, used_at = ? WHERE code = ?')
           .bind(user.id, nowIso(), keyRow.code)
           .run()
+
+        // 身份称号：注册时默认带上，之后可自行选择展示或不展示
+        const identity =
+          role === 'admin'
+            ? '管理员'
+            : String(formatUid(uid)).startsWith('1')
+              ? '剧组成员'
+              : String(formatUid(uid)).startsWith('2')
+                ? '认证成员'
+                : null
+        if (identity) {
+          await db
+            .prepare('UPDATE users SET titles = ?, shown_titles = ? WHERE id = ?')
+            .bind(JSON.stringify([identity]), JSON.stringify([identity]), user.id)
+            .run()
+        }
       }
 
       const token = await createSession(db, user.id)

@@ -103,7 +103,6 @@ function SettingsHome() {
                 titleStyles={account.titleStyles}
                 titles={account.titles}
                 shownTitles={account.shownTitles}
-                hideBadge={account.hideBadge}
               />
             </span>
           </div>
@@ -186,7 +185,6 @@ function ProfileSettingsInner() {
   const [name, setName] = useState(account?.name ?? '')
   const [avatar, setAvatar] = useState(account?.avatar ?? '')
   const [signature, setSignature] = useState(account?.signature ?? '')
-  const [hideBadge, setHideBadge] = useState(account?.hideBadge ?? false)
   const [style, setStyle] = useState(account?.profileStyle ?? 'normal')
   const [frame, setFrame] = useState(account?.avatarFrame ?? '')
   const [ownedFrames, setOwnedFrames] = useState<string[]>(
@@ -224,7 +222,6 @@ function ProfileSettingsInner() {
     name.trim() !== account.name ||
     avatar.trim() !== (account.avatar ?? '') ||
     signature.trim() !== (account.signature ?? '') ||
-    hideBadge !== (account.hideBadge ?? false) ||
     style !== (account.profileStyle ?? 'normal') ||
     frame !== (account.avatarFrame ?? '') ||
     shownDiffers
@@ -362,22 +359,6 @@ function ProfileSettingsInner() {
         <p className="field__hint">外观由管理员发放后才能选择。</p>
       </div>
 
-      <button
-        type="button"
-        className="between"
-        style={{ width: '100%', marginTop: 16, padding: '4px 2px' }}
-        onClick={() => setHideBadge((v) => !v)}
-      >
-        <span className="t-body">
-          不展示认证称号
-          <span className="t-caption faint" style={{ display: 'block' }}>
-            认证账号默认带蓝V/金V，可以在这里关掉
-          </span>
-        </span>
-        <span className={`switch${hideBadge ? ' switch--on' : ''}`}>
-          <span className="switch__knob" />
-        </span>
-      </button>
 
       <div className="card" style={{ marginTop: 16 }}>
           <div className="between">

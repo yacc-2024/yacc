@@ -213,7 +213,6 @@ export function UserProfile() {
                   titleStyles={user.titleStyles}
                   titles={user.titles}
                   shownTitles={user.shownTitles}
-                  hideBadge={user.hideBadge}
                 />
               </span>
               <div className="dy-block">
