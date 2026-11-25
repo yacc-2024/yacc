@@ -239,6 +239,9 @@ function ProfileSettingsInner() {
         avatar: avatar.trim() ? avatar.trim() : null,
         ...(shownDiffers ? { shownTitles: shown } : {}),
         ...(signature.trim() !== (account.signature ?? '') ? { signature } : {}),
+        ...(style !== (account.profileStyle ?? 'normal') ? { profileStyle: style } : {}),
+        ...(frame !== (account.avatarFrame ?? '') ? { avatarFrame: frame || null } : {}),
+        ...(Object.keys(titleStyles).length > 0 ? { titleStyles } : {}),
       })
       toast('已保存')
     } catch (err) {

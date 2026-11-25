@@ -154,7 +154,14 @@ export function Members() {
       />
 
       <div style={{ padding: '0 var(--gutter)' }}>
-        <SponsorSection />
+        <Link to="/sponsors" className="sponsor-entry">
+          <span className="sponsor-entry__icon">★</span>
+          <span className="grow">
+            <span className="sponsor-entry__title">赞助列表</span>
+            <span className="sponsor-entry__sub">感谢这些伙伴对 YACCC 的支持</span>
+          </span>
+          <Icon name="chevron-right" size={18} />
+        </Link>
         <div className="chips" role="group" aria-label="按季筛选">
           <Chip active={!seasonNo} onClick={() => toggle('season', null)}>
             全部
@@ -227,43 +234,5 @@ export function Members() {
         )}
       </div>
     </>
-  )
-}
-
-
-function SponsorSection() {
-  const [list, setList] = useState<Array<{ uid: string; name: string; avatar: string | null }>>([])
-
-  useEffect(() => {
-    let alive = true
-    void api
-      .sponsors()
-      .then((res) => {
-        if (alive) setList(res.sponsors)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  if (list.length === 0) return null
-
-  return (
-    <section style={{ marginTop: 18 }}>
-      <h2 className="section__title" style={{ marginBottom: 10 }}>
-        赞助者
-      </h2>
-      <div className="sponsor-strip">
-        {list.map((s) => (
-          <Link key={s.uid} to={`/u/${s.uid}`} className="sponsor-chip">
-            <span className="sponsor-chip__avatar">
-              {s.avatar ? <img src={s.avatar} alt="" /> : s.name.slice(0, 1)}
-            </span>
-            <span className="sponsor-chip__name">{s.name}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
   )
 }
