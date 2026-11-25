@@ -64,6 +64,7 @@ export interface SessionUser {
   skinSvip?: boolean
   profileStyle?: string
   titleStyles?: Record<string, string>
+  plates?: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]

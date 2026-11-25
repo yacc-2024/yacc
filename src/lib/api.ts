@@ -116,6 +116,7 @@ export interface ForumPost {
   badgeKind?: 'admin' | 'crew' | 'member' | 'guest'
   badgeStyle?: string | null
   titleStyles?: Record<string, string>
+  plates?: string[]
   label: string
   likes: number
   comments?: number
@@ -156,6 +157,7 @@ export interface SessionUser {
   shownTitles?: string[]
   badgeStyle?: string | null
   titleStyles?: Record<string, string>
+  plates?: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: AdminPerm[]
@@ -304,6 +306,7 @@ export const api = {
     shownTitles?: string[]
     badgeStyle?: string | null
     titleStyles?: Record<string, string>
+  plates?: string[]
     signature?: string
     hideBadge?: boolean
     profileStyle?: string
@@ -760,6 +763,7 @@ export const api = {
         role?: 'admin' | 'visitor'
         badgeStyle?: string | null
   titleStyles?: Record<string, string>
+  plates?: string[]
       },
     ) =>
       call<Record<string, never>>(`/admin/users/${id}`, { method: 'POST', body: patch }),

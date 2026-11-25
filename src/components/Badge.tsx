@@ -120,13 +120,15 @@ export function TitleBadges({
     return kind === 'guest' ? null : <Badge kind={kind} style={badgeStyle ?? null} />
   }
 
+  const IDENTITY = ['管理员', '剧组成员', '认证成员']
+
   return (
     <>
       {list.map((t) => (
         <Badge
           key={t}
           kind={kind}
-          style={titleStyles?.[t] ?? (badgeStyle ?? null)}
+          style={IDENTITY.includes(t) ? null : (titleStyles?.[t] ?? null)}
           label={t}
         />
       ))}

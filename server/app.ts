@@ -69,8 +69,10 @@ export interface User {
   /** 管理员发放的高级/顶级外观 */
   skinVip: boolean
   skinSvip: boolean
-  /** 每个称号单独的外观 */
+  /** 每个称号单独的外观（称号 → 铭牌） */
   titleStyles: Record<string, string>
+  /** 已拥有的铭牌 */
+  plates: string[]
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -89,6 +91,7 @@ interface UserRow {
   signature: string | null
   hide_badge: number | null
   title_styles: string | null
+  plates: string | null
   avatar_frame: string | null
   sponsor_until: string | null
   profile_style: string | null
@@ -208,6 +211,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN skin_vip INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN skin_svip INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE products ADD COLUMN image TEXT',
+        'ALTER TABLE users ADD COLUMN plates TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -275,6 +279,7 @@ function toUser(row: UserRow): User {
     skinVip: Number(row.skin_vip ?? 0) === 1,
     skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
+    plates: parsePlates(row.plates),
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -424,6 +429,23 @@ const BADGE_STYLES = [
   'rosy',
   'plain',
 ]
+
+/** 身份称号与铭牌固定搭配 */
+const IDENTITY_PLATES: Record<string, string> = {
+  管理员: 'admin',
+  剧组成员: 'crew',
+  认证成员: 'member',
+}
+
+function parsePlates(raw: string | null | undefined): string[] {
+  if (!raw) return []
+  try {
+    const list = JSON.parse(raw) as unknown[]
+    return list.filter((x): x is string => typeof x === 'string')
+  } catch {
+    return []
+  }
+}
 
 function parseTitleStyles(raw: string | null | undefined): Record<string, string> {
   if (!raw) return {}
@@ -1257,6 +1279,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
+    plates: parsePlates(row.plates),
           commentCount: Number(commentCount?.n ?? 0),
           followers: Number(followerCount?.n ?? 0),
           followingCount: Number(followingCount?.n ?? 0),
@@ -1392,6 +1415,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         skinVip: false,
         skinSvip: false,
         titleStyles: {},
+        plates: [],
         role,
         verified: verified === 1,
         perms: isAdminSignup ? adminPerms : [],
@@ -1432,9 +1456,15 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
                 ? '认证成员'
                 : null
         if (identity) {
+          const plate = IDENTITY_PLATES[identity] ?? null
           await db
-            .prepare('UPDATE users SET titles = ?, shown_titles = ? WHERE id = ?')
-            .bind(JSON.stringify([identity]), JSON.stringify([identity]), user.id)
+            .prepare('UPDATE users SET titles = ?, shown_titles = ?, plates = ? WHERE id = ?')
+            .bind(
+              JSON.stringify([identity]),
+              JSON.stringify([identity]),
+              JSON.stringify(plate ? [plate] : []),
+              user.id,
+            )
             .run()
         }
       }
@@ -1733,6 +1763,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         skinVip: false,
         skinSvip: false,
         titleStyles: {},
+        plates: [],
         role: 'superadmin',
         verified: true,
         perms: ALL_PERMS,
@@ -1791,6 +1822,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .run()
       }
 
+
       if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {
         const value = body.avatarFrame === null ? null : String(body.avatarFrame)
         if (value !== null && !['ring-gold', 'ring-neon', 'ring-silver'].includes(value)) {
@@ -1842,6 +1874,26 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         await db
           .prepare('UPDATE users SET shown_titles = ? WHERE id = ?')
           .bind(JSON.stringify(picked), me.id)
+          .run()
+      }
+
+      if (body.titleStyles && typeof body.titleStyles === 'object') {
+        const owned = me.titles ?? []
+        const plates = me.plates ?? []
+        const clean: Record<string, string> = {}
+        for (const [title, plate] of Object.entries(
+          body.titleStyles as Record<string, unknown>,
+        )) {
+          if (!owned.includes(title)) continue
+          if (IDENTITY_PLATES[title]) {
+            clean[title] = IDENTITY_PLATES[title]
+            continue
+          }
+          if (typeof plate === 'string' && plates.includes(plate)) clean[title] = plate
+        }
+        await db
+          .prepare('UPDATE users SET title_styles = ? WHERE id = ?')
+          .bind(JSON.stringify(clean), me.id)
           .run()
       }
 
@@ -2764,11 +2816,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         return ok({ equipped: 'avatarFrame' })
       }
       if (purchase.kind === 'nameplate') {
+        const plates = new Set(me.plates ?? [])
+        if (purchase.value) plates.add(purchase.value)
         await db
-          .prepare('UPDATE users SET badge_style = ? WHERE id = ?')
-          .bind(purchase.value, me.id)
+          .prepare('UPDATE users SET plates = ? WHERE id = ?')
+          .bind(JSON.stringify([...plates]), me.id)
           .run()
-        return ok({ equipped: 'badgeStyle' })
+        return ok({ equipped: 'plates' })
       }
       return fail('这个物品不能装备')
     }
@@ -3172,6 +3226,16 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             .bind(body.skinSvip ? 1 : 0, target.id)
             .run()
         }
+      }
+
+      if (Array.isArray(body.plates)) {
+        const list = (body.plates as unknown[])
+          .filter((x): x is string => typeof x === 'string')
+          .filter((x) => BADGE_STYLES.includes(x))
+        await db
+          .prepare('UPDATE users SET plates = ? WHERE id = ?')
+          .bind(JSON.stringify(Array.from(new Set(list))), target.id)
+          .run()
       }
 
       if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {

@@ -172,6 +172,8 @@ function SettingsHome() {
    个人资料
    ============================================================ */
 
+const IDENTITY_TITLES = ['管理员', '剧组成员', '认证成员']
+
 export function ProfileSettings() {
   return (
     <RequireAuth>
@@ -187,6 +189,9 @@ function ProfileSettingsInner() {
   const [signature, setSignature] = useState(account?.signature ?? '')
   const [style, setStyle] = useState(account?.profileStyle ?? 'normal')
   const [frame, setFrame] = useState(account?.avatarFrame ?? '')
+  const [titleStyles, setTitleStyles] = useState<Record<string, string>>(
+    account?.titleStyles ?? {},
+  )
   const [ownedFrames, setOwnedFrames] = useState<string[]>(
     account?.avatarFrame ? [account.avatarFrame] : [],
   )
@@ -404,6 +409,45 @@ function ProfileSettingsInner() {
             <p className="field__hint" style={{ marginTop: 8 }}>
               这些是管理员发给你的称号，可以自己决定主页上显示哪几个。
             </p>
+
+            {shown.length > 0 ? (
+              <>
+                <p className="t-caption faint" style={{ marginTop: 16 }}>
+                  每个称号配哪个铭牌
+                </p>
+                <div className="stack" style={{ marginTop: 8 }}>
+                  {shown.map((t) => {
+                    const locked = IDENTITY_TITLES.includes(t)
+                    const owned = account.plates ?? []
+                    return (
+                      <div key={t} className="between" style={{ gap: 10 }}>
+                        <span className="t-body">{t}</span>
+                        {locked ? (
+                          <span className="t-caption faint">身份铭牌（固定）</span>
+                        ) : (
+                          <select
+                            className="input"
+                            style={{ width: 130, minHeight: 34 }}
+                            aria-label={`${t} 的铭牌`}
+                            value={titleStyles[t] ?? ''}
+                            onChange={(e) =>
+                              setTitleStyles((prev) => ({ ...prev, [t]: e.target.value }))
+                            }
+                          >
+                            <option value="">默认</option>
+                            {owned.map((v) => (
+                              <option key={v} value={v}>
+                                {v}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            ) : null}
           </div>
         ) : null}
 
