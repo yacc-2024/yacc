@@ -1789,7 +1789,11 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare('UPDATE users SET name = ?, avatar = ? WHERE id = ?')
         .bind(nextName, nextAvatar, me.id)
         .run()
-      return ok({ user: { ...me, name: nextName, avatar: nextAvatar } })
+      const fresh = await db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .bind(me.id)
+        .first<UserRow>()
+      return ok({ user: fresh ? toUser(fresh) : { ...me, name: nextName, avatar: nextAvatar } })
     }
 
     if (path === '/auth/password' && method === 'POST') {

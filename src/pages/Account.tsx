@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, ListRow, Segmented, useConfirm, Sheet } from '../components/ui'
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
+import { api } from '../lib/api'
 import { formatUid } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useInstall } from '../lib/pwa'
@@ -188,6 +189,9 @@ function ProfileSettingsInner() {
   const [hideBadge, setHideBadge] = useState(account?.hideBadge ?? false)
   const [style, setStyle] = useState(account?.profileStyle ?? 'normal')
   const [frame, setFrame] = useState(account?.avatarFrame ?? '')
+  const [ownedFrames, setOwnedFrames] = useState<string[]>(
+    account?.avatarFrame ? [account.avatarFrame] : [],
+  )
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [shown, setShown] = useState<string[]>(account?.shownTitles ?? [])
@@ -198,6 +202,23 @@ function ProfileSettingsInner() {
   const shownDiffers =
     shown.length !== (account.shownTitles ?? []).length ||
     shown.some((t) => !(account.shownTitles ?? []).includes(t))
+
+  useEffect(() => {
+    let alive = true
+    void api
+      .store()
+      .then((res) => {
+        if (!alive) return
+        const values = res.mine
+          .filter((m) => m.kind === 'avatar_frame' && m.value)
+          .map((m) => m.value as string)
+        setOwnedFrames((prev) => Array.from(new Set([...prev, ...values])))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const dirty =
     name.trim() !== account.name ||
@@ -295,9 +316,10 @@ function ProfileSettingsInner() {
         <div className="chips" style={{ marginTop: 10 }}>
           {[
             ['', '无'],
-            ['ring-gold', '金色'],
-            ['ring-neon', '霓虹'],
-            ['ring-silver', '银灰'],
+            ...ownedFrames.map((v) => [
+              v,
+              v === 'ring-gold' ? '金色' : v === 'ring-neon' ? '霓虹' : '银灰',
+            ] as const),
           ].map(([value, label]) => (
             <button
               key={value || 'none'}

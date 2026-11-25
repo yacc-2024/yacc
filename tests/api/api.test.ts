@@ -1759,3 +1759,27 @@ describe('总管理员自举（v1.1）', () => {
     expect(res.body.data.user.role).toBe('superadmin')
   })
 })
+
+describe('外观保存（v1.1）', () => {
+  it('可以保存头像框与主页外观', async () => {
+    const key = await makeKey(await bootstrapAdmin(), 'visitor')
+    const reg = await registerWithKey(key, '换外观的人')
+    const token = reg.body.data.token
+
+    const frame = await call('POST', '/auth/profile', { avatarFrame: 'ring-gold' }, token)
+    expect(frame.status).toBe(200)
+    expect(frame.body.data.user.avatarFrame).toBe('ring-gold')
+
+    const style = await call('POST', '/auth/profile', { profileStyle: 'normal' }, token)
+    expect(style.status).toBe(200)
+  })
+
+  it('没有获得的外观不能选', async () => {
+    const key = await makeKey(await bootstrapAdmin(), 'visitor')
+    const reg = await registerWithKey(key, '没外观的人')
+    const token = reg.body.data.token
+
+    const vip = await call('POST', '/auth/profile', { profileStyle: 'vip' }, token)
+    expect(vip.status).toBe(403)
+  })
+})
