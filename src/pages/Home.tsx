@@ -202,7 +202,7 @@ export function Home() {
             <Link to="/forum" className="forum-teaser">
               {posts.slice(0, 2).map((p) => (
                 <span key={p.id} className="forum-teaser__row">
-                  <Avatar name={p.author} src={p.avatar} size={32} />
+                  <Avatar name={p.author} src={p.avatar} size={32} frame={p.avatarFrame} />
                   <span className="grow" style={{ minWidth: 0 }}>
                     <span className="forum-teaser__name">{p.author}</span>
                     <span className="forum-teaser__text clamp-1">{p.body}</span>

@@ -94,7 +94,7 @@ export function PostDetail() {
             <article className="post post--detail">
               <header className="post__head">
                 <Link to={`/u/${post.uid}`} className="post__who">
-                  <Avatar name={post.author} src={post.avatar} size={32} />
+                  <Avatar name={post.author} src={post.avatar} size={32} frame={post.avatarFrame} />
                   <span>
                     <span className="post__name-row">
                       <span className="post__name">{post.author}</span>

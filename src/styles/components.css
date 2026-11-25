@@ -3908,15 +3908,13 @@ select.input {
 /* 头像框 */
 .avatar--frame {
   position: relative;
-  padding: 3px;
 }
 
 .avatar--frame::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -3px;
   border-radius: 50%;
-  padding: 3px;
   pointer-events: none;
   z-index: 2;
 }
@@ -3925,6 +3923,7 @@ select.input {
   background: conic-gradient(from 0deg, #f7d774, #b9821f, #ffe9a8, #b9821f, #f7d774);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  transform-origin: center;
   animation: frame-spin 6s linear infinite;
 }
 
@@ -3932,6 +3931,7 @@ select.input {
   background: conic-gradient(from 0deg, #7df9ff, #8a5cff, #ff6bd6, #7df9ff);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  transform-origin: center;
   animation: frame-spin 4s linear infinite;
 }
 
@@ -3939,6 +3939,7 @@ select.input {
   background: conic-gradient(from 0deg, #f4f6f9, #9aa2ae, #ffffff, #9aa2ae, #f4f6f9);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  transform-origin: center;
 }
 
 @keyframes frame-spin {

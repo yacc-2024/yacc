@@ -264,7 +264,7 @@ export function Comments({
     <div key={c.id} className="reply">
       <div className="reply__head">
         <Link to={`/u/${c.uid}`} className="comment__who reply__who">
-          <Avatar name={c.author} src={c.avatar} size={32} />
+          <Avatar name={c.author} src={c.avatar} size={32} frame={c.avatarFrame} />
           <span className="comment__author">{c.author}</span>
         </Link>
         {c.replyToName ? <span className="reply__to">回复 @{c.replyToName}</span> : null}
@@ -331,7 +331,7 @@ export function Comments({
         <p className="t-caption faint">你的账号还没有通过认证，暂时只能浏览。</p>
       ) : (
         <div className="composer">
-          <Avatar name={account.name} src={account.avatar} size={32} />
+          <Avatar name={account.name} src={account.avatar} size={32} frame={account.avatarFrame} />
           <div className="grow">
             <textarea
               className="composer__input"
@@ -379,7 +379,7 @@ export function Comments({
 
                 <div className="comment__head">
                   <Link to={`/u/${c.uid}`} className="comment__who" aria-label={`查看 ${c.author} 的主页`}>
-                    <Avatar name={c.author} src={c.avatar} size={32} />
+                    <Avatar name={c.author} src={c.avatar} size={32} frame={c.avatarFrame} />
                     <span className="comment__author">{c.author}</span>
                   </Link>
                   <span className="comment__time">{relativeTime(c.createdAt)}</span>

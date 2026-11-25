@@ -2296,7 +2296,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const rows = await db
         .prepare(
           `SELECT c.id, c.body, c.created_at, c.user_id, c.parent_id, c.pinned,
-                  c.reply_to_name, u.name AS author, u.avatar, u.uid
+                  c.reply_to_name, u.name AS author, u.avatar, u.avatar_frame, u.uid
            FROM comments c JOIN users u ON u.id = c.user_id
            WHERE c.target_type = ? AND c.target_id = ? AND c.status = 'published'
            ORDER BY c.created_at ASC`,
@@ -2312,6 +2312,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           reply_to_name: string | null
           author: string
           avatar: string | null
+          avatar_frame: string | null
           uid: number | null
         }>()
 
@@ -2344,6 +2345,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         createdAt: r.created_at,
         author: r.author,
         avatar: r.avatar ?? null,
+        avatarFrame: (r.avatar_frame as string | null) ?? null,
         uid: formatUid(r.uid),
         mine: me?.id === r.user_id,
         pinned: r.pinned === 1,

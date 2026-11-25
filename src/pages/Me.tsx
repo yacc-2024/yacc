@@ -64,7 +64,7 @@ export function Me() {
               className="me-head"
               aria-label="编辑个人资料"
             >
-              <Avatar name={account.name} src={account.avatar} size={56} />
+              <Avatar name={account.name} src={account.avatar} size={56} frame={account.avatarFrame} />
               <span className="grow">
                 <span className="t-title3" style={{ display: 'block' }}>
                   {account.name}

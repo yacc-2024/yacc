@@ -88,7 +88,7 @@ function SettingsHome() {
 
       <div className="page__body">
         <div className="profile-head">
-          <Avatar name={account.name} src={account.avatar} size={56} />
+          <Avatar name={account.name} src={account.avatar} size={56} frame={account.avatarFrame} />
           <div className="grow">
             <p className="t-title3">{account.name}</p>
             <p className="t-caption faint t-num" style={{ marginTop: 2 }}>

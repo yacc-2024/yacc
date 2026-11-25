@@ -136,6 +136,7 @@ export interface CommentItem {
   createdAt: string
   author: string
   avatar: string | null
+  avatarFrame?: string | null
   uid: string
   mine: boolean
   pinned: boolean

@@ -46,7 +46,7 @@ export function SideNav() {
       <NavLink to={account ? '/me' : '/login'} className="sidenav__account">
         {account ? (
           <>
-            <Avatar name={account.name} src={account.avatar} size={32} />
+            <Avatar name={account.name} src={account.avatar} size={32} frame={account.avatarFrame} />
             <span className="grow">
               <span className="sidenav__name">{account.name}</span>
               <span className="sidenav__role">
