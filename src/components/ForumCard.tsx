@@ -33,7 +33,9 @@ export function ForumCard({
               <span className="post__name">{post.author}</span>
               <TitleBadges
                 role={post.badgeKind === 'admin' ? 'admin' : 'visitor'}
-                uid={null}
+                uid={
+                  post.badgeKind === 'crew' ? 10000 : post.badgeKind === 'member' ? 20000 : null
+                }
                 badgeStyle={post.badgeStyle ?? null}
                 titleStyles={post.titleStyles ?? {}}
                 titles={(post.titles ?? [post.badge]).filter(Boolean) as string[]}

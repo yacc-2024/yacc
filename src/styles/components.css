@@ -4270,3 +4270,33 @@ select.input {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
   animation: svip-shine 3s ease-in-out infinite;
 }
+
+/* 赞助者成员卡：与成员卡同构，只换配色 */
+.member--sponsor {
+  background: linear-gradient(150deg, #221a0e 0%, #3f3016 55%, #6d5320 100%);
+  border-color: rgba(232, 192, 106, 0.65);
+  box-shadow: 0 8px 28px rgba(150, 110, 30, 0.35);
+}
+
+.member--sponsor .member__role {
+  color: rgba(255, 233, 192, 0.72);
+}
+
+.sponsor-entry {
+  margin-bottom: 20px;
+}
+
+
+/* 头像框外扩，容器不能裁掉 */
+.avatar--frame {
+  overflow: visible;
+}
+
+.post__avatar,
+.comment__avatar {
+  overflow: visible;
+}
+
+.avatar--frame img {
+  border-radius: 50%;
+}

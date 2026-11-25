@@ -36,10 +36,10 @@ export function Sponsors() {
         ) : (
           <div className="member-grid" style={{ marginTop: 16 }}>
             {list.map((s) => (
-              <Link key={s.uid} to={`/u/${s.uid}`} className="member-card member-card--sponsor">
-                <Avatar name={s.name} src={s.avatar} size={56} />
-                <span className="member-card__name sponsor-glow">{s.name}</span>
-                <span className="member-card__meta">有效期至 {formatDate(s.until)}</span>
+              <Link key={s.uid} to={`/u/${s.uid}`} className="member member--sponsor">
+                <Avatar name={s.name} src={s.avatar} size={88} />
+                <span className="member__name clamp-1 sponsor-glow">{s.name}</span>
+                <span className="member__role">赞助者 · 有效期至 {formatDate(s.until)}</span>
               </Link>
             ))}
           </div>
