@@ -368,7 +368,12 @@ function ProfileSettingsInner() {
         style={{ width: '100%', marginTop: 16, padding: '4px 2px' }}
         onClick={() => setHideBadge((v) => !v)}
       >
-        <span className="t-body">对外隐藏身份徽章</span>
+        <span className="t-body">
+          不展示认证称号
+          <span className="t-caption faint" style={{ display: 'block' }}>
+            认证账号默认带蓝V/金V，可以在这里关掉
+          </span>
+        </span>
         <span className={`switch${hideBadge ? ' switch--on' : ''}`}>
           <span className="switch__knob" />
         </span>
