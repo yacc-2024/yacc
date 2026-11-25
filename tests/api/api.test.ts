@@ -1783,3 +1783,37 @@ describe('外观保存（v1.1）', () => {
     expect(vip.status).toBe(403)
   })
 })
+
+describe('商品上下架与删除（v1.1）', () => {
+  it('带短横线的商品 id 也能下架和删除', async () => {
+    const token = await bootstrapAdmin()
+    const created = await call(
+      'POST',
+      '/admin/products',
+      {
+        title: '测试商品',
+        price: 10,
+        currency: 'points',
+        kind: 'nameplate',
+        value: 'vip',
+        durationDays: 7,
+        active: true,
+      },
+      token,
+    )
+    expect(created.status).toBe(200)
+    const id = created.body.data.id
+
+    const off = await call('POST', `/admin/products/${id}`, { active: false }, token)
+    expect(off.status).toBe(200)
+
+    const removed = await call('DELETE', `/admin/products/${id}`, undefined, token)
+    expect(removed.status).toBe(200)
+  })
+
+  it('种子商品（含短横线 id）可以下架', async () => {
+    const token = await bootstrapAdmin()
+    const res = await call('POST', '/admin/products/p-frame-7', { active: false }, token)
+    expect(res.status).toBe(200)
+  })
+})

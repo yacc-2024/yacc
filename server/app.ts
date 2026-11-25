@@ -3299,7 +3299,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       return ok({ count: ids.length })
     }
 
-    const toggleProduct = /^\/admin\/products\/([a-z0-9]+)$/.exec(path)
+    const toggleProduct = /^\/admin\/products\/([a-z0-9-]+)$/.exec(path)
     if (toggleProduct && method === 'POST') {
       const denied = need('content:publish')
       if (denied) return denied
@@ -3311,7 +3311,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       return ok({})
     }
 
-    const removeProduct = /^\/admin\/products\/([a-z0-9]+)$/.exec(path)
+    const removeProduct = /^\/admin\/products\/([a-z0-9-]+)$/.exec(path)
     if (removeProduct && method === 'DELETE') {
       const denied = need('content:publish')
       if (denied) return denied
