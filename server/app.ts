@@ -1976,7 +1976,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare(
           `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
                   u.name AS author, u.avatar, u.uid, u.role, u.badge_style,
-                  u.title, u.titles, u.shown_titles,
+                  u.title, u.titles, u.shown_titles, u.title_styles, u.avatar_frame,
                   (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
                   (SELECT COUNT(*) FROM comments c WHERE c.target_type = 'post'
                      AND c.target_id = p.id AND c.status = 'published') AS comments
@@ -2034,6 +2034,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           badge: shortBadge(r.role as string, r.uid as number | null),
           badgeKind: badgeKind(r.role as string, r.uid as number | null),
           badgeStyle: (r.badge_style as string | null) ?? null,
+          shownTitles: parseShown(r.shown_titles as string | null, r.titles as string | null, r.title as string | null),
+          titleStyles: parseTitleStyles(r.title_styles as string | null),
+          avatarFrame: (r.avatar_frame as string | null) ?? null,
           label:
             parseShown(
               r.shown_titles as string | null,
@@ -2095,7 +2098,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare(
           `SELECT p.id, p.body, p.created_at, p.views, p.pinned, p.user_id,
                   u.name AS author, u.avatar, u.uid, u.role, u.badge_style,
-                  u.title, u.titles, u.shown_titles
+                  u.title, u.titles, u.shown_titles, u.title_styles, u.avatar_frame
            FROM posts p JOIN users u ON u.id = p.user_id
            WHERE p.id = ? AND p.status = 'published'`,
         )
@@ -2141,6 +2144,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           badge: shortBadge(row.role as string, row.uid as number | null),
           badgeKind: badgeKind(row.role as string, row.uid as number | null),
           badgeStyle: (row.badge_style as string | null) ?? null,
+          shownTitles: parseShown(row.shown_titles as string | null, row.titles as string | null, row.title as string | null),
+          titleStyles: parseTitleStyles(row.title_styles as string | null),
+          avatarFrame: (row.avatar_frame as string | null) ?? null,
           label:
             parseShown(
               row.shown_titles as string | null,
@@ -3105,6 +3111,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           label: (r.title as string | null) || describeUid(r.uid as number | null).label,
           perms: parsePerms(r.perms as string | null),
           badgeStyle: (r.badge_style as string | null) ?? null,
+          titleStyles: parseTitleStyles(r.title_styles as string | null),
+          avatarFrame: (r.avatar_frame as string | null) ?? null,
           title: (r.title as string | null) ?? null,
           titles: parseTitles(r.titles as string | null, r.title as string | null),
           shownTitles: parseShown(

@@ -4188,3 +4188,84 @@ select.input {
     background-position: 200% 0;
   }
 }
+
+/* 赞助主页：金色体系 */
+.profile-skin--sponsor .dy-head {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 226, 160, 0.28), transparent 60%),
+    linear-gradient(135deg, #1d1608 0%, #3a2b12 45%, #7a5c1e 100%);
+  border: 1px solid rgba(255, 214, 128, 0.55);
+  box-shadow:
+    0 10px 36px rgba(150, 110, 30, 0.45),
+    inset 0 1px 0 rgba(255, 235, 180, 0.35);
+}
+
+.profile-skin--sponsor .dy-name {
+  color: #ffe9c0;
+}
+
+.profile-skin--sponsor .dy-uid {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #3a2a06;
+  background: linear-gradient(100deg, #ffe9a8, #e3b452, #fff3c9, #e3b452);
+  background-size: 220% 100%;
+  animation: sponsor-flow 3.4s linear infinite;
+  box-shadow: 0 1px 8px rgba(227, 180, 82, 0.5);
+}
+
+.profile-skin--sponsor .dy-sign,
+.profile-skin--sponsor .dy-bio {
+  color: rgba(255, 233, 200, 0.85);
+}
+
+.profile-skin--sponsor .dy-block {
+  background: rgba(255, 226, 160, 0.1);
+  border: 1px solid rgba(255, 226, 160, 0.22);
+}
+
+.profile-skin--sponsor .dy-block__label {
+  color: rgba(255, 226, 160, 0.7);
+}
+
+.profile-skin--sponsor .dy-stat__num {
+  color: #ffe9c0;
+}
+
+.profile-skin--sponsor .follow-btn {
+  background: linear-gradient(100deg, #ffe9a8, #e3b452);
+  color: #3a2a06;
+  border-color: transparent;
+}
+
+/* 名字流光 */
+.sponsor-name {
+  background: linear-gradient(100deg, #fff6dd, #f0c96a, #fff6dd);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sponsor-flow 3s linear infinite;
+}
+
+/* 赞助列表入口：大胶囊 + 流光 */
+.sponsor-entry {
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sponsor-entry::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 26%;
+  height: 220%;
+  transform: rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  animation: svip-shine 3s ease-in-out infinite;
+}

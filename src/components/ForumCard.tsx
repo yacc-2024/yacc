@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Avatar } from './ui'
 import { Icon } from './Icon'
 import { relativeTime } from '../lib/format'
-import { Badge, type BadgeKind } from './Badge'
+import { TitleBadges } from './Badge'
 import type { ForumPost } from '../lib/api'
 
 /** 论坛帖子卡片：主页和列表页共用 */
@@ -27,14 +27,17 @@ export function ForumCard({
     <article className="post">
       <header className="post__head">
         <Link to={`/u/${post.uid}`} className="post__who">
-          <Avatar name={post.author} src={post.avatar} size={32} />
+          <Avatar name={post.author} src={post.avatar} size={32} frame={post.avatarFrame} />
           <span>
             <span className="post__name-row">
               <span className="post__name">{post.author}</span>
-              <Badge
-                kind={(post.badgeKind as BadgeKind) ?? 'guest'}
-                style={post.badgeStyle}
-                label={post.badge}
+              <TitleBadges
+                role={post.badgeKind === 'admin' ? 'admin' : 'visitor'}
+                uid={null}
+                badgeStyle={post.badgeStyle ?? null}
+                titleStyles={post.titleStyles ?? {}}
+                titles={(post.titles ?? [post.badge]).filter(Boolean) as string[]}
+                shownTitles={((post.shownTitles ?? [post.badge]).filter(Boolean) as string[]).slice(0, 1)}
               />
             </span>
           </span>

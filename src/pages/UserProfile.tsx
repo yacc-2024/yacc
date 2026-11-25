@@ -201,8 +201,8 @@ export function UserProfile() {
             ) : null}
 
             <div className="dy-info">
-              <p className="dy-name">{user.name}</p>
-              <p className="dy-uid t-num">ID {user.uid}</p>
+              <p className={`dy-name${user.isSponsor ? ' sponsor-name' : ''}`}>{user.name}</p>
+              <p className={`dy-uid t-num${user.isSponsor ? ' sponsor-id' : ''}`}>ID {user.uid}</p>
               <span className="title-row" style={{ marginTop: 8 }}>
                 <span className={`lv lv--${tierOf(user.level)}`}>Lv.{user.level}</span>
                 <TitleBadges

@@ -115,7 +115,10 @@ export interface ForumPost {
   badge?: string
   badgeKind?: 'admin' | 'crew' | 'member' | 'guest'
   badgeStyle?: string | null
+  titles?: string[]
+  shownTitles?: string[]
   titleStyles?: Record<string, string>
+  avatarFrame?: string | null
   plates?: string[]
   label: string
   likes: number

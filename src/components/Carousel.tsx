@@ -14,6 +14,9 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
   const [index, setIndex] = useState(0)
   const [drag, setDrag] = useState(0)
   const startX = useRef<number | null>(null)
+  const lastX = useRef<number>(0)
+  const lastT = useRef<number>(0)
+  const velocity = useRef<number>(0)
   const count = items.length
 
   useEffect(() => {
@@ -26,16 +29,29 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
 
   const onStart = (e: React.PointerEvent) => {
     startX.current = e.clientX
+    lastX.current = e.clientX
+    lastT.current = performance.now()
+    velocity.current = 0
   }
   const onMove = (e: React.PointerEvent) => {
     if (startX.current === null) return
+    const now = performance.now()
+    const dt = Math.max(1, now - lastT.current)
+    velocity.current = (e.clientX - lastX.current) / dt
+    lastX.current = e.clientX
+    lastT.current = now
     setDrag(e.clientX - startX.current)
   }
   const onEnd = () => {
-    if (Math.abs(drag) > 60) {
-      setIndex((i) => (i + (drag < 0 ? 1 : count - 1)) % count)
+    const distance = drag
+    const speed = velocity.current
+    const shouldSwitch = Math.abs(distance) > 60 || Math.abs(speed) > 0.45
+    if (shouldSwitch) {
+      const forward = distance < 0 || (distance === 0 && speed < 0)
+      setIndex((i) => (i + (forward ? 1 : count - 1)) % count)
     }
     startX.current = null
+    velocity.current = 0
     setDrag(0)
   }
 
@@ -57,9 +73,9 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
               className="deck__card"
               style={{
                 zIndex: count - depth,
-                transform: `translateY(${depth * 10}px) scale(${1 - depth * 0.05}) rotate(${
-                  depth * -1.2
-                }deg) translateX(${drag * (depth === 0 ? 1 : 0.2)}px)`,
+                transform: `translateY(${depth * 10 - (depth === 0 ? 0 : 4)}px) scale(${
+                  1 - depth * 0.05 + (depth === 0 ? Math.min(Math.abs(drag) / 2000, 0.02) : 0)
+                }) rotate(${depth * -1.2}deg) translateX(${drag * (depth === 0 ? 1 : 0.25)}px)`,
                 opacity: depth > 2 ? 0 : 1,
                 transition:
                   startX.current === null
