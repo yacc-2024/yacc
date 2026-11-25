@@ -224,6 +224,9 @@ function ProfileSettingsInner() {
     name.trim() !== account.name ||
     avatar.trim() !== (account.avatar ?? '') ||
     signature.trim() !== (account.signature ?? '') ||
+    hideBadge !== (account.hideBadge ?? false) ||
+    style !== (account.profileStyle ?? 'normal') ||
+    frame !== (account.avatarFrame ?? '') ||
     shownDiffers
 
   const save = async () => {
