@@ -264,15 +264,7 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
-    titles: (() => {
-      const list = parseTitles(row.titles, row.title)
-      if (list.length > 0) return list
-      const code = formatUid(row.uid)
-      if (row.role === 'admin' || row.role === 'superadmin') return ['管理员']
-      if (code.startsWith('1')) return ['剧组成员']
-      if (code.startsWith('2')) return ['认证成员']
-      return []
-    })(),
+    titles: parseTitles(row.titles, row.title),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
     signature: row.signature ?? null,
@@ -1261,15 +1253,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             )
             return shown.length ? shown.join(' · ') : summary.label
           })(),
-          titles: (() => {
-      const list = parseTitles(row.titles, row.title)
-      if (list.length > 0) return list
-      const code = formatUid(row.uid)
-      if (row.role === 'admin' || row.role === 'superadmin') return ['管理员']
-      if (code.startsWith('1')) return ['剧组成员']
-      if (code.startsWith('2')) return ['认证成员']
-      return []
-    })(),
+          titles: parseTitles(row.titles, row.title),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),

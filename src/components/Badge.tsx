@@ -115,6 +115,11 @@ export function TitleBadges({
   const shown = (shownTitles ?? []).filter((t) => typeof t === 'string' && t.trim())
   const list = shown.length > 0 ? shown : (titles ?? []).slice(0, 1)
 
+  if (list.length === 0) {
+    // 没有任何称号时按身份显示（认证账号默认带身份铭牌）
+    return kind === 'guest' ? null : <Badge kind={kind} style={badgeStyle ?? null} />
+  }
+
   return (
     <>
       {list.map((t) => (
