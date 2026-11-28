@@ -62,20 +62,54 @@ export function RefreshGate({
 
     let startTarget: EventTarget | null = null
     let startedAtTop = false
+    let startX = 0
+    let gestureLocked = false
+
+    /** 这些控件里拖动是正常操作，不触发下拉刷新 */
+    const isInteractive = (target: EventTarget | null): boolean => {
+      let el = target instanceof HTMLElement ? target : null
+      while (el && el !== document.body) {
+        if (el.dataset?.noRefresh !== undefined) return true
+        const tag = el.tagName.toLowerCase()
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+        if (el.getAttribute('role') === 'slider') return true
+        if (el.classList.contains('slider')) return true
+        if (el.classList.contains('deck__stage')) return true
+        if (el.classList.contains('hscroll')) return true
+        const style = getComputedStyle(el)
+        if (style.touchAction === 'none' || style.touchAction === 'pan-x') return true
+        el = el.parentElement
+      }
+      return false
+    }
 
     const onStart = (e: TouchEvent) => {
       if (loading) return
       if (e.touches.length !== 1) return
+      if (isInteractive(e.target)) return
       startTarget = e.target
       startedAtTop = scrollTopOf(startTarget) <= 0
       if (!startedAtTop) return
       startY.current = e.touches[0].clientY
+      startX = e.touches[0].clientX
+      gestureLocked = false
       active.current = false
     }
 
     const onMove = (e: TouchEvent) => {
       if (startY.current === null || loading) return
       const dy = e.touches[0].clientY - startY.current
+      const dx = e.touches[0].clientX - startX
+      // 先判断方向：横向滑动不算下拉
+      if (!gestureLocked) {
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+          startY.current = null
+          distRef.current = 0
+          setDistance(0)
+          return
+        }
+        if (Math.abs(dy) > 6) gestureLocked = true
+      }
       if (dy <= 0) {
         distRef.current = 0
         setDistance(0)
