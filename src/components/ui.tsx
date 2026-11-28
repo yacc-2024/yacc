@@ -108,6 +108,7 @@ export function NavBar({ title, back, large, sub, action, brand }: NavBarProps) 
   const stuck = large ? p > 0.98 : true
 
   return (
+    <>
     <header
       className={`nav${glass ? ' nav--glass' : ''}${stuck ? ' nav--stuck' : ''}${
         brand ? ' nav--brand' : ''
@@ -137,6 +138,8 @@ export function NavBar({ title, back, large, sub, action, brand }: NavBarProps) 
         </>
       ) : null}
     </header>
+    {large ? <div className="nav-spacer" aria-hidden="true" /> : null}
+    </>
   )
 }
 

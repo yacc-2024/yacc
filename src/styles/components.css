@@ -10,8 +10,7 @@
   top: 0;
   z-index: 60;
   padding-top: env(safe-area-inset-top);
-  /* 固定高度：不随滚动变化，避免布局回弹导致标题抖动 */
-  padding-bottom: 38px;
+  padding-bottom: 0;
   background: transparent;
   border-bottom: 1px solid transparent;
   transition: background var(--dur) var(--ease),
@@ -4946,13 +4945,21 @@ html[data-motion="performance"] .ptr__spinner--busy {
   right: 0;
   top: 0;
   /* 高度随大标题一起收缩：底线正好贴着标题底端 */
-  height: calc(44px + env(safe-area-inset-top, 0px) + (1 - var(--p, 0)) * 38px);
+  height: calc(44px + env(safe-area-inset-top, 0px));
   background: color-mix(in srgb, var(--glass-nav) calc(var(--glass-alpha, 1) * 100%), transparent);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-bottom: 1px solid var(--glass-border);
+  border: 0;
   z-index: -1;
   pointer-events: none;
-  /* 与大标题同步出现：滚动越深，玻璃底越实 */
+  /* 与大标题同步出现：滚动越深，玻璃底越实；不用描边避免出现白线 */
   opacity: calc(var(--p, 0) * 1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, calc(var(--p, 0) * 0.06));
+}
+
+
+/* 大标题占位：跟随内容滚动，不留在导航栏里形成白条 */
+.nav-spacer {
+  height: 38px;
+  flex: none;
 }
