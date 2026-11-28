@@ -127,6 +127,12 @@ function SettingsHome() {
           <ListRow icon="edit" title="编辑资料" sub="改头像、昵称与签名" to="/me/settings/profile" />
           <ListRow icon="lock" title="修改密码" sub="旧密码 + 新密码" to="/me/settings/password" />
           <ListRow
+            icon="users"
+            title="隐私设置"
+            sub="关注/粉丝列表、人气与帖子可见性"
+            to="/me/settings/privacy"
+          />
+          <ListRow
             icon="gear"
             title="外观"
             sub="深浅色、毛玻璃、动效、字号"
