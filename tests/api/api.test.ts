@@ -1892,3 +1892,28 @@ describe('铭牌发放（v1.1）', () => {
     expect(page.body.data.user.plates).toContain('vip')
   })
 })
+
+describe('关注/粉丝列表（v1.1）', () => {
+  it('可以取到关注与粉丝列表，隐私关闭后为空', async () => {
+    const admin = await bootstrapAdmin()
+    const a = await registerWithKey(await makeKey(admin, 'visitor'), '甲同学')
+    const b = await registerWithKey(await makeKey(admin, 'visitor'), '乙同学')
+    await call('POST', `/follows/${b.body.data.user.id}`, undefined, a.body.data.token)
+
+    const following = await call('GET', `/users/${a.body.data.user.uid}/following`)
+    expect(following.status).toBe(200)
+    expect(following.body.data.list.length).toBe(1)
+
+    const followers = await call('GET', `/users/${b.body.data.user.uid}/followers`)
+    expect(followers.body.data.list.length).toBe(1)
+
+    await call(
+      'POST',
+      '/auth/profile',
+      { privacy: { showFollowers: false } },
+      b.body.data.token,
+    )
+    const hidden = await call('GET', `/users/${b.body.data.user.uid}/followers`)
+    expect(hidden.body.data.hidden).toBe(true)
+  })
+})

@@ -141,16 +141,18 @@ export function UserProfile() {
                         <span className="dy-stat__num">{user.likes}</span>
                         <span className="dy-stat__label">获赞</span>
                       </span>
-                      <span className="dy-stat">
+                      <Link className="dy-stat" to={`/u/${user.uid}/following`}>
                         <span className="dy-stat__num">{user.followingCount}</span>
                         <span className="dy-stat__label">关注</span>
-                      </span>
-                      <span className="dy-stat">
+                      </Link>
+                      <Link className="dy-stat" to={`/u/${user.uid}/followers`}>
                         <span className="dy-stat__num">{user.followers}</span>
                         <span className="dy-stat__label">粉丝</span>
-                      </span>
+                      </Link>
                       <span className="dy-stat">
-                        <span className="dy-stat__num">{user.popularity}</span>
+                        <span className="dy-stat__num">
+                          {user.privacy?.showPopularity || user.isMe ? user.popularity : '—'}
+                        </span>
                         <span className="dy-stat__label">人气</span>
                       </span>
                   </div>
