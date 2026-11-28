@@ -1144,6 +1144,24 @@ function UserForm({
         </div>
       ) : null}
 
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">身份铭牌（默认显示）</p>
+        <div className="chips" style={{ marginTop: 8 }}>
+          {BADGE_STYLES.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className="chip"
+              aria-pressed={badgeStyle === opt.value}
+              onClick={() => setBadgeStyle(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">覆盖账号默认的身份铭牌；下方的「已拥有铭牌」是对方可自由搭配的铭牌。</p>
+      </div>
+
       <p className="form-section">关联关系</p>
 
       <div className="field">
@@ -1169,7 +1187,7 @@ function UserForm({
         </p>
       </div>
 
-      <p className="form-section">发放</p>
+      <p className="form-section">称号与外观</p>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <p className="t-caption faint">发放时长</p>
@@ -1192,11 +1210,99 @@ function UserForm({
             </button>
           ))}
         </div>
-        <p className="field__hint">对头像框和新发放的称号生效。</p>
+        <p className="field__hint">对下方发放的称号、铭牌、头像框同时生效。</p>
+      </div>
+
+
+      <div className="field">
+        <span className="field__label">称号（可以发多个）</span>
+        <div className="row gap-2">
+          <input
+            id="user-title"
+            className="input grow"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            placeholder="比如「特邀摄影」"
+            maxLength={20}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              const value = titleDraft.trim()
+              if (!value || titleList.includes(value)) return
+              setTitleList((prev) => [...prev, value].slice(0, 10))
+              if (badgeStyle !== 'auto') {
+                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
+              }
+              setTitleDraft('')
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            style={{ minHeight: 44, padding: '0 16px' }}
+            onClick={() => {
+              const value = titleDraft.trim()
+              if (!value || titleList.includes(value)) return
+              setTitleList((prev) => [...prev, value].slice(0, 10))
+              if (badgeStyle !== 'auto') {
+                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
+              }
+              setTitleDraft('')
+            }}
+          >
+            添加
+          </button>
+        </div>
+        {titleList.length > 0 ? (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {titleList.map((t) => (
+              <div key={t} className="row gap-2" style={{ alignItems: 'center' }}>
+                <span className="grow t-body">{t}</span>
+                <select
+                  className="input"
+                  style={{ width: 120, minHeight: 36 }}
+                  aria-label={`${t} 的外观`}
+                  value={titleStyles[t] ?? 'auto'}
+                  onChange={(e) =>
+                    setTitleStyles((prev) => {
+                      const next = { ...prev }
+                      if (e.target.value === 'auto') delete next[t]
+                      else next[t] = e.target.value
+                      return next
+                    })
+                  }
+                >
+                  {BADGE_STYLES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="linklike"
+                  onClick={() => {
+                    setTitleList((prev) => prev.filter((x) => x !== t))
+                    setTitleStyles((prev) => {
+                      const next = { ...prev }
+                      delete next[t]
+                      return next
+                    })
+                  }}
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <p className="field__hint">
+          可以发多个，对方自己决定主页上展示哪几个（最多 3 个）。点称号可以删除。
+        </p>
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <p className="t-caption faint">铭牌</p>
+        <p className="t-caption faint">已拥有铭牌（可多选）</p>
         <div className="perm-preview" style={{ marginTop: 8 }}>
           {BADGE_STYLES.filter((v) => v.value !== 'auto').map((opt) => (
             <button
@@ -1327,113 +1433,6 @@ function UserForm({
           </button>
         </div>
         <p className="field__hint">会员积分决定高级/顶级主页外观。</p>
-      </div>
-
-      <p className="form-section">称号</p>
-
-      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <p className="t-caption faint">铭牌</p>
-        <div className="chips" style={{ marginTop: 8 }}>
-          {BADGE_STYLES.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className="chip"
-              aria-pressed={badgeStyle === opt.value}
-              onClick={() => setBadgeStyle(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <p className="field__hint">决定这个名字旁边显示什么徽章，预览可以在论坛看到。</p>
-      </div>
-
-      <div className="field">
-        <span className="field__label">称号（可以发多个）</span>
-        <div className="row gap-2">
-          <input
-            id="user-title"
-            className="input grow"
-            value={titleDraft}
-            onChange={(e) => setTitleDraft(e.target.value)}
-            placeholder="比如「特邀摄影」"
-            maxLength={20}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter') return
-              e.preventDefault()
-              const value = titleDraft.trim()
-              if (!value || titleList.includes(value)) return
-              setTitleList((prev) => [...prev, value].slice(0, 10))
-              if (badgeStyle !== 'auto') {
-                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
-              }
-              setTitleDraft('')
-            }}
-          />
-          <button
-            type="button"
-            className="btn btn--ghost"
-            style={{ minHeight: 44, padding: '0 16px' }}
-            onClick={() => {
-              const value = titleDraft.trim()
-              if (!value || titleList.includes(value)) return
-              setTitleList((prev) => [...prev, value].slice(0, 10))
-              if (badgeStyle !== 'auto') {
-                setTitleStyles((prev) => ({ ...prev, [value]: badgeStyle }))
-              }
-              setTitleDraft('')
-            }}
-          >
-            添加
-          </button>
-        </div>
-        {titleList.length > 0 ? (
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {titleList.map((t) => (
-              <div key={t} className="row gap-2" style={{ alignItems: 'center' }}>
-                <span className="grow t-body">{t}</span>
-                <select
-                  className="input"
-                  style={{ width: 120, minHeight: 36 }}
-                  aria-label={`${t} 的外观`}
-                  value={titleStyles[t] ?? 'auto'}
-                  onChange={(e) =>
-                    setTitleStyles((prev) => {
-                      const next = { ...prev }
-                      if (e.target.value === 'auto') delete next[t]
-                      else next[t] = e.target.value
-                      return next
-                    })
-                  }
-                >
-                  {BADGE_STYLES.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="linklike"
-                  onClick={() => {
-                    setTitleList((prev) => prev.filter((x) => x !== t))
-                    setTitleStyles((prev) => {
-                      const next = { ...prev }
-                      delete next[t]
-                      return next
-                    })
-                  }}
-                >
-                  删除
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <p className="field__hint">
-          可以发多个，对方自己决定主页上展示哪几个（最多 3 个）。点称号可以删除。
-        </p>
       </div>
 
       <p className="form-section">昵称与安全</p>
