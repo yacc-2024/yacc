@@ -3,7 +3,7 @@ import { useApp } from '../../state/AppContext'
 import { NavBar, Segmented, EmptyState, useConfirm, Avatar, Sheet } from '../../components/ui'
 import { useBulk, Pick, BulkBar, useBulkDelete } from '../../components/BulkSelect'
 import { PERM_GROUPS, expandPerms } from '../../lib/perms'
-import { BADGE_STYLES } from '../../components/Badge'
+import { BADGE_STYLES, Badge } from '../../components/Badge'
 import { DirtyBanner } from '../../components/DirtyBanner'
 import { api, type AdminPerm } from '../../lib/api'
 import { formatDate } from '../../lib/format'
@@ -735,6 +735,7 @@ interface AdminUser {
   perms: string[]
   badgeStyle: string | null
   avatarFrame: string | null
+  plates: string[]
   sponsorUntil: string | null
   titleStyles: Record<string, string>
   keyCode: string | null
@@ -927,6 +928,7 @@ function UserForm({
   const [pointDelta, setPointDelta] = useState('100')
   const [frame, setFrame] = useState(user.avatarFrame ?? '')
   const [grantDays, setGrantDays] = useState(0)
+  const [plateList, setPlateList] = useState<string[]>(user.plates ?? [])
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -954,6 +956,8 @@ function UserForm({
         avatarFrame?: string | null
         avatarFrameDays?: number
         titleDays?: number
+        plates?: string[]
+        plateDays?: number
         titleStyles?: Record<string, string>
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
@@ -965,6 +969,10 @@ function UserForm({
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
       if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
+      if (plateList.join() !== (user.plates ?? []).join()) {
+        patch.plates = plateList
+        patch.plateDays = grantDays
+      }
       if (frame !== (user.avatarFrame ?? '')) {
         patch.avatarFrame = frame || null
         patch.avatarFrameDays = grantDays
@@ -1185,6 +1193,30 @@ function UserForm({
           ))}
         </div>
         <p className="field__hint">对头像框和新发放的称号生效。</p>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">铭牌</p>
+        <div className="perm-preview" style={{ marginTop: 8 }}>
+          {BADGE_STYLES.filter((v) => v.value !== 'auto').map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className="perm-preview__item"
+              aria-pressed={plateList.includes(opt.value)}
+              onClick={() =>
+                setPlateList((prev) =>
+                  prev.includes(opt.value)
+                    ? prev.filter((x) => x !== opt.value)
+                    : [...prev, opt.value],
+                )
+              }
+            >
+              <Badge kind="member" style={opt.value} label={opt.label} />
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">勾选后保存，按上方发放时长生效。</p>
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>

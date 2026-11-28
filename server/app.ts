@@ -297,7 +297,15 @@ function toUser(row: UserRow): User {
     skinVip: Number(row.skin_vip ?? 0) === 1,
     skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
-    plates: parsePlates(row.plates),
+    plates: (() => {
+      let exp: Record<string, string> = {}
+      try {
+        exp = row.plate_expires ? (JSON.parse(row.plate_expires) as Record<string, string>) : {}
+      } catch {
+        exp = {}
+      }
+      return parsePlates(row.plates).filter((pl) => !exp[pl] || exp[pl] > nowIso())
+    })(),
     avatarFrameUntil: row.avatar_frame_until ?? null,
     avatarFrameExpired: Boolean(
       row.avatar_frame_until && row.avatar_frame_until < nowIso(),
@@ -1442,7 +1450,15 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
-    plates: parsePlates(row.plates),
+    plates: (() => {
+      let exp: Record<string, string> = {}
+      try {
+        exp = row.plate_expires ? (JSON.parse(row.plate_expires) as Record<string, string>) : {}
+      } catch {
+        exp = {}
+      }
+      return parsePlates(row.plates).filter((pl) => !exp[pl] || exp[pl] > nowIso())
+    })(),
     avatarFrameUntil: row.avatar_frame_until ?? null,
     avatarFrameExpired: Boolean(
       row.avatar_frame_until && row.avatar_frame_until < nowIso(),
@@ -3439,9 +3455,27 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         const list = (body.plates as unknown[])
           .filter((x): x is string => typeof x === 'string')
           .filter((x) => BADGE_STYLES.includes(x))
+        const unique = Array.from(new Set(list))
+        const days = numberOf(body.plateDays, 0)
+        let expires: Record<string, string> = {}
+        try {
+          expires = target.plate_expires
+            ? (JSON.parse(target.plate_expires) as Record<string, string>)
+            : {}
+        } catch {
+          expires = {}
+        }
+        for (const plate of Object.keys(expires)) {
+          if (!unique.includes(plate)) delete expires[plate]
+        }
+        const previous = parsePlates(target.plates)
+        for (const plate of unique) {
+          if (previous.includes(plate)) continue
+          if (days > 0) expires[plate] = new Date(Date.now() + days * 86400_000).toISOString()
+        }
         await db
-          .prepare('UPDATE users SET plates = ? WHERE id = ?')
-          .bind(JSON.stringify(Array.from(new Set(list))), target.id)
+          .prepare('UPDATE users SET plates = ?, plate_expires = ? WHERE id = ?')
+          .bind(JSON.stringify(unique), JSON.stringify(expires), target.id)
           .run()
       }
 

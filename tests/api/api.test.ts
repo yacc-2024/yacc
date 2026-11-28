@@ -1871,3 +1871,24 @@ describe('发放时限（v1.1）', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('铭牌发放（v1.1）', () => {
+  it('管理员可以发放铭牌并带时限', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '拿铭牌的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+
+    const res = await call(
+      'POST',
+      `/admin/users/${id}`,
+      { plates: ['vip', 'gold'], plateDays: 30 },
+      token,
+    )
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.plates).toContain('vip')
+  })
+})
