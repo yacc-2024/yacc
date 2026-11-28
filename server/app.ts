@@ -1410,7 +1410,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           name: r.name,
           avatar: r.avatar ?? null,
           until: r.sponsor_until,
-          since: r.sponsor_since ?? r.sponsor_until,
+          // 老数据没有建立时间时，按当前年份兜底（便于显示跨年区间）
+          since: r.sponsor_since ?? nowIso(),
         })),
       })
     }
