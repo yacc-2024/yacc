@@ -184,6 +184,8 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         .first<{ value: string }>()
       if (mark?.value === SCHEMA_VERSION) {
         await ensureSuperadmin(db, createSuper)
+        // 每次启动都校准更新日志
+        await ensureChangelogSeed(db)
         return
       }
 
