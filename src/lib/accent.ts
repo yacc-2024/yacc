@@ -8,6 +8,7 @@ export interface AccentOption {
 
 /** 可选主题色 */
 export const ACCENTS: AccentOption[] = [
+  { value: 'white', label: '纯白', color: '#FFFFFF' },
   { value: 'blue', label: '天蓝', color: '#4DBDF5' },
   { value: 'ink', label: '墨黑', color: '#2B2B2F' },
   { value: 'green', label: '松绿', color: '#2FA97C' },
@@ -26,7 +27,10 @@ export function getAccent(): string {
 
 export function applyAccent(value: string): void {
   if (typeof document === 'undefined') return
-  const option = ACCENTS.find((a) => a.value === value) ?? ACCENTS[0]
+  const custom = value.startsWith('custom:') ? value.slice(7) : ''
+  const option = custom
+    ? { value: 'custom', label: '自定义', color: custom }
+    : (ACCENTS.find((a) => a.value === value) ?? ACCENTS[1])
   const root = document.documentElement
   root.style.setProperty('--accent', option.color)
   root.style.setProperty('--accent-weak', `${option.color}26`)

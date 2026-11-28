@@ -569,10 +569,35 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v20'
+const CHANGELOG_KEY = 'migrate:changelog-v21'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
+  {
+    version: '1.1.6',
+    date: '2026-11-28',
+    items: [
+      '合作伙伴主页全新视觉：极光背景、细碎星点',
+      '合作伙伴名单改称「官方合作伙伴」并显示合作年份',
+    ],
+  },
+  {
+    version: '1.1.5',
+    date: '2026-11-28',
+    items: [
+      '外观新增主题色，含纯白与自定义调色盘',
+      '个人主页排版重排：头像居左，数据与关注在右',
+    ],
+  },
+  {
+    version: '1.1.4',
+    date: '2026-11-28',
+    items: [
+      '下拉刷新重做：顶部圆环跟随手指，拉够松手即刷新',
+      '商城物品可查看装备状态，支持一键卸下',
+      '论坛头像不再被裁切，头像框完整显示',
+    ],
+  },
   {
     version: '1.1.4',
     date: '2026-11-24',
@@ -749,9 +774,28 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
       // 旧编号去掉，同一版本只留一条，并按版本号从新到旧排
       const LEGACY = new Set(['1.6.0', '1.5.0', '1.4.0', '1.3.0', '1.2.0', '1.1.0'])
       const byVersion = new Map<string, { version: string; date: string; items: string[] }>()
+      // 1.1.x 顺延：旧 1.1.1 改为 1.1.0，后续依次下移
+      const RENUMBER: Record<string, string> = {
+        '1.1.4': '1.1.3',
+        '1.1.3': '1.1.2',
+        '1.1.2': '1.1.1',
+        '1.1.1': '1.1.0',
+      }
       for (const entry of Array.isArray(doc.changelog) ? doc.changelog : []) {
         if (LEGACY.has(entry.version)) continue
-        if (!byVersion.has(entry.version)) byVersion.set(entry.version, entry)
+        const version = RENUMBER[entry.version] ?? entry.version
+        const prev = byVersion.get(version)
+        if (!prev) {
+          byVersion.set(version, { ...entry, version })
+        } else {
+          // 同一版本合并条目
+          const merged = new Set([...prev.items, ...entry.items])
+          byVersion.set(version, {
+            version,
+            date: prev.date > entry.date ? prev.date : entry.date,
+            items: Array.from(merged),
+          })
+        }
       }
       for (const entry of CHANGELOG_SEED) {
         if (!byVersion.has(entry.version)) byVersion.set(entry.version, entry)

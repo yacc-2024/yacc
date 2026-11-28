@@ -683,6 +683,17 @@ export function AppearanceSettings() {
                 }}
               />
             ))}
+            <label className="accent-dot accent-dot--custom" aria-label="自定义颜色">
+              <input
+                type="color"
+                value={accent.startsWith('custom:') ? accent.slice(7) : '#4DBDF5'}
+                onChange={(e) => {
+                  const value = `custom:${e.target.value}`
+                  setAccentValue(value)
+                  setAccent(value)
+                }}
+              />
+            </label>
           </div>
           <p className="field__hint" style={{ marginTop: 8 }}>
             按钮、链接、选中态的强调色，会立即生效。
