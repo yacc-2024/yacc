@@ -17,6 +17,7 @@ export function RefreshGate({
 }) {
   const [distance, setDistance] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
   const startY = useRef<number | null>(null)
   const active = useRef(false)
   const distRef = useRef(0)
@@ -71,10 +72,12 @@ export function RefreshGate({
       void Promise.resolve(onRefresh())
         .catch(() => {})
         .finally(() => {
+          setLoading(false)
+          setDone(true)
           window.setTimeout(() => {
-            setLoading(false)
+            setDone(false)
             setDistance(0)
-          }, 260)
+          }, 900)
         })
     }
 
@@ -91,31 +94,38 @@ export function RefreshGate({
   }, [onRefresh, loading])
 
   const progress = Math.min(1, distance / THRESHOLD)
-  const visible = distance > 2 || loading
+  const visible = distance > 2 || loading || done
 
   return (
     <>
       <div
-        className={`refresh${loading ? ' refresh--loading' : ''}`}
+        className={`refresh${loading ? ' refresh--loading' : ''}${done ? ' refresh--done' : ''}`}
         style={{
-          transform: `translate3d(-50%, ${distance - 56}px, 0)`,
+          transform: `translate3d(-50%, ${done ? 24 : distance - 56}px, 0)`,
           opacity: visible ? 1 : 0,
         }}
         aria-hidden={!visible}
         role="status"
         aria-live="polite"
       >
-        <span
-          className="refresh__ring"
-          style={
-            loading
-              ? undefined
-              : { transform: `rotate(${progress * 270}deg)` }
-          }
-        />
-        <span className="refresh__text">
-          {loading ? '正在刷新' : progress >= 1 ? '松手刷新' : '下拉刷新'}
-        </span>
+        {done ? (
+          <svg className="refresh__check" viewBox="0 0 24 24" width="18" height="18">
+            <path
+              d="M5 12.5 10 17.5 19 7.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : (
+          <span
+            className="refresh__ring"
+            style={loading ? undefined : { transform: `rotate(${progress * 270}deg)` }}
+          />
+        )}
+        <span className="refresh__label">{done ? '刷新成功' : ''}</span>
       </div>
       {children}
     </>

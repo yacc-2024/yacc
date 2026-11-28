@@ -4693,32 +4693,50 @@ select.input {
   mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
 }
 
-/* 全局下拉刷新条 */
+/* 全局下拉刷新：圆形加载圈 */
+:root {
+  --refresh-bg: #ffffff;
+  --refresh-fg: #1b1b1f;
+  --refresh-track: rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] {
+  --refresh-bg: #2c2c2e;
+  --refresh-fg: #f5f5f7;
+  --refresh-track: rgba(255, 255, 255, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --refresh-bg: #2c2c2e;
+    --refresh-fg: #f5f5f7;
+    --refresh-track: rgba(255, 255, 255, 0.18);
+  }
+}
+
 .refresh {
   position: fixed;
   top: env(safe-area-inset-top, 0px);
   left: 50%;
   z-index: 120;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  place-items: center;
+  width: 40px;
   height: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #1b1b1f;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-  transition: transform 140ms ease-out, opacity 160ms ease;
+  border-radius: 50%;
+  background: var(--refresh-bg, #fff);
+  color: var(--refresh-fg, #1b1b1f);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+  transition: transform 140ms ease-out, opacity 160ms ease, background 200ms ease;
   pointer-events: none;
-  white-space: nowrap;
 }
 
 .refresh__ring {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-  border-top-color: #4dbdf5;
+  border: 2.5px solid var(--refresh-track, rgba(0, 0, 0, 0.12));
+  border-top-color: var(--accent);
   transition: transform 60ms linear;
 }
 
@@ -4726,7 +4744,40 @@ select.input {
   animation: spin 700ms linear infinite;
 }
 
-.refresh__text {
-  font-size: 12px;
+.refresh--done {
+  background: #22c55e;
+  color: #fff;
+}
+
+.refresh__check {
+  animation: check-pop 240ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes check-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+.refresh__label {
+  position: absolute;
+  top: 46px;
+  font-size: 11px;
   font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+  background: var(--refresh-bg, #fff);
+  padding: 2px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.refresh__label:empty {
+  display: none;
+}
+
+
+:root[data-theme="dark"],
+@media (prefers-color-scheme: dark) {
 }
