@@ -436,7 +436,13 @@ export const api = {
 
   sponsors: () =>
     call<{
-      sponsors: Array<{ uid: string; name: string; avatar: string | null; until: string }>
+      sponsors: Array<{
+        uid: string
+        name: string
+        avatar: string | null
+        until: string
+        since: string
+      }>
     }>('/sponsors'),
 
   store: () =>

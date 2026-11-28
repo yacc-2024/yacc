@@ -108,6 +108,7 @@ interface UserRow {
   plate_expires: string | null
   privacy: string | null
   sponsor_until: string | null
+  sponsor_since: string | null
   profile_style: string | null
   skin_vip: number | null
   skin_svip: number | null
@@ -179,7 +180,7 @@ const fail = (error: string, status = 400) => json({ ok: false, error }, status)
 const schemas = new WeakMap<DB, Promise<void>>()
 
 /** 结构版本：每次加字段就改这里，改过之后老库会重新跑一遍补列 */
-const SCHEMA_VERSION = '2026-11-28'
+const SCHEMA_VERSION = '2026-11-29'
 
 function ensureSchema(db: DB, createSuper = true): Promise<void> {
   let promise = schemas.get(db)
@@ -232,6 +233,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN title_expires TEXT',
         'ALTER TABLE users ADD COLUMN plate_expires TEXT',
         'ALTER TABLE users ADD COLUMN privacy TEXT',
+        'ALTER TABLE users ADD COLUMN sponsor_since TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -1373,18 +1375,25 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     if (path === '/sponsors' && method === 'GET') {
       const rows = await db
         .prepare(
-          `SELECT uid, name, avatar, sponsor_until FROM users
+          `SELECT uid, name, avatar, sponsor_until, sponsor_since FROM users
            WHERE sponsor_until IS NOT NULL AND sponsor_until > ?
            ORDER BY sponsor_until DESC LIMIT 100`,
         )
         .bind(nowIso())
-        .all<{ uid: number | null; name: string; avatar: string | null; sponsor_until: string }>()
+        .all<{
+          uid: number | null
+          name: string
+          avatar: string | null
+          sponsor_until: string
+          sponsor_since: string | null
+        }>()
       return ok({
         sponsors: rows.map((r) => ({
           uid: formatUid(r.uid),
           name: r.name,
           avatar: r.avatar ?? null,
           until: r.sponsor_until,
+          since: r.sponsor_since ?? r.sponsor_until,
         })),
       })
     }
@@ -3824,7 +3833,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       if (!userId) return fail('参数不对')
       if (body?.revoke === true) {
         await db
-          .prepare('UPDATE users SET sponsor_until = NULL WHERE id = ?')
+          .prepare('UPDATE users SET sponsor_until = NULL, sponsor_since = NULL WHERE id = ?')
           .bind(userId)
           .run()
         return ok({ sponsorUntil: null })
@@ -3839,9 +3848,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           ? new Date(row.sponsor_until).getTime()
           : Date.now()
       const until = new Date(base + days * 86400_000).toISOString()
+      const already = await db
+        .prepare('SELECT sponsor_since FROM users WHERE id = ?')
+        .bind(userId)
+        .first<{ sponsor_since: string | null }>()
+      const since = already?.sponsor_since ?? nowIso()
       await db
-        .prepare('UPDATE users SET sponsor_until = ? WHERE id = ?')
-        .bind(until, userId)
+        .prepare('UPDATE users SET sponsor_until = ?, sponsor_since = ? WHERE id = ?')
+        .bind(until, since, userId)
         .run()
       return ok({ sponsorUntil: until })
     }

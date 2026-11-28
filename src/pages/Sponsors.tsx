@@ -4,14 +4,19 @@ import { NavBar, Avatar, EmptyState } from '../components/ui'
 import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 import { api } from '../lib/api'
 
-type Sponsor = { uid: string; name: string; avatar: string | null; until: string }
+type Sponsor = {
+  uid: string
+  name: string
+  avatar: string | null
+  until: string
+  since: string
+}
 
-/** 当前年份 – 有效期年份；同年则显示到次年 */
-function partnerRange(until: string): string {
-  const now = new Date().getFullYear()
+/** 合作年份：不跨年只显示一年，跨年显示「建立年-到期年」 */
+function partnerRange(since: string | null, until: string): string {
+  const start = new Date(since ?? until).getFullYear()
   const end = new Date(until).getFullYear()
-  const to = end > now ? end : now + 1
-  return `${now}-${to}`
+  return start === end ? String(start) : `${start}-${end}`
 }
 
 export function Sponsors() {
@@ -62,7 +67,7 @@ export function Sponsors() {
                 <Avatar name={s.name} src={s.avatar} size={88} />
                 <span className="member__name clamp-1 sponsor-glow">{s.name}</span>
                 <span className="member__role">
-                  {partnerRange(s.until)} 官方合作伙伴
+                  {partnerRange(s.since, s.until)} 官方合作伙伴
                 </span>
               </Link>
             ))}
