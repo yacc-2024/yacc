@@ -4231,17 +4231,41 @@ select.input {
   animation: aurora-drift 18s ease-in-out infinite alternate;
 }
 
-/* 细碎星点 */
+/* 流动光带（缓慢横扫） */
 .profile-skin--sponsor::after {
   content: "";
   position: absolute;
-  inset: 0;
+  top: -40%;
+  left: -60%;
+  width: 45%;
+  height: 180%;
   pointer-events: none;
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 1px, transparent 1px),
-    radial-gradient(circle, rgba(180, 210, 255, 0.5) 0 1px, transparent 1px);
-  background-size: 160px 160px, 260px 260px;
-  opacity: 0.35;
+  transform: rotate(18deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(150, 200, 255, 0.16),
+    rgba(200, 170, 255, 0.12),
+    transparent
+  );
+  animation: partner-sheen 9s ease-in-out infinite;
+}
+
+@keyframes partner-sheen {
+  0% {
+    left: -60%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 130%;
+    opacity: 0;
+  }
 }
 
 @keyframes aurora-drift {
@@ -4453,4 +4477,54 @@ select.input {
   cursor: pointer;
   border: 0;
   padding: 0;
+}
+
+/* 极光主页：卡片上的流光与呼吸光晕 */
+.profile-skin--sponsor .dy-stats--top,
+.profile-skin--sponsor .dy-block,
+.profile-skin--sponsor .dy-head {
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-skin--sponsor .dy-stats--top::after,
+.profile-skin--sponsor .dy-block::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 26%;
+  height: 220%;
+  transform: rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(170, 210, 255, 0.22), transparent);
+  animation: svip-shine 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* 名字背后的光晕缓慢呼吸 */
+.profile-skin--sponsor .dy-name {
+  position: relative;
+  animation: partner-breathe 5s ease-in-out infinite;
+}
+
+@keyframes partner-breathe {
+  0%,
+  100% {
+    text-shadow: 0 0 14px rgba(140, 190, 255, 0.35);
+  }
+  50% {
+    text-shadow: 0 0 26px rgba(170, 150, 255, 0.6);
+  }
+}
+
+/* 关注按钮的光泽流动 */
+.profile-skin--sponsor .follow-btn {
+  background-size: 200% 100%;
+  animation: partner-btn 6s linear infinite;
+}
+
+@keyframes partner-btn {
+  to {
+    background-position: 200% 0;
+  }
 }
