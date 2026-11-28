@@ -59,6 +59,9 @@ export function Sponsors() {
           <div className="grid-2" style={{ marginTop: 16 }}>
             {list.map((s) => (
               <Link key={s.uid} to={`/u/${s.uid}`} className="member member--sponsor">
+                <span className="partner-crown" aria-hidden="true">
+                  ★
+                </span>
                 <Avatar name={s.name} src={s.avatar} size={88} />
                 <span className="member__name clamp-1 sponsor-glow">{s.name}</span>
                 <span className="member__role">

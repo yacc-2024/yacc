@@ -5018,3 +5018,58 @@ html[data-motion="performance"] .ptr__spinner--busy {
   display: block;
   max-width: 100%;
 }
+
+/* 合作伙伴卡片：更尊贵的外观 */
+.member--sponsor {
+  position: relative;
+  overflow: hidden;
+  border-radius: 30px;
+  border: 1px solid rgba(232, 192, 106, 0.55);
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 222, 150, 0.18), transparent 62%),
+    linear-gradient(150deg, #1d1709 0%, #34280f 52%, #5d4718 100%);
+  box-shadow:
+    0 10px 30px rgba(120, 90, 30, 0.35),
+    inset 0 1px 0 rgba(255, 230, 170, 0.25);
+}
+
+.member--sponsor::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -50%;
+  width: 34%;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 235, 180, 0.5), transparent);
+  animation: svip-shine 4.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.member--sponsor .avatar {
+  box-shadow: 0 0 0 2px rgba(255, 214, 128, 0.75), 0 6px 18px rgba(160, 120, 40, 0.45);
+}
+
+.partner-crown {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  color: #3a2a06;
+  background: linear-gradient(140deg, #ffe9a8, #e3b452);
+  box-shadow: 0 2px 8px rgba(227, 180, 82, 0.5);
+}
+
+.member--sponsor .member__name {
+  font-weight: 800;
+}
+
+.member--sponsor .member__role {
+  color: rgba(255, 233, 192, 0.8);
+  letter-spacing: 0.2px;
+}
