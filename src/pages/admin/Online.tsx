@@ -736,6 +736,9 @@ interface AdminUser {
   badgeStyle: string | null
   avatarFrame: string | null
   plates: string[]
+  titleExpires: Record<string, string>
+  plateExpires: Record<string, string>
+  avatarFrameUntil: string | null
   sponsorUntil: string | null
   titleStyles: Record<string, string>
   keyCode: string | null
@@ -903,6 +906,16 @@ export function UsersPanel() {
   )
 }
 
+/** ISO → yyyy-mm-dd */
+function dayOf(iso: string): string {
+  return iso ? iso.slice(0, 10) : ''
+}
+
+/** yyyy-mm-dd → 当天 23:59 的 ISO */
+function endOfDay(day: string): string {
+  return new Date(`${day}T23:59:00`).toISOString()
+}
+
 function UserForm({
   user,
   onClose,
@@ -929,6 +942,10 @@ function UserForm({
   const [frame, setFrame] = useState(user.avatarFrame ?? '')
   const [grantDays, setGrantDays] = useState(0)
   const [plateList, setPlateList] = useState<string[]>(user.plates ?? [])
+  const [titleExp, setTitleExp] = useState<Record<string, string>>(user.titleExpires ?? {})
+  const [plateExp, setPlateExp] = useState<Record<string, string>>(user.plateExpires ?? {})
+  const [frameUntil, setFrameUntil] = useState(dayOf(user.avatarFrameUntil ?? ''))
+  const [sponsorUntil, setSponsorUntil] = useState(dayOf(user.sponsorUntil ?? ''))
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -958,6 +975,10 @@ function UserForm({
         titleDays?: number
         plates?: string[]
         plateDays?: number
+        titleExpires?: Record<string, string>
+        plateExpires?: Record<string, string>
+        avatarFrameUntil?: string | null
+        sponsorUntil?: string
         titleStyles?: Record<string, string>
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
@@ -969,6 +990,14 @@ function UserForm({
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
       if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
+      patch.titleExpires = titleExp
+      patch.plateExpires = plateExp
+      if (dayOf(user.avatarFrameUntil ?? '') !== frameUntil) {
+        patch.avatarFrameUntil = frameUntil ? endOfDay(frameUntil) : null
+      }
+      if (dayOf(user.sponsorUntil ?? '') !== sponsorUntil && sponsorUntil) {
+        patch.sponsorUntil = endOfDay(sponsorUntil)
+      }
       if (plateList.join() !== (user.plates ?? []).join()) {
         patch.plates = plateList
         patch.plateDays = grantDays
@@ -1258,6 +1287,21 @@ function UserForm({
             {titleList.map((t) => (
               <div key={t} className="row gap-2" style={{ alignItems: 'center' }}>
                 <span className="grow t-body">{t}</span>
+                <input
+                  className="input"
+                  style={{ width: 132, minHeight: 34 }}
+                  type="date"
+                  aria-label={`${t} 的到期日`}
+                  value={titleExp[t] ? titleExp[t].slice(0, 10) : ''}
+                  onChange={(e) =>
+                    setTitleExp((prev) => {
+                      const next = { ...prev }
+                      if (e.target.value) next[t] = endOfDay(e.target.value)
+                      else delete next[t]
+                      return next
+                    })
+                  }
+                />
                 <select
                   className="input"
                   style={{ width: 120, minHeight: 36 }}
@@ -1322,7 +1366,31 @@ function UserForm({
             </button>
           ))}
         </div>
-        <p className="field__hint">勾选后保存，按上方发放时长生效。</p>
+        {plateList.length > 0 ? (
+          <div className="stack" style={{ marginTop: 10 }}>
+            {plateList.map((pl) => (
+              <div key={pl} className="between" style={{ gap: 8 }}>
+                <span className="t-caption">{pl}</span>
+                <input
+                  className="input"
+                  style={{ width: 132, minHeight: 34 }}
+                  type="date"
+                  aria-label={`${pl} 的到期日`}
+                  value={plateExp[pl] ? plateExp[pl].slice(0, 10) : ''}
+                  onChange={(e) =>
+                    setPlateExp((prev) => {
+                      const next = { ...prev }
+                      if (e.target.value) next[pl] = endOfDay(e.target.value)
+                      else delete next[pl]
+                      return next
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <p className="field__hint">勾选后保存，按上方发放时长生效；也可逐个改到期日。</p>
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
@@ -1345,13 +1413,32 @@ function UserForm({
             </button>
           ))}
         </div>
+        <div className="between" style={{ marginTop: 12 }}>
+          <span className="t-caption faint">到期日</span>
+          <input
+            className="input"
+            style={{ width: 150, minHeight: 34 }}
+            type="date"
+            aria-label="头像框到期日"
+            value={frameUntil}
+            onChange={(e) => setFrameUntil(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <p className="t-caption faint">合作伙伴</p>
-        <p className="field__hint" style={{ marginTop: 4 }}>
-          {user.sponsorUntil ? `当前有效期至 ${user.sponsorUntil.slice(0, 10)}` : '还不是合作伙伴'}
-        </p>
+        <div className="between" style={{ marginTop: 8 }}>
+          <span className="t-caption faint">到期日</span>
+          <input
+            className="input"
+            style={{ width: 150, minHeight: 34 }}
+            type="date"
+            aria-label="合作到期日"
+            value={sponsorUntil}
+            onChange={(e) => setSponsorUntil(e.target.value)}
+          />
+        </div>
         <div className="row gap-2" style={{ marginTop: 10 }}>
           <input
             className="input"

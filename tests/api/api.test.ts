@@ -1917,3 +1917,33 @@ describe('关注/粉丝列表（v1.1）', () => {
     expect(hidden.body.data.hidden).toBe(true)
   })
 })
+
+describe('管理员可改时限（v1.1）', () => {
+  it('可以逐个设置称号与铭牌的到期日', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '要改时限的人')
+    const id = reg.body.data.user.id
+
+    const until = new Date(Date.now() + 60 * 86400_000).toISOString()
+    const res = await call(
+      'POST',
+      `/admin/users/${id}`,
+      {
+        titles: ['限时称号'],
+        titleExpires: { 限时称号: until },
+        plates: ['vip'],
+        plateExpires: { vip: until },
+        avatarFrameUntil: until,
+        sponsorUntil: until,
+      },
+      token,
+    )
+    expect(res.status).toBe(200)
+
+    const list = await call('GET', '/admin/users', undefined, token)
+    const row = list.body.data.users.find((u: { id: string }) => u.id === id)
+    expect(row.titleExpires['限时称号']).toBe(until)
+    expect(row.plateExpires.vip).toBe(until)
+  })
+})

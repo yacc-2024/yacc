@@ -80,6 +80,9 @@ export interface User {
     showPopularity: boolean
     showPosts: boolean
   }
+  /** 称号/铭牌的到期时间 */
+  titleExpires: Record<string, string>
+  plateExpires: Record<string, string>
   /** 头像框到期时间 */
   avatarFrameUntil: string | null
   avatarFrameExpired: boolean
@@ -309,6 +312,20 @@ function toUser(row: UserRow): User {
     skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
     privacy: parsePrivacy(row.privacy),
+    titleExpires: (() => {
+      try {
+        return JSON.parse(row.title_expires ?? '{}') as Record<string, string>
+      } catch {
+        return {}
+      }
+    })(),
+    plateExpires: (() => {
+      try {
+        return JSON.parse(row.plate_expires ?? '{}') as Record<string, string>
+      } catch {
+        return {}
+      }
+    })(),
     plates: (() => {
       let exp: Record<string, string> = {}
       try {
@@ -1560,6 +1577,20 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
     privacy: parsePrivacy(row.privacy),
+    titleExpires: (() => {
+      try {
+        return JSON.parse(row.title_expires ?? '{}') as Record<string, string>
+      } catch {
+        return {}
+      }
+    })(),
+    plateExpires: (() => {
+      try {
+        return JSON.parse(row.plate_expires ?? '{}') as Record<string, string>
+      } catch {
+        return {}
+      }
+    })(),
     plates: (() => {
       let exp: Record<string, string> = {}
       try {
@@ -1705,6 +1736,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         avatarFrameUntil: null,
         avatarFrameExpired: false,
+        titleExpires: {},
+        plateExpires: {},
         privacy: { ...DEFAULT_PRIVACY },
         sponsorUntil: null,
         profileStyle: null,
@@ -2056,6 +2089,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         avatarFrameUntil: null,
         avatarFrameExpired: false,
+        titleExpires: {},
+        plateExpires: {},
         privacy: { ...DEFAULT_PRIVACY },
         sponsorUntil: null,
         profileStyle: null,
@@ -3410,6 +3445,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const rows = await db
         .prepare(
           `SELECT u.id, u.uid, u.name, u.avatar, u.title, u.titles, u.shown_titles, u.role, u.verified, u.created_at,
+                  u.badge_style, u.title_styles, u.avatar_frame, u.avatar_frame_until,
+                  u.plates, u.title_expires, u.plate_expires, u.sponsor_until, u.member_id,
                   k.code AS key_code
            FROM users u
            LEFT JOIN activation_keys k ON k.used_by = u.id
@@ -3429,6 +3466,23 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           badgeStyle: (r.badge_style as string | null) ?? null,
           titleStyles: parseTitleStyles(r.title_styles as string | null),
           avatarFrame: (r.avatar_frame as string | null) ?? null,
+          avatarFrameUntil: (r.avatar_frame_until as string | null) ?? null,
+          plates: parsePlates(r.plates as string | null),
+          titleExpires: (() => {
+            try {
+              return JSON.parse((r.title_expires as string | null) ?? '{}') as Record<string, string>
+            } catch {
+              return {}
+            }
+          })(),
+          plateExpires: (() => {
+            try {
+              return JSON.parse((r.plate_expires as string | null) ?? '{}') as Record<string, string>
+            } catch {
+              return {}
+            }
+          })(),
+          sponsorUntil: (r.sponsor_until as string | null) ?? null,
           title: (r.title as string | null) ?? null,
           titles: parseTitles(r.titles as string | null, r.title as string | null),
           shownTitles: parseShown(
@@ -3679,6 +3733,34 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           .bind(JSON.stringify(perms), target.id)
           .run()
       }
+      if (body.titleExpires && typeof body.titleExpires === 'object') {
+        await db
+          .prepare('UPDATE users SET title_expires = ? WHERE id = ?')
+          .bind(JSON.stringify(body.titleExpires), target.id)
+          .run()
+      }
+
+      if (body.plateExpires && typeof body.plateExpires === 'object') {
+        await db
+          .prepare('UPDATE users SET plate_expires = ? WHERE id = ?')
+          .bind(JSON.stringify(body.plateExpires), target.id)
+          .run()
+      }
+
+      if (typeof body.avatarFrameUntil === 'string' || body.avatarFrameUntil === null) {
+        await db
+          .prepare('UPDATE users SET avatar_frame_until = ? WHERE id = ?')
+          .bind(body.avatarFrameUntil, target.id)
+          .run()
+      }
+
+      if (typeof body.sponsorUntil === 'string') {
+        await db
+          .prepare('UPDATE users SET sponsor_until = ? WHERE id = ?')
+          .bind(body.sponsorUntil, target.id)
+          .run()
+      }
+
       return ok()
     }
 
