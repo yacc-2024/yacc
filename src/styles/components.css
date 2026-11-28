@@ -4781,3 +4781,27 @@ select.input {
 :root[data-theme="dark"],
 @media (prefers-color-scheme: dark) {
 }
+
+/* 加载动画属于必要反馈，不受「性能」档和系统减弱动效影响 */
+html[data-motion="performance"] .refresh--loading .refresh__ring,
+html[data-motion="performance"] .ptr__spinner--busy {
+  animation-duration: 800ms !important;
+  animation-iteration-count: infinite !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh--loading .refresh__ring,
+  .ptr__spinner--busy {
+    animation-duration: 800ms !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+.refresh__ring {
+  will-change: transform;
+}
+
+.refresh--loading .refresh__ring {
+  animation: spin 800ms linear infinite;
+  transition: none;
+}
