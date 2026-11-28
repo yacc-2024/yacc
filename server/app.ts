@@ -73,6 +73,9 @@ export interface User {
   titleStyles: Record<string, string>
   /** 已拥有的铭牌 */
   plates: string[]
+  /** 头像框到期时间 */
+  avatarFrameUntil: string | null
+  avatarFrameExpired: boolean
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   /** 分管理员的权限；总管理员恒为全部 */
@@ -93,6 +96,9 @@ interface UserRow {
   title_styles: string | null
   plates: string | null
   avatar_frame: string | null
+  avatar_frame_until: string | null
+  title_expires: string | null
+  plate_expires: string | null
   sponsor_until: string | null
   profile_style: string | null
   skin_vip: number | null
@@ -214,6 +220,9 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN skin_svip INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE products ADD COLUMN image TEXT',
         'ALTER TABLE users ADD COLUMN plates TEXT',
+        'ALTER TABLE users ADD COLUMN avatar_frame_until TEXT',
+        'ALTER TABLE users ADD COLUMN title_expires TEXT',
+        'ALTER TABLE users ADD COLUMN plate_expires TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -270,7 +279,14 @@ function toUser(row: UserRow): User {
     uid: row.uid ?? null,
     name: row.name,
     avatar: row.avatar ?? null,
-    titles: parseTitles(row.titles, row.title),
+    titles: parseTitles(row.titles, row.title).filter((t) => {
+      try {
+        const exp = row.title_expires ? (JSON.parse(row.title_expires) as Record<string, string>) : {}
+        return !exp[t] || exp[t] > nowIso()
+      } catch {
+        return true
+      }
+    }),
     shownTitles: parseShown(row.shown_titles, row.titles, row.title),
     badgeStyle: row.badge_style ?? null,
     signature: row.signature ?? null,
@@ -282,6 +298,10 @@ function toUser(row: UserRow): User {
     skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
     plates: parsePlates(row.plates),
+    avatarFrameUntil: row.avatar_frame_until ?? null,
+    avatarFrameExpired: Boolean(
+      row.avatar_frame_until && row.avatar_frame_until < nowIso(),
+    ),
     role:
       row.role === 'superadmin'
         ? 'superadmin'
@@ -1411,11 +1431,22 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             )
             return shown.length ? shown.join(' · ') : summary.label
           })(),
-          titles: parseTitles(row.titles, row.title),
+          titles: parseTitles(row.titles, row.title).filter((t) => {
+      try {
+        const exp = row.title_expires ? (JSON.parse(row.title_expires) as Record<string, string>) : {}
+        return !exp[t] || exp[t] > nowIso()
+      } catch {
+        return true
+      }
+    }),
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
     plates: parsePlates(row.plates),
+    avatarFrameUntil: row.avatar_frame_until ?? null,
+    avatarFrameExpired: Boolean(
+      row.avatar_frame_until && row.avatar_frame_until < nowIso(),
+    ),
           commentCount: Number(commentCount?.n ?? 0),
           followers: Number(followerCount?.n ?? 0),
           followingCount: Number(followingCount?.n ?? 0),
@@ -1546,6 +1577,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         signature: null,
         hideBadge: false,
         avatarFrame: null,
+        avatarFrameUntil: null,
+        avatarFrameExpired: false,
         sponsorUntil: null,
         profileStyle: null,
         skinVip: false,
@@ -1894,6 +1927,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         signature: null,
         hideBadge: false,
         avatarFrame: null,
+        avatarFrameUntil: null,
+        avatarFrameExpired: false,
         sponsorUntil: null,
         profileStyle: null,
         skinVip: false,
@@ -3334,6 +3369,26 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           )
           .run()
 
+        const days = numberOf(body.titleDays, 0)
+        let expires: Record<string, string> = {}
+        try {
+          expires = target.title_expires ? (JSON.parse(target.title_expires) as Record<string, string>) : {}
+        } catch {
+          expires = {}
+        }
+        const addedTitles = list.filter((t) => !current.includes(t))
+        for (const t of addedTitles) {
+          if (days > 0) expires[t] = new Date(Date.now() + days * 86400_000).toISOString()
+          else delete expires[t]
+        }
+        for (const t of Object.keys(expires)) {
+          if (!list.includes(t)) delete expires[t]
+        }
+        await db
+          .prepare('UPDATE users SET title_expires = ? WHERE id = ?')
+          .bind(JSON.stringify(expires), target.id)
+          .run()
+
         // 新称号通知
         const added = list.filter((t) => !current.includes(t))
         if (added.length > 0) {
@@ -3392,11 +3447,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
 
       if (typeof body.avatarFrame === 'string' || body.avatarFrame === null) {
         const value = body.avatarFrame === null ? null : String(body.avatarFrame)
+        const days = numberOf(body.avatarFrameDays, 0)
+        const until =
+          value && days > 0 ? new Date(Date.now() + days * 86400_000).toISOString() : null
         const allowed = [null, 'ring-gold', 'ring-neon', 'ring-silver']
         if (!allowed.includes(value)) return fail('头像框不认识')
         await db
-          .prepare('UPDATE users SET avatar_frame = ? WHERE id = ?')
-          .bind(value, target.id)
+          .prepare('UPDATE users SET avatar_frame = ?, avatar_frame_until = ? WHERE id = ?')
+          .bind(value, until, target.id)
           .run()
       }
 

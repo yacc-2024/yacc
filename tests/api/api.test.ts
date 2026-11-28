@@ -1835,3 +1835,39 @@ describe('总管理员不计入访客（v1.1）', () => {
     expect(page.body.data.user.visitors.length).toBe(0)
   })
 })
+
+describe('发放时限（v1.1）', () => {
+  it('头像框可以带天数发放', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '拿头像框的人')
+    const id = reg.body.data.user.id
+    const uid = reg.body.data.user.uid
+
+    const res = await call(
+      'POST',
+      `/admin/users/${id}`,
+      { avatarFrame: 'ring-gold', avatarFrameDays: 30 },
+      token,
+    )
+    expect(res.status).toBe(200)
+
+    const page = await call('GET', `/users/${uid}`)
+    expect(page.body.data.user.avatarFrame).toBe('ring-gold')
+  })
+
+  it('称号可以带天数，过期后不再返回', async () => {
+    const token = await bootstrapAdmin()
+    const key = await makeKey(token, 'visitor')
+    const reg = await registerWithKey(key, '拿称号的人')
+    const id = reg.body.data.user.id
+
+    const res = await call(
+      'POST',
+      `/admin/users/${id}`,
+      { titles: ['限时称号'], titleDays: 30 },
+      token,
+    )
+    expect(res.status).toBe(200)
+  })
+})

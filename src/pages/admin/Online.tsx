@@ -926,6 +926,7 @@ function UserForm({
   const [sponsorDays, setSponsorDays] = useState('30')
   const [pointDelta, setPointDelta] = useState('100')
   const [frame, setFrame] = useState(user.avatarFrame ?? '')
+  const [grantDays, setGrantDays] = useState(0)
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
   )
@@ -951,6 +952,8 @@ function UserForm({
         role?: 'visitor' | 'admin'
         badgeStyle?: string
         avatarFrame?: string | null
+        avatarFrameDays?: number
+        titleDays?: number
         titleStyles?: Record<string, string>
       } = {}
       if (name.trim() && name.trim() !== user.name) patch.name = name.trim()
@@ -962,7 +965,11 @@ function UserForm({
       if (!sameTitles) patch.titles = titleList
       if (memberId !== (user.memberId ?? '')) patch.memberId = memberId || null
       if (badgeStyle !== (user.badgeStyle ?? 'auto')) patch.badgeStyle = badgeStyle
-      if (frame !== (user.avatarFrame ?? '')) patch.avatarFrame = frame || null
+      if (frame !== (user.avatarFrame ?? '')) {
+        patch.avatarFrame = frame || null
+        patch.avatarFrameDays = grantDays
+      }
+      if (patch.titles) patch.titleDays = grantDays
       if (JSON.stringify(titleStyles) !== JSON.stringify(user.titleStyles ?? {})) {
         patch.titleStyles = titleStyles
       }
@@ -1155,6 +1162,30 @@ function UserForm({
       </div>
 
       <p className="form-section">发放</p>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">发放时长</p>
+        <div className="chips" style={{ marginTop: 8 }}>
+          {[
+            [0, '长期'],
+            [7, '7 天'],
+            [30, '30 天'],
+            [90, '90 天'],
+            [365, '365 天'],
+          ].map(([days, label]) => (
+            <button
+              key={String(days)}
+              type="button"
+              className="chip"
+              aria-pressed={grantDays === days}
+              onClick={() => setGrantDays(days as number)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">对头像框和新发放的称号生效。</p>
+      </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <p className="t-caption faint">头像框</p>
