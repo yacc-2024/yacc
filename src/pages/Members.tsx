@@ -157,7 +157,7 @@ export function Members() {
         <Link to="/sponsors" className="sponsor-entry">
           <span className="sponsor-entry__icon">★</span>
           <span className="grow">
-            <span className="sponsor-entry__title">赞助列表</span>
+            <span className="sponsor-entry__title">合作伙伴</span>
             <span className="sponsor-entry__sub">
               YACC{new Date().getFullYear()} 官方合作伙伴列表
             </span>
