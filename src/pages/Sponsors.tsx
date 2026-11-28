@@ -56,7 +56,7 @@ export function Sponsors() {
         ) : list.length === 0 ? (
           <EmptyState icon="person" title="还没有合作伙伴" desc="支持 YACC 的伙伴会出现在这里。" />
         ) : (
-          <div className="member-grid" style={{ marginTop: 16 }}>
+          <div className="grid-2" style={{ marginTop: 16 }}>
             {list.map((s) => (
               <Link key={s.uid} to={`/u/${s.uid}`} className="member member--sponsor">
                 <Avatar name={s.name} src={s.avatar} size={88} />
