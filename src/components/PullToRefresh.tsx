@@ -45,14 +45,30 @@ export function RefreshGate({
   const distRef = useRef(0)
 
   useEffect(() => {
-    const atTop = () => {
-      const el = document.scrollingElement ?? document.documentElement
-      return el.scrollTop <= 0 && window.scrollY <= 0
+    /** 找到离触点最近的滚动容器，返回它的滚动位置 */
+    const scrollTopOf = (target: EventTarget | null): number => {
+      let el = target instanceof HTMLElement ? target : null
+      while (el && el !== document.body && el !== document.documentElement) {
+        const style = getComputedStyle(el)
+        const scrollable = /(auto|scroll)/.test(`${style.overflowY}`)
+        if (scrollable && el.scrollHeight - el.clientHeight > 2) {
+          return el.scrollTop
+        }
+        el = el.parentElement
+      }
+      const root = document.scrollingElement ?? document.documentElement
+      return root.scrollTop
     }
 
+    let startTarget: EventTarget | null = null
+    let startedAtTop = false
+
     const onStart = (e: TouchEvent) => {
-      if (loading || !atTop()) return
+      if (loading) return
       if (e.touches.length !== 1) return
+      startTarget = e.target
+      startedAtTop = scrollTopOf(startTarget) <= 0
+      if (!startedAtTop) return
       startY.current = e.touches[0].clientY
       active.current = false
     }
@@ -65,7 +81,8 @@ export function RefreshGate({
         setDistance(0)
         return
       }
-      if (!atTop()) {
+      // 页面在下拉过程中被滚走就放弃
+      if (!startedAtTop || scrollTopOf(startTarget) > 0) {
         startY.current = null
         distRef.current = 0
         setDistance(0)
