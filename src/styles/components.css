@@ -4817,3 +4817,76 @@ html[data-motion="performance"] .ptr__spinner--busy {
 .sheet__panel {
   background-color: color-mix(in srgb, var(--glass-surface) calc(var(--glass-alpha) * 100%), transparent);
 }
+
+/* 自定义滑块 */
+.slider {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.slider__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--control-bg);
+}
+
+.slider__fill {
+  position: absolute;
+  left: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.slider__knob {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* 毛玻璃预览卡 */
+.glass-demo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 88px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at 20% 30%, #ff8a8a, transparent 45%),
+    radial-gradient(circle at 70% 20%, #8ab6ff, transparent 45%),
+    radial-gradient(circle at 45% 80%, #8affc1, transparent 45%),
+    radial-gradient(circle at 85% 75%, #ffd48a, transparent 45%);
+  background-size: 200% 200%;
+}
+
+.glass-demo__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 28px;
+}
+
+.glass-demo__text {
+  font-size: 12px;
+  color: #1b1b1f;
+  font-weight: 600;
+}

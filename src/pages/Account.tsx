@@ -6,6 +6,7 @@ import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { api } from '../lib/api'
 import { ACCENTS, getAccent, setAccent } from '../lib/accent'
+import { Slider } from '../components/Slider'
 import {
   getGlassAlpha,
   setGlassAlpha,
@@ -722,49 +723,53 @@ export function AppearanceSettings() {
         </section>
 
         <section className="section">
-          <div className="between" style={{ marginBottom: 8 }}>
-            <h2 className="field__label" style={{ margin: 0 }}>
-              毛玻璃模糊度
-            </h2>
+          <h2 className="field__label">毛玻璃</h2>
+
+          <div
+            className="glass-demo"
+            aria-hidden="true"
+            style={{
+              backdropFilter: `blur(${blur}px)`,
+              WebkitBackdropFilter: `blur(${blur}px)`,
+              background: `rgba(255, 255, 255, ${alpha / 100})`,
+            }}
+          >
+            <span className="glass-demo__dot" />
+            <span className="glass-demo__text">预览：模糊 {blur}px · 透明度 {alpha}%</span>
+          </div>
+
+          <div className="between" style={{ marginTop: 12 }}>
+            <label className="field__label" style={{ margin: 0 }} htmlFor="glass-blur">
+              模糊度
+            </label>
             <span className="count">{blur}px</span>
           </div>
-          <input
-            className="range"
-            type="range"
+          <Slider
+            label="毛玻璃模糊度"
+            value={blur}
             min={0}
             max={MAX_BLUR}
             step={2}
-            value={blur}
-            aria-label="毛玻璃模糊度"
-            onChange={(e) => setBlur(setGlassBlur(Number(e.target.value)))}
+            onChange={(v) => setBlur(setGlassBlur(v))}
           />
-          <div className="glass-preview" aria-hidden="true">
-            拖动试试，导航栏和卡片会一起变
-          </div>
-          <p className="field__hint" style={{ marginTop: 8 }}>
-            手机性能一般时调低一点会更顺。默认 {DEFAULT_BLUR}px。
-          </p>
-        </section>
 
-        <section className="section">
-          <div className="between" style={{ marginBottom: 8 }}>
-            <h2 className="field__label" style={{ margin: 0 }}>
-              毛玻璃透明度
-            </h2>
+          <div className="between" style={{ marginTop: 4 }}>
+            <label className="field__label" style={{ margin: 0 }} htmlFor="glass-alpha">
+              透明度
+            </label>
             <span className="count">{alpha}%</span>
           </div>
-          <input
-            className="range"
-            type="range"
+          <Slider
+            label="毛玻璃透明度"
+            value={alpha}
             min={MIN_ALPHA}
             max={MAX_ALPHA}
             step={5}
-            value={alpha}
-            aria-label="毛玻璃透明度"
-            onChange={(e) => setAlpha(setGlassAlpha(Number(e.target.value)))}
+            onChange={(v) => setAlpha(setGlassAlpha(v))}
           />
+
           <p className="field__hint" style={{ marginTop: 8 }}>
-            数值越小越透，能看到背后的内容；默认 {DEFAULT_ALPHA}%。
+            模糊度越高越柔和，透明度越低越能看清背后的内容。默认 {DEFAULT_BLUR}px / {DEFAULT_ALPHA}%。
           </p>
         </section>
 
