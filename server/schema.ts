@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_frame_until TEXT,
   title_expires TEXT,
   plate_expires TEXT,
+  privacy TEXT,
   title_styles TEXT,
   member_id TEXT,
   password_hash TEXT NOT NULL,

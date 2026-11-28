@@ -40,6 +40,8 @@ import {
 } from './pages/Account'
 import { Store } from './pages/Store'
 import { Sponsors } from './pages/Sponsors'
+import { FollowList } from './pages/FollowList'
+import { PrivacySettings } from './pages/PrivacySettings'
 import { ProductsAdmin } from './pages/admin/Products'
 import { TasksAdmin } from './pages/admin/Tasks'
 import { AdminIndex } from './pages/admin/Index'
@@ -187,6 +189,9 @@ export function App() {
         <Route path="forum/:id" element={<PostDetail />} />
         <Route path="me/favorites" element={<Favorites />} />
         <Route path="me/history" element={<History />} />
+        <Route path="u/:uid/following" element={<FollowList kind="following" />} />
+        <Route path="u/:uid/followers" element={<FollowList kind="followers" />} />
+        <Route path="me/settings/privacy" element={<PrivacySettings />} />
         <Route path="sponsors" element={<Sponsors />} />
         <Route path="me/store" element={<Store />} />
         <Route path="me/settings" element={<Settings />} />

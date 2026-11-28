@@ -315,6 +315,12 @@ export const api = {
     hideBadge?: boolean
     profileStyle?: string
     avatarFrame?: string | null
+    privacy?: {
+      showFollowing: boolean
+      showFollowers: boolean
+      showPopularity: boolean
+      showPosts: boolean
+    }
   }) =>
     call<{ user: SessionUser }>('/auth/profile', { method: 'POST', body: patch }),
 
@@ -415,6 +421,18 @@ export const api = {
 
   follow: (userId: string, action: 'follow' | 'unfollow') =>
     call<{ following: boolean }>(`/follows/${userId}`, { method: 'POST', body: { action } }),
+
+  followList: (uid: string, kind: 'following' | 'followers') =>
+    call<{
+      hidden: boolean
+      list: Array<{
+        uid: string
+        name: string
+        avatar: string | null
+        avatarFrame: string | null
+        since: string
+      }>
+    }>(`/users/${uid}/${kind}`),
 
   sponsors: () =>
     call<{

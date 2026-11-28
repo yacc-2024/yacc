@@ -6,6 +6,13 @@ import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { api } from '../lib/api'
 import { ACCENTS, getAccent, setAccent } from '../lib/accent'
+import {
+  getGlassAlpha,
+  setGlassAlpha,
+  DEFAULT_ALPHA,
+  MIN_ALPHA,
+  MAX_ALPHA,
+} from '../lib/glass'
 import { ColorPicker } from '../components/ColorPicker'
 import { formatUid } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
@@ -632,6 +639,7 @@ export function AppearanceSettings() {
   const [font, setFont] = useState<FontScale>(getFontScale())
   const [blur, setBlur] = useState(getGlassBlur())
   const [accent, setAccentValue] = useState(getAccent())
+  const [alpha, setAlpha] = useState(getGlassAlpha())
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const onTheme = (value: ThemeMode) => {
@@ -729,6 +737,28 @@ export function AppearanceSettings() {
           </div>
           <p className="field__hint" style={{ marginTop: 8 }}>
             手机性能一般时调低一点会更顺。默认 {DEFAULT_BLUR}px。
+          </p>
+        </section>
+
+        <section className="section">
+          <div className="between" style={{ marginBottom: 8 }}>
+            <h2 className="field__label" style={{ margin: 0 }}>
+              毛玻璃透明度
+            </h2>
+            <span className="count">{alpha}%</span>
+          </div>
+          <input
+            className="range"
+            type="range"
+            min={MIN_ALPHA}
+            max={MAX_ALPHA}
+            step={5}
+            value={alpha}
+            aria-label="毛玻璃透明度"
+            onChange={(e) => setAlpha(setGlassAlpha(Number(e.target.value)))}
+          />
+          <p className="field__hint" style={{ marginTop: 8 }}>
+            数值越小越透，能看到背后的内容；默认 {DEFAULT_ALPHA}%。
           </p>
         </section>
 

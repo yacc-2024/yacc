@@ -47,6 +47,12 @@ interface PublicUser {
   sponsorUntil: string | null
   avatarFrame: string | null
   profileStyle: string | null
+  privacy?: {
+    showFollowing: boolean
+    showFollowers: boolean
+    showPopularity: boolean
+    showPosts: boolean
+  }
   visitors: Array<{ uid: string; name: string; avatar: string | null; at: string }>
   isMe: boolean
   badgeStyle: string | null

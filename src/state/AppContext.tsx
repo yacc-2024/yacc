@@ -65,6 +65,12 @@ export interface SessionUser {
   profileStyle?: string
   titleStyles?: Record<string, string>
   plates?: string[]
+  privacy?: {
+    showFollowing: boolean
+    showFollowers: boolean
+    showPopularity: boolean
+    showPosts: boolean
+  }
   role: 'superadmin' | 'admin' | 'member' | 'visitor'
   verified: boolean
   perms?: string[]
@@ -113,6 +119,12 @@ interface AppContextValue {
     avatar?: string | null
     signature?: string
     shownTitles?: string[]
+    privacy?: {
+      showFollowing: boolean
+      showFollowers: boolean
+      showPopularity: boolean
+      showPosts: boolean
+    }
   }) => Promise<void>
   changeMyPassword: (oldPassword: string, newPassword: string) => Promise<void>
   toggleFavorite: (type: FavRef['type'], id: string) => Promise<boolean>
@@ -545,11 +557,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shownTitles?: string[]
       signature?: string
       hideBadge?: boolean
-  avatarFrame?: string | null
-  sponsorUntil?: string | null
-  skinVip?: boolean
-  skinSvip?: boolean
-  profileStyle?: string
+      avatarFrame?: string | null
+      profileStyle?: string
+      privacy?: {
+        showFollowing: boolean
+        showFollowers: boolean
+        showPopularity: boolean
+        showPosts: boolean
+      }
     }) => {
       if (!account) throw new Error('未登录')
       if (modeRef.current === 'online') {
@@ -559,6 +574,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (patch.hideBadge !== undefined) await api.profile({ hideBadge: patch.hideBadge })
         if (patch.profileStyle !== undefined) await api.profile({ profileStyle: patch.profileStyle })
         if (patch.avatarFrame !== undefined) await api.profile({ avatarFrame: patch.avatarFrame })
+        if (patch.privacy) await api.profile({ privacy: patch.privacy })
         const res = await api.profile({ name: patch.name, avatar: patch.avatar })
         cacheUser(res.user)
         setAccount(res.user)

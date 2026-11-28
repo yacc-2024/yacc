@@ -73,6 +73,13 @@ export interface User {
   titleStyles: Record<string, string>
   /** 已拥有的铭牌 */
   plates: string[]
+  /** 隐私设置 */
+  privacy: {
+    showFollowing: boolean
+    showFollowers: boolean
+    showPopularity: boolean
+    showPosts: boolean
+  }
   /** 头像框到期时间 */
   avatarFrameUntil: string | null
   avatarFrameExpired: boolean
@@ -99,6 +106,7 @@ interface UserRow {
   avatar_frame_until: string | null
   title_expires: string | null
   plate_expires: string | null
+  privacy: string | null
   sponsor_until: string | null
   profile_style: string | null
   skin_vip: number | null
@@ -223,6 +231,7 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN avatar_frame_until TEXT',
         'ALTER TABLE users ADD COLUMN title_expires TEXT',
         'ALTER TABLE users ADD COLUMN plate_expires TEXT',
+        'ALTER TABLE users ADD COLUMN privacy TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -297,6 +306,7 @@ function toUser(row: UserRow): User {
     skinVip: Number(row.skin_vip ?? 0) === 1,
     skinSvip: Number(row.skin_svip ?? 0) === 1,
     titleStyles: parseTitleStyles(row.title_styles),
+    privacy: parsePrivacy(row.privacy),
     plates: (() => {
       let exp: Record<string, string> = {}
       try {
@@ -465,6 +475,28 @@ const IDENTITY_PLATES: Record<string, string> = {
   管理员: 'admin',
   剧组成员: 'crew',
   认证成员: 'member',
+}
+
+const DEFAULT_PRIVACY = {
+  showFollowing: true,
+  showFollowers: true,
+  showPopularity: true,
+  showPosts: true,
+}
+
+function parsePrivacy(raw: string | null | undefined) {
+  if (!raw) return { ...DEFAULT_PRIVACY }
+  try {
+    const obj = JSON.parse(raw) as Record<string, unknown>
+    return {
+      showFollowing: obj.showFollowing !== false,
+      showFollowers: obj.showFollowers !== false,
+      showPopularity: obj.showPopularity !== false,
+      showPosts: obj.showPosts !== false,
+    }
+  } catch {
+    return { ...DEFAULT_PRIVACY }
+  }
 }
 
 function parsePlates(raw: string | null | undefined): string[] {
@@ -1335,6 +1367,52 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       })
     }
 
+    const followList = /^\/users\/(\d{1,6})\/(following|followers)$/.exec(path)
+    if (followList && method === 'GET') {
+      const raw = Number(followList[1])
+      const kind = followList[2]
+      const target = await db
+        .prepare('SELECT id, privacy FROM users WHERE uid = ?')
+        .bind(raw)
+        .first<{ id: string; privacy: string | null }>()
+      if (!target) return fail('找不到这个账号', 404)
+      const privacy = parsePrivacy(target.privacy)
+      if (kind === 'following' && !privacy.showFollowing) {
+        return ok({ list: [], hidden: true })
+      }
+      if (kind === 'followers' && !privacy.showFollowers) {
+        return ok({ list: [], hidden: true })
+      }
+      const rows =
+        kind === 'following'
+          ? await db
+              .prepare(
+                `SELECT u.uid, u.name, u.avatar, u.avatar_frame, f.created_at
+                 FROM follows f JOIN users u ON u.id = f.followee_id
+                 WHERE f.follower_id = ? ORDER BY f.created_at DESC LIMIT 200`,
+              )
+              .bind(target.id)
+              .all<{ uid: number | null; name: string; avatar: string | null; avatar_frame: string | null; created_at: string }>()
+          : await db
+              .prepare(
+                `SELECT u.uid, u.name, u.avatar, u.avatar_frame, f.created_at
+                 FROM follows f JOIN users u ON u.id = f.follower_id
+                 WHERE f.followee_id = ? ORDER BY f.created_at DESC LIMIT 200`,
+              )
+              .bind(target.id)
+              .all<{ uid: number | null; name: string; avatar: string | null; avatar_frame: string | null; created_at: string }>()
+      return ok({
+        hidden: false,
+        list: rows.map((r) => ({
+          uid: formatUid(r.uid),
+          name: r.name,
+          avatar: r.avatar ?? null,
+          avatarFrame: r.avatar_frame ?? null,
+          since: r.created_at,
+        })),
+      })
+    }
+
     /* ---------- 公开：用户主页 ---------- */
 
     const userPage = /^\/users\/(\d{1,6})$/.exec(path)
@@ -1450,6 +1528,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           shownTitles: parseShown(row.shown_titles, row.titles, row.title),
           badgeStyle: row.badge_style ?? null,
           titleStyles: parseTitleStyles(row.title_styles),
+    privacy: parsePrivacy(row.privacy),
     plates: (() => {
       let exp: Record<string, string> = {}
       try {
@@ -1595,6 +1674,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         avatarFrameUntil: null,
         avatarFrameExpired: false,
+        privacy: { ...DEFAULT_PRIVACY },
         sponsorUntil: null,
         profileStyle: null,
         skinVip: false,
@@ -1945,6 +2025,7 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         avatarFrame: null,
         avatarFrameUntil: null,
         avatarFrameExpired: false,
+        privacy: { ...DEFAULT_PRIVACY },
         sponsorUntil: null,
         profileStyle: null,
         skinVip: false,
@@ -2040,6 +2121,14 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         await db
           .prepare('UPDATE users SET profile_style = ? WHERE id = ?')
           .bind(style === 'normal' ? null : style, me.id)
+          .run()
+      }
+
+      if (body.privacy && typeof body.privacy === 'object') {
+        const clean = parsePrivacy(JSON.stringify(body.privacy))
+        await db
+          .prepare('UPDATE users SET privacy = ? WHERE id = ?')
+          .bind(JSON.stringify(clean), me.id)
           .run()
       }
 
