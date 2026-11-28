@@ -4618,7 +4618,9 @@ select.input {
 
 /* 合作伙伴卡片更大圆角 */
 .member--sponsor {
-  border-radius: 26px;
+  border-radius: 36px;
+  padding-top: 22px;
+  padding-bottom: 22px;
 }
 
 /* 极光主页：更多类型的光效 */
