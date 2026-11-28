@@ -6,6 +6,7 @@ import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { api } from '../lib/api'
 import { ACCENTS, getAccent, setAccent } from '../lib/accent'
+import { ColorPicker } from '../components/ColorPicker'
 import { formatUid } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useInstall } from '../lib/pwa'
@@ -631,6 +632,7 @@ export function AppearanceSettings() {
   const [font, setFont] = useState<FontScale>(getFontScale())
   const [blur, setBlur] = useState(getGlassBlur())
   const [accent, setAccentValue] = useState(getAccent())
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const onTheme = (value: ThemeMode) => {
     setTheme(value)
@@ -651,6 +653,16 @@ export function AppearanceSettings() {
   return (
     <>
       <NavBar title="外观" back />
+      <Sheet open={pickerOpen} title="自定义主题色" onClose={() => setPickerOpen(false)}>
+        <ColorPicker
+          value={accent.startsWith('custom:') ? accent.slice(7) : '#4DBDF5'}
+          onChange={(hex) => {
+            const value = `custom:${hex}`
+            setAccentValue(value)
+            setAccent(value)
+          }}
+        />
+      </Sheet>
       <div className="page__body">
         <section style={{ marginTop: 8 }}>
           <h2 className="field__label">深浅色</h2>
@@ -683,17 +695,12 @@ export function AppearanceSettings() {
                 }}
               />
             ))}
-            <label className="accent-dot accent-dot--custom" aria-label="自定义颜色">
-              <input
-                type="color"
-                value={accent.startsWith('custom:') ? accent.slice(7) : '#4DBDF5'}
-                onChange={(e) => {
-                  const value = `custom:${e.target.value}`
-                  setAccentValue(value)
-                  setAccent(value)
-                }}
-              />
-            </label>
+            <button
+              type="button"
+              className="accent-dot accent-dot--custom"
+              aria-label="自定义颜色"
+              onClick={() => setPickerOpen(true)}
+            />
           </div>
           <p className="field__hint" style={{ marginTop: 8 }}>
             按钮、链接、选中态的强调色，会立即生效。

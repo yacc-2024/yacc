@@ -4466,8 +4466,19 @@ select.input {
 .accent-dot--custom {
   position: relative;
   overflow: hidden;
-  background: conic-gradient(#ff5a5f, #ffb300, #2fc98a, #4d8dff, #8a5cff, #ff5a5f);
   cursor: pointer;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0 22%, transparent 24%),
+    conic-gradient(
+      #ff3b30 0deg,
+      #ff9500 60deg,
+      #ffcc00 120deg,
+      #34c759 180deg,
+      #32ade6 240deg,
+      #5856d6 300deg,
+      #ff2d55 360deg
+    );
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
 }
 
 .accent-dot--custom input {
@@ -4527,4 +4538,155 @@ select.input {
   to {
     background-position: 200% 0;
   }
+}
+
+/* 调色盘 */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.picker__area {
+  position: relative;
+  height: 200px;
+  border-radius: 18px;
+  touch-action: none;
+  cursor: crosshair;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.picker__knob {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.picker__hue {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #ff0000,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #ff00ff,
+    #ff0000
+  );
+  outline: none;
+}
+
+.picker__hue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.picker__hue::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+.picker__preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.picker__swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+}
+
+/* 合作伙伴卡片更大圆角 */
+.member--sponsor {
+  border-radius: 26px;
+}
+
+/* 极光主页：更多类型的光效 */
+.profile-skin--sponsor .dy-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 60% at 12% 0%, rgba(140, 190, 255, 0.22), transparent 70%),
+    radial-gradient(35% 55% at 88% 100%, rgba(180, 140, 255, 0.2), transparent 72%);
+  animation: partner-corner 7s ease-in-out infinite alternate;
+}
+
+@keyframes partner-corner {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 数据条：顶部细光缓慢左右移动 */
+.profile-skin--sponsor .dy-stats--top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(170, 210, 255, 0.9), transparent);
+  animation: partner-line 5s ease-in-out infinite;
+}
+
+@keyframes partner-line {
+  0%,
+  100% {
+    transform: translateX(-20%);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(160%);
+    opacity: 1;
+  }
+}
+
+/* 头像外圈缓慢旋转的光环 */
+.profile-skin--sponsor .dy-main > .avatar {
+  position: relative;
+}
+
+.profile-skin--sponsor .dy-main > .avatar::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(140, 190, 255, 0.55) 60deg,
+    transparent 120deg,
+    rgba(180, 140, 255, 0.45) 220deg,
+    transparent 300deg
+  );
+  animation: frame-spin 8s linear infinite;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
 }
