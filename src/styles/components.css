@@ -4953,4 +4953,6 @@ html[data-motion="performance"] .ptr__spinner--busy {
   border-bottom: 1px solid var(--glass-border);
   z-index: -1;
   pointer-events: none;
+  /* 与大标题同步出现：滚动越深，玻璃底越实 */
+  opacity: calc(var(--p, 0) * 1);
 }
