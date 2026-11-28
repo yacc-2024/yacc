@@ -158,7 +158,9 @@ export function Members() {
           <span className="sponsor-entry__icon">★</span>
           <span className="grow">
             <span className="sponsor-entry__title">赞助列表</span>
-            <span className="sponsor-entry__sub">感谢这些伙伴对 YACC 的支持</span>
+            <span className="sponsor-entry__sub">
+              YACC{new Date().getFullYear()} 官方合作伙伴列表
+            </span>
           </span>
           <Icon name="chevron-right" size={18} />
         </Link>

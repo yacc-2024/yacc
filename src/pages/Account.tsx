@@ -5,6 +5,7 @@ import { NavBar, Avatar, ListRow, Segmented, useConfirm, Sheet } from '../compon
 import { RequireAuth } from '../components/guards'
 import { formatDate } from '../lib/format'
 import { api } from '../lib/api'
+import { ACCENTS, getAccent, setAccent } from '../lib/accent'
 import { formatUid } from '../lib/uid'
 import { latestChangelog, sortedChangelog } from '../lib/selectors'
 import { useInstall } from '../lib/pwa'
@@ -629,6 +630,7 @@ export function AppearanceSettings() {
   const [motion, setMotion] = useState<MotionMode>(getMotionMode())
   const [font, setFont] = useState<FontScale>(getFontScale())
   const [blur, setBlur] = useState(getGlassBlur())
+  const [accent, setAccentValue] = useState(getAccent())
 
   const onTheme = (value: ThemeMode) => {
     setTheme(value)
@@ -662,6 +664,29 @@ export function AppearanceSettings() {
               { value: 'dark', label: '深色' },
             ]}
           />
+        </section>
+
+        <section className="section">
+          <h2 className="field__label">主题色</h2>
+          <div className="accent-row">
+            {ACCENTS.map((a) => (
+              <button
+                key={a.value}
+                type="button"
+                className="accent-dot"
+                aria-label={a.label}
+                aria-pressed={accent === a.value}
+                style={{ background: a.color }}
+                onClick={() => {
+                  setAccentValue(a.value)
+                  setAccent(a.value)
+                }}
+              />
+            ))}
+          </div>
+          <p className="field__hint" style={{ marginTop: 8 }}>
+            按钮、链接、选中态的强调色，会立即生效。
+          </p>
         </section>
 
         <section className="section">

@@ -8,10 +8,12 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/components.css'
 import { initGlassBlur } from './lib/glass'
+import { initAccent } from './lib/accent'
 import { initAppearance } from './lib/appearance'
 import { hideSplash } from './lib/splash'
 
 initGlassBlur()
+initAccent()
 initAppearance()
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
