@@ -739,6 +739,8 @@ interface AdminUser {
   titleExpires: Record<string, string>
   plateExpires: Record<string, string>
   avatarFrameUntil: string | null
+  skinVipUntil: string | null
+  skinSvipUntil: string | null
   sponsorUntil: string | null
   titleStyles: Record<string, string>
   keyCode: string | null
@@ -945,6 +947,8 @@ function UserForm({
   const [titleExp, setTitleExp] = useState<Record<string, string>>(user.titleExpires ?? {})
   const [plateExp, setPlateExp] = useState<Record<string, string>>(user.plateExpires ?? {})
   const [frameUntil, setFrameUntil] = useState(dayOf(user.avatarFrameUntil ?? ''))
+  const [vipUntil, setVipUntil] = useState(dayOf(user.skinVipUntil ?? ''))
+  const [svipUntil, setSvipUntil] = useState(dayOf(user.skinSvipUntil ?? ''))
   const [sponsorUntil, setSponsorUntil] = useState(dayOf(user.sponsorUntil ?? ''))
   const [roleDraft, setRoleDraft] = useState<'admin' | 'visitor'>(
     user.role === 'admin' ? 'admin' : 'visitor',
@@ -978,6 +982,8 @@ function UserForm({
         titleExpires?: Record<string, string>
         plateExpires?: Record<string, string>
         avatarFrameUntil?: string | null
+        skinVipUntil?: string | null
+        skinSvipUntil?: string | null
         sponsorUntil?: string
         titleStyles?: Record<string, string>
       } = {}
@@ -994,6 +1000,12 @@ function UserForm({
       patch.plateExpires = plateExp
       if (dayOf(user.avatarFrameUntil ?? '') !== frameUntil) {
         patch.avatarFrameUntil = frameUntil ? endOfDay(frameUntil) : null
+      }
+      if (dayOf(user.skinVipUntil ?? '') !== vipUntil) {
+        patch.skinVipUntil = vipUntil ? endOfDay(vipUntil) : null
+      }
+      if (dayOf(user.skinSvipUntil ?? '') !== svipUntil) {
+        patch.skinSvipUntil = svipUntil ? endOfDay(svipUntil) : null
       }
       if (dayOf(user.sponsorUntil ?? '') !== sponsorUntil && sponsorUntil) {
         patch.sponsorUntil = endOfDay(sponsorUntil)
@@ -1427,6 +1439,33 @@ function UserForm({
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <p className="t-caption faint">高级 / 顶级主页外观</p>
+        <div className="between" style={{ marginTop: 10 }}>
+          <span className="t-caption">高级外观到期日</span>
+          <input
+            className="input"
+            style={{ width: 150, minHeight: 34 }}
+            type="date"
+            aria-label="高级外观到期日"
+            value={vipUntil}
+            onChange={(e) => setVipUntil(e.target.value)}
+          />
+        </div>
+        <div className="between" style={{ marginTop: 8 }}>
+          <span className="t-caption">顶级外观到期日</span>
+          <input
+            className="input"
+            style={{ width: 150, minHeight: 34 }}
+            type="date"
+            aria-label="顶级外观到期日"
+            value={svipUntil}
+            onChange={(e) => setSvipUntil(e.target.value)}
+          />
+        </div>
+        <p className="field__hint">留空表示长期有效；到期后对方就不能再选这套外观。</p>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <p className="t-caption faint">合作伙伴</p>
         <div className="between" style={{ marginTop: 8 }}>
           <span className="t-caption faint">到期日</span>
@@ -1519,7 +1558,6 @@ function UserForm({
             会员积分
           </button>
         </div>
-        <p className="field__hint">会员积分决定高级/顶级主页外观。</p>
       </div>
 
       <p className="form-section">昵称与安全</p>

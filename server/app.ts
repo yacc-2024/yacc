@@ -69,6 +69,8 @@ export interface User {
   /** 管理员发放的高级/顶级外观 */
   skinVip: boolean
   skinSvip: boolean
+  skinVipUntil: string | null
+  skinSvipUntil: string | null
   /** 每个称号单独的外观（称号 → 铭牌） */
   titleStyles: Record<string, string>
   /** 已拥有的铭牌 */
@@ -115,6 +117,8 @@ interface UserRow {
   profile_style: string | null
   skin_vip: number | null
   skin_svip: number | null
+  skin_vip_until: string | null
+  skin_svip_until: string | null
   member_id: string | null
   perms: string | null
   password_hash: string
@@ -183,7 +187,7 @@ const fail = (error: string, status = 400) => json({ ok: false, error }, status)
 const schemas = new WeakMap<DB, Promise<void>>()
 
 /** 结构版本：每次加字段就改这里，改过之后老库会重新跑一遍补列 */
-const SCHEMA_VERSION = '2026-11-29'
+const SCHEMA_VERSION = '2026-11-30'
 
 function ensureSchema(db: DB, createSuper = true): Promise<void> {
   let promise = schemas.get(db)
@@ -237,6 +241,8 @@ function ensureSchema(db: DB, createSuper = true): Promise<void> {
         'ALTER TABLE users ADD COLUMN plate_expires TEXT',
         'ALTER TABLE users ADD COLUMN privacy TEXT',
         'ALTER TABLE users ADD COLUMN sponsor_since TEXT',
+        'ALTER TABLE users ADD COLUMN skin_vip_until TEXT',
+        'ALTER TABLE users ADD COLUMN skin_svip_until TEXT',
         'ALTER TABLE user_stats ADD COLUMN member_points INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE user_stats ADD COLUMN daily_kinds TEXT',
         'ALTER TABLE users ADD COLUMN member_id TEXT',
@@ -310,6 +316,8 @@ function toUser(row: UserRow): User {
     profileStyle: row.profile_style ?? null,
     skinVip: Number(row.skin_vip ?? 0) === 1,
     skinSvip: Number(row.skin_svip ?? 0) === 1,
+    skinVipUntil: row.skin_vip_until ?? null,
+    skinSvipUntil: row.skin_svip_until ?? null,
     titleStyles: parseTitleStyles(row.title_styles),
     privacy: parsePrivacy(row.privacy),
     titleExpires: (() => {
@@ -1627,6 +1635,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
     profileStyle: row.profile_style ?? null,
     skinVip: Number(row.skin_vip ?? 0) === 1,
     skinSvip: Number(row.skin_svip ?? 0) === 1,
+    skinVipUntil: row.skin_vip_until ?? null,
+    skinSvipUntil: row.skin_svip_until ?? null,
           level: stats.level,
           points: stats.points,
           popularity: stats.visits + Number(followerCount?.n ?? 0) * 3 + stats.gifts * 10,
@@ -1744,6 +1754,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         profileStyle: null,
         skinVip: false,
         skinSvip: false,
+        skinVipUntil: null,
+        skinSvipUntil: null,
         titleStyles: {},
         plates: [],
         role,
@@ -2097,6 +2109,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         profileStyle: null,
         skinVip: false,
         skinSvip: false,
+        skinVipUntil: null,
+        skinSvipUntil: null,
         titleStyles: {},
         plates: [],
         role: 'superadmin',
@@ -2183,8 +2197,13 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
             return fail('赞助者才能使用这套外观', 403)
           }
         }
-        if (style === 'vip' && !me.skinVip) return fail('还没有获得这套外观', 403)
-        if (style === 'svip' && !me.skinSvip) return fail('还没有获得这套外观', 403)
+        const expired = (until: string | null) => Boolean(until && until <= nowIso())
+        if (style === 'vip' && (!me.skinVip || expired(me.skinVipUntil))) {
+          return fail('还没有获得这套外观', 403)
+        }
+        if (style === 'svip' && (!me.skinSvip || expired(me.skinSvipUntil))) {
+          return fail('还没有获得这套外观', 403)
+        }
         await db
           .prepare('UPDATE users SET profile_style = ? WHERE id = ?')
           .bind(style === 'normal' ? null : style, me.id)
@@ -3752,6 +3771,20 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         await db
           .prepare('UPDATE users SET avatar_frame_until = ? WHERE id = ?')
           .bind(body.avatarFrameUntil, target.id)
+          .run()
+      }
+
+      if (typeof body.skinVipUntil === 'string' || body.skinVipUntil === null) {
+        await db
+          .prepare('UPDATE users SET skin_vip_until = ? WHERE id = ?')
+          .bind(body.skinVipUntil, target.id)
+          .run()
+      }
+
+      if (typeof body.skinSvipUntil === 'string' || body.skinSvipUntil === null) {
+        await db
+          .prepare('UPDATE users SET skin_svip_until = ? WHERE id = ?')
+          .bind(body.skinSvipUntil, target.id)
           .run()
       }
 
