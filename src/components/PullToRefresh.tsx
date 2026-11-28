@@ -1,97 +1,121 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
+const THRESHOLD = 72
+
 /**
- * 下拉刷新：
- * - 页面在顶部时往下拉，顶部出现小圆环并跟着手指走
- * - 拉够 64px 松手进入加载，转圈后自动收起
- * - iOS/安卓都走 touch 事件，阻止页面自身的回弹
+ * 全局下拉刷新：
+ * - 页面滚到最顶端时，手指往下拉会出现白色加载条
+ * - 拉过阈值松手：转圈并刷新数据
+ * - 每个页面都能用（挂在应用外层）
  */
-export function PullToRefresh({
+export function RefreshGate({
   onRefresh,
   children,
 }: {
-  onRefresh: () => Promise<unknown> | void
+  onRefresh: () => Promise<unknown> | unknown
   children: ReactNode
 }) {
-  const [pull, setPull] = useState(0)
+  const [distance, setDistance] = useState(0)
   const [loading, setLoading] = useState(false)
   const startY = useRef<number | null>(null)
-  const pulling = useRef(false)
+  const active = useRef(false)
+  const distRef = useRef(0)
 
   useEffect(() => {
-    const canScroll = () => {
+    const atTop = () => {
       const el = document.scrollingElement ?? document.documentElement
-      return el.scrollTop > 0
+      return el.scrollTop <= 0 && window.scrollY <= 0
     }
 
     const onStart = (e: TouchEvent) => {
-      if (loading || canScroll()) return
+      if (loading || !atTop()) return
+      if (e.touches.length !== 1) return
       startY.current = e.touches[0].clientY
-      pulling.current = false
+      active.current = false
     }
 
     const onMove = (e: TouchEvent) => {
       if (startY.current === null || loading) return
       const dy = e.touches[0].clientY - startY.current
       if (dy <= 0) {
-        setPull(0)
+        distRef.current = 0
+        setDistance(0)
         return
       }
-      if (canScroll()) {
+      if (!atTop()) {
         startY.current = null
-        setPull(0)
+        distRef.current = 0
+        setDistance(0)
         return
       }
-      // 阻尼 + 阻止页面自带回弹
+      // 阻止浏览器自带的回弹，让手势完全由我们接管
       if (e.cancelable) e.preventDefault()
-      pulling.current = true
-      setPull(Math.min(96, dy * 0.5))
+      active.current = true
+      const eased = Math.min(120, dy * 0.55)
+      distRef.current = eased
+      setDistance(eased)
     }
 
-    const onEnd = () => {
+    const finish = () => {
       if (startY.current === null) return
-      const reached = pull >= 64
+      const reached = distRef.current >= THRESHOLD && active.current
       startY.current = null
-      if (!reached || !pulling.current) {
-        setPull(0)
+      active.current = false
+      distRef.current = 0
+      if (!reached) {
+        setDistance(0)
         return
       }
+      setDistance(THRESHOLD)
       setLoading(true)
-      setPull(56)
       void Promise.resolve(onRefresh())
         .catch(() => {})
         .finally(() => {
-          setLoading(false)
-          setPull(0)
+          window.setTimeout(() => {
+            setLoading(false)
+            setDistance(0)
+          }, 260)
         })
     }
 
     window.addEventListener('touchstart', onStart, { passive: true })
     window.addEventListener('touchmove', onMove, { passive: false })
-    window.addEventListener('touchend', onEnd)
-    window.addEventListener('touchcancel', onEnd)
+    window.addEventListener('touchend', finish)
+    window.addEventListener('touchcancel', finish)
     return () => {
       window.removeEventListener('touchstart', onStart)
       window.removeEventListener('touchmove', onMove)
-      window.removeEventListener('touchend', onEnd)
-      window.removeEventListener('touchcancel', onEnd)
+      window.removeEventListener('touchend', finish)
+      window.removeEventListener('touchcancel', finish)
     }
-  }, [onRefresh, pull, loading])
+  }, [onRefresh, loading])
+
+  const progress = Math.min(1, distance / THRESHOLD)
+  const visible = distance > 2 || loading
 
   return (
     <>
       <div
-        className="ptr-indicator"
+        className={`refresh${loading ? ' refresh--loading' : ''}`}
         style={{
-          transform: `translateY(${pull - 44}px)`,
-          opacity: pull > 4 ? 1 : 0,
+          transform: `translate3d(-50%, ${distance - 56}px, 0)`,
+          opacity: visible ? 1 : 0,
         }}
-        aria-hidden={pull < 8}
+        aria-hidden={!visible}
+        role="status"
+        aria-live="polite"
       >
         <span
-          className={`ptr__spinner${loading ? ' ptr__spinner--busy' : ''}`}
-          style={loading ? undefined : { transform: `rotate(${pull * 6}deg)` }}
+          className="refresh__ring"
+          style={
+            loading
+              ? undefined
+              : { transform: `rotate(${progress * 270}deg)` }
+          }
         />
+        <span className="refresh__text">
+          {loading ? '正在刷新' : progress >= 1 ? '松手刷新' : '下拉刷新'}
+        </span>
       </div>
       {children}
     </>

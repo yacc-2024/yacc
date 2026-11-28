@@ -6,7 +6,7 @@ import { Carousel } from '../components/Carousel'
 import { Icon } from '../components/Icon'
 import { api, type ForumPost } from '../lib/api'
 import { DirtyBanner } from '../components/DirtyBanner'
-import { PullToRefresh } from '../components/PullToRefresh'
+
 import { EventSheet } from '../components/detailSheets'
 import { Sheet } from '../components/ui'
 import {
@@ -90,18 +90,6 @@ export function Home() {
       <DirtyBanner />
 
       <div className="page__body">
-        <PullToRefresh
-          onRefresh={async () => {
-            if (mode !== 'online') return
-            try {
-              const res = await api.posts(2)
-              homePostsCache = res.posts
-              setPosts(res.posts)
-            } catch {
-              /* 忽略 */
-            }
-          }}
-        >
         <Link to="/about" className="hero" aria-label="了解 YACC 项目">
           <p className="hero__claim">{c.home.claim}</p>
           <p className="hero__intro">{c.home.intro}</p>
@@ -233,7 +221,6 @@ export function Home() {
         >
           {c.site.copyright} · {c.site.school}
         </footer>
-        </PullToRefresh>
       </div>
 
       <Sheet open={newsOpen} title="公告" onClose={closeNews}>

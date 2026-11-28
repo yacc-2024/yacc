@@ -5,7 +5,7 @@ import { NavBar, EmptyState, Sheet } from '../components/ui'
 import { Comments } from '../components/Comments'
 import { Icon } from '../components/Icon'
 import { ForumCard } from '../components/ForumCard'
-import { PullToRefresh, Spinner } from '../components/PullToRefresh'
+import { Spinner } from '../components/PullToRefresh'
 import { api, type ForumPost } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 
@@ -84,7 +84,6 @@ export function Forum() {
         }
       />
       <div className="page__body">
-        <PullToRefresh onRefresh={load}>
 
         {loading ? (
           <Spinner label="正在加载帖子" />
@@ -120,7 +119,6 @@ export function Forum() {
             />
           ))
         )}
-        </PullToRefresh>
       </div>
 
       <Sheet
