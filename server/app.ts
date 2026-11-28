@@ -826,11 +826,7 @@ const CHANGELOG_SEED = [
  * 已经存在的版本以线上为准，不覆盖。
  */
 export async function ensureChangelogSeed(db: DB): Promise<void> {
-  const done = await db
-    .prepare('SELECT value FROM settings WHERE key = ?')
-    .bind(CHANGELOG_KEY)
-    .first<{ value: string }>()
-  if (done) return
+  // 每次都校验一次：发现线上日志和标准清单不一致就自动修正
 
   const latest = await db
     .prepare('SELECT version, content FROM documents ORDER BY version DESC LIMIT 1')
@@ -880,8 +876,19 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
         }
         return 0
       })
-      // 1.1.x 以 CHANGELOG_CANON 为准，覆盖旧数据
-      const older = merged.filter((e) => !e.version.startsWith('1.1.'))
+      // 1.1.x 以 CHANGELOG_CANON 为准；管理员后来加的更高版本保留
+      const cmp = (v: string) => v.split('.').map((n) => Number(n) || 0)
+      const newerThanCanon = (v: string) => {
+        const a = cmp(v)
+        const b = cmp('1.1.6')
+        for (let i = 0; i < 3; i += 1) {
+          if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0)
+        }
+        return false
+      }
+      const older = merged.filter(
+        (e) => !e.version.startsWith('1.1.') || newerThanCanon(e.version),
+      )
       doc.changelog = [...older, ...CHANGELOG_CANON].sort((a, b) => {
         const pa = a.version.split('.').map((n) => Number(n) || 0)
         const pb = b.version.split('.').map((n) => Number(n) || 0)
