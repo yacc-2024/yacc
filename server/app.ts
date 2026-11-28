@@ -569,7 +569,77 @@ export async function normaliseLegacyUids(db: DB): Promise<void> {
  * 优先级：名字叫 yacc-admin 的 → 最早创建的管理员。
  */
 const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
-const CHANGELOG_KEY = 'migrate:changelog-v21'
+/** 1.1.x 的正式更新日志（以此为准，覆盖旧数据） */
+const CHANGELOG_CANON = [
+  {
+    version: '1.1.6',
+    date: '2026-11-28',
+    items: [
+      '合作伙伴主页换成极光主题，多层光效缓慢流动',
+      '外观新增主题色，含纯白与自定义调色盘',
+      '个人主页重新排版：头像居左，数据与关注在右侧',
+    ],
+  },
+  {
+    version: '1.1.5',
+    date: '2026-11-28',
+    items: [
+      '下拉刷新重做：顶部圆环跟随手指，拉够松手即可刷新',
+      '积分商城可查看是否已装备，并支持一键卸下',
+      '论坛与评论区的头像框不再被裁切',
+      '文字排版修复，长标题不再被圆角遮住',
+    ],
+  },
+  {
+    version: '1.1.4',
+    date: '2026-11-24',
+    items: [
+      '首页推荐改为叠卡式轮播，左右滑动都跟手',
+      '公告改为进站弹出，看过之后不再打扰',
+      '新增最近访客，只有本人能看到',
+    ],
+  },
+  {
+    version: '1.1.3',
+    date: '2026-11-24',
+    items: [
+      '成员页新增「合作伙伴」入口，展示支持我们的伙伴',
+      '合作伙伴主页外观可在账号设置里挑选',
+      '论坛展示的称号与铭牌和主页保持一致',
+    ],
+  },
+  {
+    version: '1.1.2',
+    date: '2026-11-24',
+    items: [
+      '新增积分商城：可用积分兑换铭牌与头像框',
+      '每日登录、首次发帖、首次看作品都会获得积分',
+      '头像可以套上金色、霓虹或银灰头像框',
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: '2026-11-24',
+    items: [
+      '桌面端侧边导航补上论坛入口',
+      '首页铃铛随标题大小同步缩放，滚动更顺',
+      '论坛的加号会随页面状态变为发帖按钮',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026-11-23',
+    items: [
+      '个人主页全新改版：资料与帖子分区展示',
+      '新增等级与积分：每日登录与活跃行为累积，名字后显示等级',
+      '新增个性签名与最近访客，互相关注会显示「互相关注」',
+      '新增人气值：由主页访问与关注情况综合计算',
+      '论坛新增显眼的发帖入口',
+    ],
+  },
+]
+
+const CHANGELOG_KEY = 'migrate:changelog-v22'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
@@ -810,7 +880,18 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
         }
         return 0
       })
-      doc.changelog = merged
+      // 1.1.x 以 CHANGELOG_CANON 为准，覆盖旧数据
+      const older = merged.filter((e) => !e.version.startsWith('1.1.'))
+      doc.changelog = [...older, ...CHANGELOG_CANON].sort((a, b) => {
+        const pa = a.version.split('.').map((n) => Number(n) || 0)
+        const pb = b.version.split('.').map((n) => Number(n) || 0)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+          const d = (pb[i] ?? 0) - (pa[i] ?? 0)
+          if (d !== 0) return d
+        }
+        return 0
+      })
+      merged.length = 0
       if (JSON.stringify(merged) !== originalJson) {
         await db
           .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
