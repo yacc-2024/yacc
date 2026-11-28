@@ -4952,8 +4952,8 @@ html[data-motion="performance"] .ptr__spinner--busy {
   border: 0;
   z-index: -1;
   pointer-events: none;
-  /* 与大标题同步出现：滚动越深，玻璃底越实；不用描边避免出现白线 */
-  opacity: calc(var(--p, 0) * 1);
+  /* 前 60% 滚动完全透明（只看到大字在缩），后 40% 才淡入玻璃底 */
+  opacity: max(0, calc((var(--p, 0) - 0.6) / 0.4));
   box-shadow: 0 8px 20px rgba(0, 0, 0, calc(var(--p, 0) * 0.06));
 }
 
