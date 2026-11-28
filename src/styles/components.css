@@ -3308,8 +3308,13 @@ select.input {
 
 .post__head .avatar,
 .post__who .avatar {
-  overflow: visible;
   flex: 0 0 auto;
+}
+
+/* 只有带头像框时才放开裁剪，普通头像保持圆形 */
+.post__head .avatar--frame,
+.post__who .avatar.avatar--frame {
+  overflow: visible;
 }
 
 .post__who > span {
@@ -4348,7 +4353,7 @@ select.input {
 
 
 /* 头像框外扩，容器不能裁掉 */
-.avatar--frame {
+.avatar.avatar--frame {
   overflow: visible;
 }
 
