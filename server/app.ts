@@ -960,8 +960,8 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
         }
         return 0
       })
-      merged.length = 0
-      if (JSON.stringify(merged) !== originalJson) {
+      // 只有内容真的变了才写入新版本，避免每次冷启动都产生一条
+      if (JSON.stringify(doc.changelog) !== originalJson) {
         await db
           .prepare('INSERT INTO documents (content, published_at, published_by) VALUES (?, ?, ?)')
           .bind(JSON.stringify(doc), nowIso(), null)
@@ -970,6 +970,17 @@ export async function ensureChangelogSeed(db: DB): Promise<void> {
     } catch {
       /* 内容坏了就跳过，不阻断启动 */
     }
+  }
+
+  // 自动迁移写入的版本（published_by 为空）只保留最新一条，避免版本历史被刷屏
+  const newestAuto = await db
+    .prepare('SELECT MAX(version) AS v FROM documents WHERE published_by IS NULL')
+    .first<{ v: number | null }>()
+  if (newestAuto?.v) {
+    await db
+      .prepare('DELETE FROM documents WHERE published_by IS NULL AND version < ?')
+      .bind(newestAuto.v)
+      .run()
   }
 
   await db
@@ -3214,7 +3225,8 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         .prepare(
           `SELECT d.version, d.published_at, d.published_by, LENGTH(d.content) AS size,
                   u.name AS publisher
-           FROM documents d LEFT JOIN users u ON u.id = d.published_by
+           FROM documents d JOIN users u ON u.id = d.published_by
+           WHERE d.published_by IS NOT NULL
            ORDER BY d.version DESC LIMIT 20`,
         )
         .all<{
