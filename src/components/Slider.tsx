@@ -37,12 +37,6 @@ export function Slider({
   return (
     <div
       className="slider"
-      role="slider"
-      tabIndex={0}
-      aria-label={label}
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={value}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId)
         setFromX(e.clientX)
@@ -52,6 +46,16 @@ export function Slider({
       }}
       ref={trackRef}
     >
+      <input
+        className="slider__input"
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-label={label}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
       <span className="slider__rail" />
       <span className="slider__fill" style={{ width: `${percent}%` }} />
       <span className="slider__knob" style={{ left: `${percent}%` }} />
