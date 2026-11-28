@@ -179,7 +179,7 @@ const fail = (error: string, status = 400) => json({ ok: false, error }, status)
 const schemas = new WeakMap<DB, Promise<void>>()
 
 /** 结构版本：每次加字段就改这里，改过之后老库会重新跑一遍补列 */
-const SCHEMA_VERSION = '2026-11-25'
+const SCHEMA_VERSION = '2026-11-28'
 
 function ensureSchema(db: DB, createSuper = true): Promise<void> {
   let promise = schemas.get(db)
