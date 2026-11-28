@@ -4963,3 +4963,58 @@ html[data-motion="performance"] .ptr__spinner--busy {
   height: 38px;
   flex: none;
 }
+
+
+/* 评论/回复：长名字单行省略，不撑成两行 */
+.comment__head {
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.comment__author {
+  min-width: 0;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment__reply,
+.comment__reply-to,
+.comment__time {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.comment__text {
+  overflow-wrap: anywhere;
+}
+
+/* 楼中楼缩进区域同样不换行 */
+.comment__children .comment__head {
+  flex-wrap: nowrap;
+}
+
+
+/* 评论作者区：头像固定，名字过长省略 */
+.comment__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.comment__who .avatar {
+  flex: 0 0 auto;
+}
+
+.comment__author {
+  display: block;
+  max-width: 100%;
+}

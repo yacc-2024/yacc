@@ -634,11 +634,22 @@ const GUEST_MIGRATION_KEY = 'migrate:guest-uid-v3'
 /** 1.1.x 的正式更新日志（以此为准，覆盖旧数据） */
 const CHANGELOG_CANON = [
   {
+    version: '1.1.7',
+    date: '2026-11-28',
+    items: [
+      '新增关注与粉丝列表，点头像旁的关注/粉丝数字就能查看',
+      '账号设置里新增隐私设置：可决定列表、人气和帖子是否对外可见',
+      '导航栏标题缩放的动画更顺滑，滚动停下不再抖动',
+      '评论与回复里过长的昵称改为单行省略，排版更整齐',
+    ],
+  },
+  {
     version: '1.1.6',
     date: '2026-11-28',
     items: [
       '合作伙伴主页换成极光主题，多层光效缓慢流动',
-      '外观新增主题色，含纯白与自定义调色盘',
+      '合作伙伴列表改为与成员一致的卡片，圆角更大',
+      '外观新增主题色（含纯白与自定义调色盘）与毛玻璃透明度',
       '个人主页重新排版：头像居左，数据与关注在右侧',
     ],
   },
@@ -701,7 +712,7 @@ const CHANGELOG_CANON = [
   },
 ]
 
-const CHANGELOG_KEY = 'migrate:changelog-v22'
+const CHANGELOG_KEY = 'migrate:changelog-v23'
 
 /** 站点历次更新（面向访客，不含管理端功能） */
 const CHANGELOG_SEED = [
