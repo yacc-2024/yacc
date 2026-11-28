@@ -127,61 +127,68 @@ export function UserProfile() {
       <div className={`page__body profile-skin profile-skin--${user?.profileStyle ?? 'normal'}`}>
         {user ? (
           <>
-            <div className="dy-stats dy-stats--top">
-                <span className="dy-stat">
-                  <span className="dy-stat__num">{user.likes}</span>
-                  <span className="dy-stat__label">获赞</span>
-                </span>
-                <span className="dy-stat">
-                  <span className="dy-stat__num">{user.followingCount}</span>
-                  <span className="dy-stat__label">关注</span>
-                </span>
-                <span className="dy-stat">
-                  <span className="dy-stat__num">{user.followers}</span>
-                  <span className="dy-stat__label">粉丝</span>
-                </span>
-                <span className="dy-stat">
-                  <span className="dy-stat__num">{user.popularity}</span>
-                  <span className="dy-stat__label">人气</span>
-                </span>
+            <div className="dy-main">
+              <Avatar name={user.name} src={user.avatar} size={88} frame={user.avatarFrame} />
+              <div className="dy-side">
+                  <div className="dy-stats dy-stats--top">
+                      <span className="dy-stat">
+                        <span className="dy-stat__num">{user.likes}</span>
+                        <span className="dy-stat__label">获赞</span>
+                      </span>
+                      <span className="dy-stat">
+                        <span className="dy-stat__num">{user.followingCount}</span>
+                        <span className="dy-stat__label">关注</span>
+                      </span>
+                      <span className="dy-stat">
+                        <span className="dy-stat__num">{user.followers}</span>
+                        <span className="dy-stat__label">粉丝</span>
+                      </span>
+                      <span className="dy-stat">
+                        <span className="dy-stat__num">{user.popularity}</span>
+                        <span className="dy-stat__label">人气</span>
+                      </span>
+                  </div>
+                {!user.isMe ? (
+                  <button
+                    type="button"
+                    className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
+                    style={{ display: 'block', width: '100%', marginTop: 10, minHeight: 36 }}
+                    disabled={busy}
+                    onClick={async () => {
+                      if (user.isFollowing) {
+                        const yes = await confirm({
+                          title: '取消关注？',
+                          message: `取消关注后，TA 的新动态不会再优先出现。`,
+                          confirmText: '取消关注',
+                          danger: true,
+                        })
+                        if (!yes) return
+                      }
+                      setBusy(true)
+                      try {
+                        const res = await api.follow(
+                          user.userId,
+                          user.isFollowing ? 'unfollow' : 'follow',
+                        )
+                        setUser({
+                          ...user,
+                          isFollowing: res.following,
+                          followers: user.followers + (res.following ? 1 : -1),
+                        })
+                      } finally {
+                        setBusy(false)
+                      }
+                    }}
+                  >
+                    {user.isFollowing && user.followsMe
+                      ? '互相关注'
+                      : user.isFollowing
+                        ? '已关注'
+                        : '关注'}
+                  </button>
+                ) : null}
+              </div>
             </div>
-
-            {!user.isMe ? (
-              <button
-                type="button"
-                className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
-                style={{ display: 'block', width: '100%', marginTop: 12, minHeight: 38 }}
-                disabled={busy}
-                onClick={async () => {
-                  if (user.isFollowing) {
-                    const yes = await confirm({
-                      title: '取消关注？',
-                      message: `取消关注后，TA 的新动态不会再优先出现。`,
-                      confirmText: '取消关注',
-                      danger: true,
-                    })
-                    if (!yes) return
-                  }
-                  setBusy(true)
-                  try {
-                    const res = await api.follow(user.userId, user.isFollowing ? 'unfollow' : 'follow')
-                    setUser({
-                      ...user,
-                      isFollowing: res.following,
-                      followers: user.followers + (res.following ? 1 : -1),
-                    })
-                  } finally {
-                    setBusy(false)
-                  }
-                }}
-              >
-                {user.isFollowing && user.followsMe
-                  ? '互相关注'
-                  : user.isFollowing
-                    ? '已关注'
-                    : '关注'}
-              </button>
-            ) : null}
 
             {user.isSponsor && user.profileStyle !== 'sponsor' ? (
               <div className="sponsor-card">
@@ -197,9 +204,7 @@ export function UserProfile() {
               </div>
             ) : null}
 
-            <div className="dy-main">
-              <Avatar name={user.name} src={user.avatar} size={88} frame={user.avatarFrame} />
-              <div className="dy-info">
+            <div className="dy-info">
               <p className={`dy-name${user.isSponsor ? ' sponsor-name' : ''}`}>
                 {user.name}
                 <span className="dy-uid-inline t-num">ID {user.uid}</span>
@@ -228,10 +233,7 @@ export function UserProfile() {
                   <p className="dy-bio">{bio}</p>
                 </div>
               ) : null}
-              </div>
             </div>
-
-
 
             <div className="seg" style={{ marginTop: 20, marginBottom: 4 }}>
               <button

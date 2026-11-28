@@ -4379,13 +4379,21 @@ select.input {
 .dy-main {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
   margin-top: 16px;
 }
 
-.dy-main .dy-info {
+.dy-side {
   flex: 1;
   min-width: 0;
+}
+
+.dy-stats--top {
+  margin-top: 0;
+}
+
+.dy-info {
+  margin-top: 16px;
 }
 
 .dy-uid-inline {
