@@ -152,7 +152,7 @@ export function UserProfile() {
                   <button
                     type="button"
                     className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
-                    style={{ display: 'block', width: '100%', marginTop: 10, minHeight: 36 }}
+                    style={{ display: 'block', width: '100%', marginTop: 6, minHeight: 34 }}
                     disabled={busy}
                     onClick={async () => {
                       if (user.isFollowing) {

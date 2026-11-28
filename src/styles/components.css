@@ -2822,7 +2822,7 @@ select.input {
 }
 
 .dy-info {
-  margin-top: 16px;
+  margin-top: 6px;
 }
 
 .dy-name {
@@ -4370,17 +4370,17 @@ select.input {
 .dy-stats--top {
   display: flex;
   justify-content: space-around;
-  margin-top: 16px;
-  padding: 12px 0;
-  border-radius: 16px;
+  margin-top: 0;
+  padding: 8px 0;
+  border-radius: 14px;
   background: var(--control-bg);
 }
 
 .dy-main {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .dy-side {
@@ -4393,7 +4393,7 @@ select.input {
 }
 
 .dy-info {
-  margin-top: 16px;
+  margin-top: 6px;
 }
 
 .dy-uid-inline {
