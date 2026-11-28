@@ -1179,16 +1179,16 @@ function UserForm({
       </div>
 
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <p className="t-caption faint">赞助</p>
+        <p className="t-caption faint">合作伙伴</p>
         <p className="field__hint" style={{ marginTop: 4 }}>
-          {user.sponsorUntil ? `当前有效期至 ${user.sponsorUntil.slice(0, 10)}` : '还不是赞助者'}
+          {user.sponsorUntil ? `当前有效期至 ${user.sponsorUntil.slice(0, 10)}` : '还不是合作伙伴'}
         </p>
         <div className="row gap-2" style={{ marginTop: 10 }}>
           <input
             className="input"
             style={{ flex: 1 }}
             type="number"
-            aria-label="赞助天数"
+            aria-label="合作天数"
             value={sponsorDays}
             onChange={(e) => setSponsorDays(e.target.value)}
           />
@@ -1198,7 +1198,7 @@ function UserForm({
             onClick={async () => {
               try {
                 await api.adminSponsor(user.id, Number(sponsorDays) || 30)
-                toast('已发放赞助')
+                toast('已设为合作伙伴')
               } catch (err) {
                 toast(err instanceof Error ? err.message : '发放失败', 'error')
               }
@@ -1212,7 +1212,7 @@ function UserForm({
             onClick={async () => {
               try {
                 await api.adminSponsor(user.id, 0, true)
-                toast('已取消赞助')
+                toast('已取消合作身份')
               } catch (err) {
                 toast(err instanceof Error ? err.message : '取消失败', 'error')
               }
