@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { usePageRefresh } from '../components/PullToRefresh'
 import { useApp } from '../state/AppContext'
 import { NavBar, SectionHead, Avatar } from '../components/ui'
 import { Carousel } from '../components/Carousel'
@@ -29,21 +30,22 @@ export function Home() {
   const [posts, setPosts] = useState<ForumPost[]>(homePostsCache ?? [])
   const [newsOpen, setNewsOpen] = useState(false)
 
-  useEffect(() => {
+  const loadPosts = useCallback(async () => {
     if (mode !== 'online') return
-    let alive = true
-    void api
-      .posts(2)
-      .then((res) => {
-        if (!alive) return
-        homePostsCache = res.posts
-        setPosts(res.posts)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
+    try {
+      const res = await api.posts(2)
+      homePostsCache = res.posts
+      setPosts(res.posts)
+    } catch {
+      /* 忽略 */
     }
   }, [mode])
+
+  useEffect(() => {
+    void loadPosts()
+  }, [loadPosts])
+
+  usePageRefresh(loadPosts)
   const [evt, setEvt] = useState<CrewEvent | null>(null)
 
   const featured = featuredItems(c)

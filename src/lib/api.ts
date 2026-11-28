@@ -514,6 +514,10 @@ export const api = {
   userProfileUncached: (uid: string) =>
     call<{
       user: {
+        level: number
+        points: number
+        popularity: number
+        avatarFrame: string | null
         uid: string
         rawUid: number | null
         name: string

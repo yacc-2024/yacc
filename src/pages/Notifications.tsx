@@ -5,7 +5,7 @@ import { NavBar, EmptyState } from '../components/ui'
 import { api } from '../lib/api'
 import { formatDateTime } from '../lib/format'
 import { usePolling } from '../hooks/usePolling'
-import { Spinner } from '../components/PullToRefresh'
+import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 
 interface Item {
   id: string
@@ -47,6 +47,8 @@ export function Notifications() {
   }, [refresh])
 
   usePolling(() => refresh(), 20_000, mode === 'online' && !!account)
+
+  usePageRefresh(refresh)
 
   const filtered = items.filter((n) =>
     tab === 'all' ? true : tab === 'system' ? n.category === 'system' : n.category !== 'system',

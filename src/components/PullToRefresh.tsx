@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
+/* ---------------- 页面刷新总线 ---------------- */
+
+const listeners = new Set<() => unknown>()
+
+/** 让当前页面在“下拉刷新”时重新拉数据 */
+export function usePageRefresh(fn: () => unknown): void {
+  const ref = useRef(fn)
+  ref.current = fn
+  useEffect(() => {
+    const listener = () => ref.current()
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
+}
+
+/** 触发所有已注册页面的刷新 */
+export async function runPageRefreshes(): Promise<void> {
+  await Promise.all(Array.from(listeners).map((fn) => Promise.resolve(fn())))
+}
+
 const THRESHOLD = 72
 
 /**

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { NavBar, Avatar, EmptyState, Sheet, useConfirm } from '../components/ui'
 import { TitleBadges } from '../components/Badge'
-import { Spinner } from '../components/PullToRefresh'
+import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 import { EpisodeRow } from '../components/media'
 import { Icon } from '../components/Icon'
 import { api, ApiError } from '../lib/api'
@@ -65,21 +65,21 @@ export function UserProfile() {
   const confirm = useConfirm()
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let alive = true
+  const load = useCallback(async () => {
     if (mode !== 'online' || !uid) return
-    void api
-      .userProfile(uid)
-      .then((res) => {
-        if (alive) setUser(res.user)
-      })
-      .catch((err) => {
-        if (alive) setError(err instanceof ApiError ? err.message : '加载失败')
-      })
-    return () => {
-      alive = false
+    try {
+      const res = await api.userProfileUncached(uid)
+      setUser(res.user)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '加载失败')
     }
   }, [mode, uid])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  usePageRefresh(load)
 
   if (mode !== 'online') {
     return (

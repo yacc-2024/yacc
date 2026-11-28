@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../state/AppContext'
 import { NavBar, useConfirm } from '../components/ui'
-import { Spinner } from '../components/PullToRefresh'
+import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 import { api } from '../lib/api'
 import { Badge } from '../components/Badge'
 import { formatDate } from '../lib/format'
@@ -52,6 +52,8 @@ export function Store() {
     if (!account) return
     void refresh()
   }, [account, refresh])
+
+  usePageRefresh(refresh)
 
   const buy = async (p: Product) => {
     const ok = await confirm({

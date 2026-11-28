@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NavBar, Avatar, EmptyState } from '../components/ui'
-import { Spinner } from '../components/PullToRefresh'
+import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 import { api } from '../lib/api'
 
 type Sponsor = { uid: string; name: string; avatar: string | null; until: string }
@@ -16,6 +16,21 @@ function partnerRange(until: string): string {
 
 export function Sponsors() {
   const [list, setList] = useState<Sponsor[] | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      const res = await api.sponsors()
+      setList(res.sponsors)
+    } catch {
+      setList([])
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  usePageRefresh(load)
 
   useEffect(() => {
     let alive = true

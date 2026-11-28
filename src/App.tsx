@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom'
 import { useApp } from './state/AppContext'
 import { TabBar, PageSkeleton, Sheet } from './components/ui'
-import { RefreshGate } from './components/PullToRefresh'
+import { RefreshGate, runPageRefreshes } from './components/PullToRefresh'
 import { SideNav } from './components/SideNav'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useIsDesktop } from './hooks/useMediaQuery'
@@ -154,7 +154,12 @@ export function App() {
 
   return (
     <>
-      <RefreshGate onRefresh={() => reload()}>
+      <RefreshGate
+        onRefresh={async () => {
+          await runPageRefreshes()
+          await reload()
+        }}
+      >
       <ErrorBoundary>
       <Routes>
       <Route element={<TabLayout />}>

@@ -5,7 +5,7 @@ import { NavBar, EmptyState, Sheet } from '../components/ui'
 import { Comments } from '../components/Comments'
 import { Icon } from '../components/Icon'
 import { ForumCard } from '../components/ForumCard'
-import { Spinner } from '../components/PullToRefresh'
+import { Spinner, usePageRefresh } from '../components/PullToRefresh'
 import { api, type ForumPost } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 
@@ -36,6 +36,8 @@ export function Forum() {
   useEffect(() => {
     void load()
   }, [load])
+
+  usePageRefresh(load)
 
   usePolling(() => load(), 15_000, mode === 'online')
 
