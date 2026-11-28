@@ -1256,7 +1256,9 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
       const likeCount = { n: Number(counts?.likes ?? 0) }
 
       const viewer = await currentUser(db, request)
-      if (viewer && viewer.id !== row.id) {
+      // 总管理员不算访客：不记录足迹，也不影响别人的人气
+      const viewerIsSuper = viewer?.role === 'superadmin' || viewer?.name === 'yacc-admin'
+      if (viewer && viewer.id !== row.id && !viewerIsSuper) {
         const last = await db
           .prepare(
             'SELECT created_at FROM profile_visits WHERE host_id = ? AND visitor_id = ? ORDER BY created_at DESC LIMIT 1',

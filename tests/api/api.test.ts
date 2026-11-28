@@ -1817,3 +1817,21 @@ describe('商品上下架与删除（v1.1）', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('总管理员不计入访客（v1.1）', () => {
+  it('yacc-admin 访问主页不会留下访客记录', async () => {
+    env.disableBootstrapSuper = '0'
+    await call('GET', '/health')
+    const admin = await call('POST', '/auth/login', { name: 'yacc-admin', password: 'yacc2026-yu' })
+    expect(admin.status).toBe(200)
+
+    const key = await makeKey(admin.body.data.token, 'visitor')
+    const reg = await registerWithKey(key, '被看的人')
+    const token = reg.body.data.token
+    const uid = reg.body.data.user.uid
+
+    await call('GET', `/users/${uid}`, undefined, admin.body.data.token)
+    const page = await call('GET', `/users/${uid}`, undefined, token)
+    expect(page.body.data.user.visitors.length).toBe(0)
+  })
+})
