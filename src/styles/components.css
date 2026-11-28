@@ -146,7 +146,7 @@
   height: calc(var(--tabbar-h) + 4px);
   padding: 2px;
   border-radius: var(--r-pill);
-  background: var(--glass-tabbar);
+  background: color-mix(in srgb, var(--glass-tabbar) calc(var(--glass-alpha, 1) * 100%), transparent);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
