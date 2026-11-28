@@ -465,6 +465,7 @@ interface ConfirmOptions {
   title: string
   message?: string
   confirmText?: string
+  cancelText?: string
   danger?: boolean
 }
 
@@ -504,7 +505,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => close(false)}>
-              取消
+              {state?.cancelText ?? '取消'}
             </button>
             <button
               type="button"

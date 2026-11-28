@@ -36,7 +36,7 @@ export function Store() {
     memberPoints: number
     products: Product[]
     mine: Item[]
-    equipped: { avatarFrame: string | null; badgeStyle: string | null }
+    equipped: { avatarFrame: string | null; badgeStyle: string | null; plates: string[] }
   } | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -148,21 +148,34 @@ export function Store() {
                     {item.expiresAt ? `有效期至 ${formatDate(item.expiresAt)}` : '永久'}
                   </span>
                 </span>
-                <button
-                  type="button"
-                  className="linklike"
-                  onClick={async () => {
-                    try {
-                      await api.equipItem(item.id)
-                      toast('已装备')
-                      await refresh()
-                    } catch (err) {
-                      toast(err instanceof Error ? err.message : '装备失败', 'error')
-                    }
-                  }}
-                >
-                  装备
-                </button>
+                {(() => {
+                  const equipped =
+                    item.kind === 'avatar_frame'
+                      ? data.equipped.avatarFrame === item.value
+                      : item.kind === 'nameplate'
+                        ? data.equipped.plates.includes(item.value ?? '')
+                        : false
+                  if (item.kind === 'custom') {
+                    return <span className="t-caption faint">已领取</span>
+                  }
+                  return (
+                    <button
+                      type="button"
+                      className="linklike"
+                      onClick={async () => {
+                        try {
+                          await api.equipItem(item.id, equipped)
+                          toast(equipped ? '已卸下' : '已装备')
+                          await refresh()
+                        } catch (err) {
+                          toast(err instanceof Error ? err.message : '操作失败', 'error')
+                        }
+                      }}
+                    >
+                      {equipped ? '卸下' : '装备'}
+                    </button>
+                  )
+                })()}
               </div>
             ))}
           </div>

@@ -2746,7 +2746,11 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
           createdAt: m.created_at,
           expiresAt: m.expires_at,
         })),
-        equipped: { avatarFrame: me.avatarFrame ?? null, badgeStyle: me.badgeStyle ?? null },
+        equipped: {
+          avatarFrame: me.avatarFrame ?? null,
+          badgeStyle: me.badgeStyle ?? null,
+          plates: me.plates ?? [],
+        },
       })
     }
 
@@ -2817,15 +2821,17 @@ async function handleApiInner(request: Request, env: Env): Promise<Response> {
         return fail('这个物品已经过期了', 400)
       }
       if (purchase.kind === 'avatar_frame') {
+        const unequip = body?.unequip === true
         await db
           .prepare('UPDATE users SET avatar_frame = ? WHERE id = ?')
-          .bind(purchase.value, me.id)
+          .bind(unequip ? null : purchase.value, me.id)
           .run()
-        return ok({ equipped: 'avatarFrame' })
+        return ok({ equipped: unequip ? 'none' : 'avatarFrame' })
       }
       if (purchase.kind === 'nameplate') {
         const plates = new Set(me.plates ?? [])
-        if (purchase.value) plates.add(purchase.value)
+        if (body?.unequip === true && purchase.value) plates.delete(purchase.value)
+        else if (purchase.value) plates.add(purchase.value)
         await db
           .prepare('UPDATE users SET plates = ? WHERE id = ?')
           .bind(JSON.stringify([...plates]), me.id)

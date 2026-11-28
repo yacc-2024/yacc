@@ -358,7 +358,39 @@ export const api = {
   pinPost: (id: string, pinned: boolean) =>
     call<Record<string, never>>(`/posts/${id}/pin`, { method: 'POST', body: { pinned } }),
 
-  userContent: (uid: string) =>
+  userContent: async (uid: string) => {
+    type Content = {
+      posts: Array<{
+        id: string
+        body: string
+        createdAt: string
+        pinned: boolean
+        likes: number
+        commentCount: number
+        imageId: string | null
+      }>
+      comments: Array<{
+        id: string
+        body: string
+        createdAt: string
+        targetType: string
+        targetId: string
+      }>
+    }
+    const key = `content:${uid}`
+    const cached = readCache<Content>(key, 90_000)
+    if (cached) {
+      void call<Content>(`/users/${uid}/content`)
+        .then((fresh) => writeCache(key, fresh))
+        .catch(() => {})
+      return cached
+    }
+    const fresh = await call<Content>(`/users/${uid}/content`)
+    writeCache(key, fresh)
+    return fresh
+  },
+
+  userContentUncached: (uid: string) =>
     call<{
       posts: Array<{
         id: string
@@ -413,14 +445,17 @@ export const api = {
         createdAt: string
         expiresAt: string | null
       }>
-      equipped: { avatarFrame: string | null; badgeStyle: string | null }
+      equipped: { avatarFrame: string | null; badgeStyle: string | null; plates: string[] }
     }>('/store'),
 
   buyProduct: (productId: string) =>
     call<{ id: string; balance: number }>('/store/buy', { method: 'POST', body: { productId } }),
 
-  equipItem: (purchaseId: string) =>
-    call<{ equipped: string }>('/store/equip', { method: 'POST', body: { purchaseId } }),
+  equipItem: (purchaseId: string, unequip = false) =>
+    call<{ equipped: string }>('/store/equip', {
+      method: 'POST',
+      body: { purchaseId, unequip },
+    }),
 
   adminSponsor: (userId: string, days: number, revoke = false) =>
     call<{ sponsorUntil: string | null }>('/admin/sponsor', {

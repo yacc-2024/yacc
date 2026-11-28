@@ -154,11 +154,16 @@ export function DataAdmin() {
       if (err instanceof ApiError && err.status === 409 && data?.code === 'conflict') {
         const ok = await confirm({
           title: '线上内容已经有更新',
-          message: '另一位管理员在你之后发布过内容。继续发布会用你这里的版本覆盖它。',
+          message:
+            '另一位管理员在你之后发布过内容。继续发布会用你这里的版本覆盖它；也可以放弃本地改动，拉取线上最新版本。',
           confirmText: '仍然覆盖',
+          cancelText: '放弃本地',
           danger: true,
         })
-        if (!ok) return
+        if (!ok) {
+          window.location.reload()
+          return
+        }
         try {
           await publishToServer()
           void refreshActivity()

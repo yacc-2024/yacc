@@ -65,21 +65,25 @@ export function Carousel({ items }: { items: CarouselItem[] }) {
         onPointerCancel={onEnd}
       >
         {items.map((f, i) => {
-          const offset = (i - index + count) % count
-          const depth = offset > 2 ? 3 : offset
+          // 按真实相对位置排布，左右滑动对称
+          let rel = i - index
+          if (rel > count / 2) rel -= count
+          if (rel < -count / 2) rel += count
+          const depth = Math.abs(rel)
+          if (depth > 2) return null
           return (
             <div
               key={f.key}
               className="deck__card"
               style={{
                 zIndex: count - depth,
-                transform: `translateY(${depth * 10 - (depth === 0 ? 0 : 4)}px) scale(${
-                  1 - depth * 0.05 + (depth === 0 ? Math.min(Math.abs(drag) / 2000, 0.02) : 0)
-                }) rotate(${depth * -1.2}deg) translateX(${drag * (depth === 0 ? 1 : 0.25)}px)`,
-                opacity: depth > 2 ? 0 : 1,
+                transform: `translateX(${rel * 10 + drag * (rel === 0 ? 1 : 0.25)}px) translateY(${
+                  depth * 9
+                }px) scale(${1 - depth * 0.05}) rotate(${rel * 0.8}deg)`,
+                opacity: 1,
                 transition:
                   startX.current === null
-                    ? 'transform 420ms cubic-bezier(.22,1,.36,1), opacity 300ms ease'
+                    ? 'transform 420ms cubic-bezier(.22,1,.36,1)'
                     : 'none',
               }}
               onClick={() => {

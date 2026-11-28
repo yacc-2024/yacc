@@ -127,9 +127,7 @@ export function UserProfile() {
       <div className={`page__body profile-skin profile-skin--${user?.profileStyle ?? 'normal'}`}>
         {user ? (
           <>
-            <div className="dy-head">
-              <Avatar name={user.name} src={user.avatar} size={88} frame={user.avatarFrame} />
-              <div className="dy-stats">
+            <div className="dy-stats dy-stats--top">
                 <span className="dy-stat">
                   <span className="dy-stat__num">{user.likes}</span>
                   <span className="dy-stat__label">获赞</span>
@@ -146,14 +144,13 @@ export function UserProfile() {
                   <span className="dy-stat__num">{user.popularity}</span>
                   <span className="dy-stat__label">人气</span>
                 </span>
-              </div>
             </div>
 
             {!user.isMe ? (
               <button
                 type="button"
                 className={`follow-btn${user.isFollowing ? ' follow-btn--on' : ''}`}
-                style={{ display: 'block', width: '100%', marginTop: 16, minHeight: 40 }}
+                style={{ display: 'block', width: '100%', marginTop: 12, minHeight: 38 }}
                 disabled={busy}
                 onClick={async () => {
                   if (user.isFollowing) {
@@ -186,7 +183,7 @@ export function UserProfile() {
               </button>
             ) : null}
 
-            {user.isSponsor ? (
+            {user.isSponsor && user.profileStyle !== 'sponsor' ? (
               <div className="sponsor-card">
                 <span className="sponsor-card__badge">赞助者</span>
                 <p className="sponsor-card__text">
@@ -200,9 +197,13 @@ export function UserProfile() {
               </div>
             ) : null}
 
-            <div className="dy-info">
-              <p className={`dy-name${user.isSponsor ? ' sponsor-name' : ''}`}>{user.name}</p>
-              <p className={`dy-uid t-num${user.isSponsor ? ' sponsor-id' : ''}`}>ID {user.uid}</p>
+            <div className="dy-main">
+              <Avatar name={user.name} src={user.avatar} size={88} frame={user.avatarFrame} />
+              <div className="dy-info">
+              <p className={`dy-name${user.isSponsor ? ' sponsor-name' : ''}`}>
+                {user.name}
+                <span className="dy-uid-inline t-num">ID {user.uid}</span>
+              </p>
               <span className="title-row" style={{ marginTop: 8 }}>
                 <span className={`lv lv--${tierOf(user.level)}`}>Lv.{user.level}</span>
                 <TitleBadges
@@ -227,6 +228,7 @@ export function UserProfile() {
                   <p className="dy-bio">{bio}</p>
                 </div>
               ) : null}
+              </div>
             </div>
 
 
