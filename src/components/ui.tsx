@@ -125,19 +125,16 @@ export function NavBar({ title, back, large, sub, action, brand }: NavBarProps) 
             <Icon name="chevron-left" size={26} />
           </button>
         ) : null}
-        {!large ? (
-          <h1 className="nav__inline">{title}</h1>
-        ) : (
-          <span className="nav__small">{title}</span>
-        )}
+        {!large ? <h1 className="nav__inline">{title}</h1> : null}
         <div className="grow" />
         {action ? <div className="nav__action">{action}</div> : null}
       </div>
       {large ? (
-        <div className="nav__large">
-          <h1 className="t-title1">{title}</h1>
-          {sub ? <p className="nav__sub">{sub}</p> : null}
-        </div>
+        <>
+          {/* 同一个标题元素：随滚动缩放到导航栏中央，而不是消失后重出现 */}
+          <h1 className="nav__morph">{title}</h1>
+          {sub ? <p className="nav__sub nav__sub--morph">{sub}</p> : null}
+        </>
       ) : null}
     </header>
   )
